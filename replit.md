@@ -90,7 +90,6 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 
 ## Changelog
 - July 01, 2025. Initial setup
-- July 01, 2025. Added image processing functionality for extracting salary data from uploaded screenshots using Anthropic Claude vision capabilities
 
 ## User Preferences
 

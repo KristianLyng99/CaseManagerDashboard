@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Upload, ImageIcon, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from '@tanstack/react-query';
 
 export default function Home() {
   const [sykdato, setSykdato] = useState('');
@@ -15,12 +14,6 @@ export default function Home() {
   const [aapTil, setAapTil] = useState('');
   const [uforetrygd, setUforetrygd] = useState('');
   const [lonnSykdato, setLonnSykdato] = useState('');
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [extractedSalaryData, setExtractedSalaryData] = useState<Array<{
-    dato: string;
-    lonn: number;
-    stillingsprosent: number;
-  }>>([]);
   const [søknadRegistrert, setSoknadRegistrert] = useState(() => {
     const today = new Date();
     const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -42,39 +35,6 @@ export default function Home() {
   }> | null>(null);
   const [rawInput, setRawInput] = useState('');
   const { toast } = useToast();
-
-  // Image processing mutation
-  const imageProcessingMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const response = await fetch('/api/analyze-salary-image', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to process image');
-      }
-      
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setExtractedSalaryData(data.data);
-      toast({
-        title: "Bilde prosessert",
-        description: `Fant ${data.data.length} lønnsoppføringer i bildet`,
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Feil ved prosessering",
-        description: error instanceof Error ? error.message : "Kunne ikke prosessere bildet",
-        variant: "destructive",
-      });
-    },
-  });
 
   // Copy to clipboard utility
   const copyToClipboard = async (text: string) => {
@@ -370,34 +330,6 @@ export default function Home() {
 
   const karensCalculations = getKarensCalculations();
 
-  // Handle image upload
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setUploadedImage(file);
-    }
-  };
-
-  // Process uploaded image
-  const processImage = () => {
-    if (uploadedImage) {
-      imageProcessingMutation.mutate(uploadedImage);
-    }
-  };
-
-  // Handle drag and drop
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      setUploadedImage(file);
-    }
-  };
-
   // Clear all fields
   const handleClear = () => {
     setSykdato(''); 
@@ -420,8 +352,6 @@ export default function Home() {
     setAvgUforegrad(null);
     setUforegradPerioder(null);
     setRawInput('');
-    setUploadedImage(null);
-    setExtractedSalaryData([]);
     
     toast({
       title: "Alle felt tømt",
@@ -617,108 +547,6 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Image Upload Section */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ImageIcon className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-medium text-slate-800">Lønnsdata fra bilde</h2>
-            </div>
-            
-            <div 
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                uploadedImage ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-blue-400'
-              }`}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              {uploadedImage ? (
-                <div className="space-y-3">
-                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
-                  <p className="text-sm font-medium text-green-800">
-                    {uploadedImage.name}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {Math.round(uploadedImage.size / 1024)} KB
-                  </p>
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      onClick={processImage}
-                      disabled={imageProcessingMutation.isPending}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {imageProcessingMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Prosesserer...
-                        </>
-                      ) : (
-                        <>
-                          <WandSparkles className="h-4 w-4 mr-2" />
-                          Les lønnsdata
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setUploadedImage(null)}
-                    >
-                      Fjern
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">
-                      Dra og slipp bilde her, eller
-                    </p>
-                    <label className="inline-block">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                      <span className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
-                        velg fil
-                      </span>
-                    </label>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Støtter JPG, PNG og andre bildeformater (maks 10MB)
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Display extracted salary data */}
-            {extractedSalaryData.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2">
-                  Uttrukket lønnsdata:
-                </h4>
-                <div className="space-y-2">
-                  {extractedSalaryData.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <div className="text-sm">
-                        <span className="font-medium">{item.dato}</span>
-                        <span className="text-gray-600 ml-2">
-                          {item.stillingsprosent}%
-                        </span>
-                      </div>
-                      <div className="text-sm font-semibold">
-                        {item.lonn.toLocaleString('no-NO')} kr
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
