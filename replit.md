@@ -1,0 +1,96 @@
+# Saksbehandler Verktøy - Date and Case Calculator
+
+## Overview
+
+This is a Norwegian case handler (saksbehandler) tool built as a full-stack web application for NAV (Norwegian Labour and Welfare Administration). The application provides date calculation and case management functionality with intelligent data parsing and calculation features. It's designed as a single-page application with a React frontend and Express backend, configured for easy deployment on Replit.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter for client-side routing
+- **UI Components**: Radix UI primitives with shadcn/ui component library
+- **Styling**: Tailwind CSS with CSS variables for theming
+- **State Management**: React hooks with TanStack Query for server state
+- **Build Tool**: Vite for development and production builds
+
+### Backend Architecture
+- **Framework**: Express.js with TypeScript
+- **Runtime**: Node.js with ESM modules
+- **Development**: tsx for TypeScript execution in development
+- **Production**: esbuild for bundling
+
+### Data Storage Strategy
+- **ORM**: Drizzle ORM configured for PostgreSQL
+- **Database**: Neon Database (serverless PostgreSQL)
+- **Schema Management**: Drizzle Kit for migrations
+- **Development Storage**: In-memory storage for rapid prototyping
+
+## Key Components
+
+### Frontend Components
+1. **Home Page** (`client/src/pages/home.tsx`): Main calculator interface with date input fields and calculation results
+2. **UI Components**: Complete set of accessible components from shadcn/ui including forms, buttons, cards, and toast notifications
+3. **Utility Functions**: Date parsing, formatting, and calculation helpers
+
+### Backend Components
+1. **Express Server** (`server/index.ts`): Main server setup with middleware and error handling
+2. **Storage Interface** (`server/storage.ts`): Abstracted storage layer with in-memory implementation
+3. **Routes** (`server/routes.ts`): API endpoint definitions (currently minimal)
+4. **Vite Integration** (`server/vite.ts`): Development server setup with HMR support
+
+### Database Schema
+- **Users Table**: Basic user management with username/password fields
+- **Migration Support**: Drizzle migrations in `/migrations` directory
+- **Type Safety**: Generated types from schema definitions
+
+## Data Flow
+
+1. **User Input**: Date inputs in DDMMYYYY or DD.MM.YYYY format
+2. **Client-Side Processing**: Intelligent parsing and validation of date inputs
+3. **Calculation Engine**: Date arithmetic for duration calculations and benefit period calculations
+4. **Result Display**: Formatted output with copy-to-clipboard functionality
+5. **Toast Notifications**: User feedback for actions like copying results
+
+## External Dependencies
+
+### Core Dependencies
+- **Database**: `@neondatabase/serverless` for PostgreSQL connectivity
+- **ORM**: `drizzle-orm` and `drizzle-zod` for database operations and validation
+- **UI Library**: Multiple `@radix-ui` packages for accessible components
+- **Query Management**: `@tanstack/react-query` for server state management
+- **Date Handling**: `date-fns` for date manipulation
+
+### Development Dependencies
+- **TypeScript**: Full TypeScript support across frontend and backend
+- **Vite**: Development server with HMR and optimized builds
+- **ESBuild**: Production bundling for backend
+- **Replit Integration**: Custom plugins for Replit environment
+
+## Deployment Strategy
+
+### Development Environment
+- **Command**: `npm run dev` starts both frontend and backend in development mode
+- **Hot Reload**: Vite provides instant feedback for frontend changes
+- **TypeScript**: Real-time type checking and compilation
+
+### Production Build
+- **Frontend**: Vite builds optimized static assets to `dist/public`
+- **Backend**: ESBuild bundles Node.js application to `dist/index.js`
+- **Command**: `npm run build` creates production-ready application
+
+### Database Management
+- **Migrations**: `npm run db:push` applies schema changes to database
+- **Environment**: Requires `DATABASE_URL` environment variable for PostgreSQL connection
+
+### Replit Specific Features
+- **Runtime Error Overlay**: Development error handling with `@replit/vite-plugin-runtime-error-modal`
+- **Cartographer Integration**: Code mapping for debugging in Replit environment
+- **Static Serving**: Fallback to static file serving in production
+
+## Changelog
+- July 01, 2025. Initial setup
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
