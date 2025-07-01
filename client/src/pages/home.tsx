@@ -15,10 +15,10 @@ export default function Home() {
   const [uforetrygd, setUforetrygd] = useState('');
   const [søknadRegistrert, setSoknadRegistrert] = useState(() => {
     const today = new Date();
-    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const d = String(firstOfMonth.getDate()).padStart(2, '0');
-    const m = String(firstOfMonth.getMonth() + 1).padStart(2, '0');
-    const y = firstOfMonth.getFullYear();
+    const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const d = String(firstOfPreviousMonth.getDate()).padStart(2, '0');
+    const m = String(firstOfPreviousMonth.getMonth() + 1).padStart(2, '0');
+    const y = firstOfPreviousMonth.getFullYear();
     return `${d}.${m}.${y}`;
   });
   const [durationText, setDurationText] = useState('');
