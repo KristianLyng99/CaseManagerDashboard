@@ -275,7 +275,6 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-xl font-semibold text-slate-800">Saksbehandler Verktøy</h1>
-              <p className="text-sm text-slate-600">Dato og vedtak kalkulator for NAV saksbehandling</p>
             </div>
           </div>
         </div>
