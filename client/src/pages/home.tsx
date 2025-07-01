@@ -13,6 +13,7 @@ export default function Home() {
   const [aapFra, setAapFra] = useState('');
   const [aapTil, setAapTil] = useState('');
   const [uforetrygd, setUforetrygd] = useState('');
+  const [innmeldingsdato, setInnmeldingsdato] = useState('');
   const [søknadRegistrert, setSoknadRegistrert] = useState(() => {
     const today = new Date();
     const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -321,6 +322,7 @@ export default function Home() {
     setAapFra(''); 
     setAapTil(''); 
     setUforetrygd('');
+    setInnmeldingsdato('');
     setSoknadRegistrert(() => {
       const today = new Date();
       const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -385,6 +387,13 @@ export default function Home() {
       label: 'Uføretrygd fra', 
       value: uforetrygd, 
       onChange: (v: string) => setUforetrygd(formatInput(v)),
+      readonly: false
+    },
+    { 
+      id: 'innmeldingsdato',
+      label: 'Innmeldingsdato', 
+      value: innmeldingsdato, 
+      onChange: (v: string) => setInnmeldingsdato(formatInput(v)),
       readonly: false
     }
   ];
