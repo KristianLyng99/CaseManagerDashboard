@@ -718,53 +718,31 @@ export default function Home() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {karensCalculations.laveste2År && (
                             <div className="bg-white p-3 rounded border border-blue-200">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-slate-800">
-                                    Laveste lønn 2 år før syk
-                                  </p>
-                                  <p className="text-lg font-semibold text-blue-700">
-                                    {karensCalculations.laveste2År.toLocaleString('no-NO')} kr
-                                  </p>
-                                  <p className="text-xs text-slate-600 mt-1">
-                                    ({lonnSykdato} ÷ 1,15)
-                                  </p>
-                                </div>
-                                <Button 
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => copyToClipboard(karensCalculations.laveste2År!.toString())}
-                                  className="text-xs px-2 py-1 bg-blue-50 hover:bg-blue-100 border-blue-200"
-                                >
-                                  <Copy className="h-3 w-3 mr-1" />
-                                  Kopier
-                                </Button>
+                              <div>
+                                <p className="text-sm font-medium text-slate-800">
+                                  Laveste lønn 2 år før syk
+                                </p>
+                                <p className="text-lg font-semibold text-blue-700">
+                                  {karensCalculations.laveste2År.toLocaleString('no-NO')} kr
+                                </p>
+                                <p className="text-xs text-slate-600 mt-1">
+                                  ({lonnSykdato} ÷ 1,15)
+                                </p>
                               </div>
                             </div>
                           )}
                           {karensCalculations.laveste1År && (
                             <div className="bg-white p-3 rounded border border-blue-200">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-slate-800">
-                                    Laveste lønn 1 år før syk
-                                  </p>
-                                  <p className="text-lg font-semibold text-blue-700">
-                                    {karensCalculations.laveste1År.toLocaleString('no-NO')} kr
-                                  </p>
-                                  <p className="text-xs text-slate-600 mt-1">
-                                    ({lonnSykdato} ÷ 1,075)
-                                  </p>
-                                </div>
-                                <Button 
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => copyToClipboard(karensCalculations.laveste1År!.toString())}
-                                  className="text-xs px-2 py-1 bg-blue-50 hover:bg-blue-100 border-blue-200"
-                                >
-                                  <Copy className="h-3 w-3 mr-1" />
-                                  Kopier
-                                </Button>
+                              <div>
+                                <p className="text-sm font-medium text-slate-800">
+                                  Laveste lønn 1 år før syk
+                                </p>
+                                <p className="text-lg font-semibold text-blue-700">
+                                  {karensCalculations.laveste1År.toLocaleString('no-NO')} kr
+                                </p>
+                                <p className="text-xs text-slate-600 mt-1">
+                                  ({lonnSykdato} ÷ 1,075)
+                                </p>
                               </div>
                             </div>
                           )}
