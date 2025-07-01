@@ -299,17 +299,7 @@ export default function Home() {
                   value={rawInput}
                   onChange={(e) => setRawInput(e.target.value)}
                   className="font-mono text-sm resize-none"
-                  placeholder="Lim inn data fra DSOP her. OBS ikke lim inn sensitiv data
-
-Eksempel format:
-Første sykedag: 15.03.2023
-første melding om uførhet: 20.03.2023
-
-Vedtak ID    Fra dato     Til dato
-12345       01.09.2024   31.12.2024   Innvilgelse av søknad
-
-Meldekort ID  Fra dato   Til dato    Timer
-67890        01.09.2024  14.09.2024  45,5"
+                  placeholder="Lim inn data fra DSOP her. OBS ikke lim inn sensitiv data"
                 />
               </div>
               <Button 
