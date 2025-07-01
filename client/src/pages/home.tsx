@@ -635,24 +635,33 @@ export default function Home() {
                             Fra: {periode.fraDato} - Til: {periode.tilDato}
                           </p>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex flex-wrap gap-1">
                           <Button 
                             variant="outline"
                             size="sm"
                             onClick={() => copyToClipboard(`${periode.uforegrad}%`)}
-                            className="text-xs px-2 py-1"
+                            className="text-xs px-2 py-1 bg-blue-50 hover:bg-blue-100 border-blue-200"
                           >
                             <Copy className="h-3 w-3 mr-1" />
-                            Grad
+                            {periode.uforegrad}%
                           </Button>
                           <Button 
                             variant="outline"
                             size="sm"
-                            onClick={() => copyToClipboard(`${periode.fraDato} - ${periode.tilDato}`)}
-                            className="text-xs px-2 py-1"
+                            onClick={() => copyToClipboard(periode.fraDato)}
+                            className="text-xs px-2 py-1 bg-green-50 hover:bg-green-100 border-green-200"
                           >
                             <Copy className="h-3 w-3 mr-1" />
-                            Periode
+                            Fra: {periode.fraDato}
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyToClipboard(periode.tilDato)}
+                            className="text-xs px-2 py-1 bg-green-50 hover:bg-green-100 border-green-200"
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Til: {periode.tilDato}
                           </Button>
                         </div>
                       </div>
