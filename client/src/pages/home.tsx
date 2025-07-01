@@ -13,7 +13,14 @@ export default function Home() {
   const [aapFra, setAapFra] = useState('');
   const [aapTil, setAapTil] = useState('');
   const [uforetrygd, setUforetrygd] = useState('');
-  const [søknadRegistrert, setSoknadRegistrert] = useState('');
+  const [søknadRegistrert, setSoknadRegistrert] = useState(() => {
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const d = String(firstOfMonth.getDate()).padStart(2, '0');
+    const m = String(firstOfMonth.getMonth() + 1).padStart(2, '0');
+    const y = firstOfMonth.getFullYear();
+    return `${d}.${m}.${y}`;
+  });
   const [durationText, setDurationText] = useState('');
   const [diffDays, setDiffDays] = useState<number | null>(null);
   const [teoretiskSykdato, setTeoretiskSykdato] = useState('');
