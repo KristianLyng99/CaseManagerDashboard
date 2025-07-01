@@ -291,7 +291,7 @@ export default function Home() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="rawInput" className="text-sm font-medium text-slate-700 mb-2 block">
-                  Lim inn data fra system
+                  Lim inn data fra DSOP her. OBS ikke lim inn sensitiv data
                 </Label>
                 <Textarea 
                   id="rawInput"
@@ -299,7 +299,7 @@ export default function Home() {
                   value={rawInput}
                   onChange={(e) => setRawInput(e.target.value)}
                   className="font-mono text-sm resize-none"
-                  placeholder="Lim inn rådata fra NAV-systemet her...
+                  placeholder="Lim inn data fra DSOP her. OBS ikke lim inn sensitiv data
 
 Eksempel format:
 Første sykedag: 15.03.2023
