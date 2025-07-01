@@ -523,15 +523,7 @@ export default function Home() {
         </Card>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-12">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="text-center text-sm text-slate-500">
-            <p>Saksbehandler Verktøy v1.0 - NAV Intern Bruk</p>
-            <p className="mt-1">For spørsmål om verktøyet, kontakt IT-support</p>
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 }
