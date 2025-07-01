@@ -25,6 +25,13 @@ export default function Home() {
   const [diffDays, setDiffDays] = useState<number | null>(null);
   const [teoretiskSykdato, setTeoretiskSykdato] = useState('');
   const [avgUforegrad, setAvgUforegrad] = useState<number | null>(null);
+  const [uforegradPerioder, setUforegradPerioder] = useState<Array<{
+    uforegrad: number;
+    fraIndex: number;
+    tilIndex: number;
+    fraDato: string;
+    tilDato: string;
+  }> | null>(null);
   const [rawInput, setRawInput] = useState('');
   const { toast } = useToast();
 
@@ -102,9 +109,13 @@ export default function Home() {
   // Parse raw clipboard data for autofill
   const parseAutofill = () => {
     const lines = rawInput.split(/\r?\n/);
-    let vedtakFra = null;
+    let vedtakFra: string | null = null;
     const tilDates: string[] = [];
-    const meldekortHours: number[] = [];
+    const meldekortData: Array<{
+      hours: number;
+      fraDato: string;
+      tilDato: string;
+    }> = [];
 
     const sykdatoMatch = rawInput.match(/Første sykedag:\s*(\d{2}\.\d{2}\.\d{4})/i);
     if (sykdatoMatch) setSykdato(sykdatoMatch[1]);
@@ -131,8 +142,15 @@ export default function Home() {
       }
       
       if (inMeldekort) {
-        const m2 = t.match(/\d+\s+\d{2}\.\d{2}\.\d{4}\s+\d{2}\.\d{2}\.\d{4}\s+(\d+[\d,]*)/);
-        if (m2) meldekortHours.push(parseFloat(m2[1].replace(',', '.')));
+        const m2 = t.match(/\d+\s+(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})\s+(\d+[\d,]*)/);
+        if (m2) {
+          const [, fraDato, tilDato, timerStr] = m2;
+          meldekortData.push({
+            hours: parseFloat(timerStr.replace(',', '.')),
+            fraDato,
+            tilDato
+          });
+        }
       }
     });
 
@@ -140,12 +158,9 @@ export default function Home() {
       applyVedtakDates(vedtakFra, tilDates[tilDates.length - 1]);
     }
     
-    if (meldekortHours.length) {
-      const sum = meldekortHours.reduce((a, h) => a + h, 0);
-      const avg = sum / meldekortHours.length;
-      const workPct = (avg / 75) * 100;
-      const unwork = 100 - workPct;
-      setAvgUforegrad(Math.round(unwork / 5) * 5);
+    // Analyze meldekort data for disability grade changes
+    if (meldekortData.length > 0) {
+      analyzeUforegradChanges(meldekortData);
     }
 
     toast({
@@ -153,6 +168,88 @@ export default function Home() {
       description: "Data er hentet fra rådata og fylt inn i feltene",
       duration: 3000,
     });
+  };
+
+  // Analyze disability grade changes across meldekort periods
+  const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+    if (meldekortData.length < 3) {
+      // Not enough data to detect changes, just calculate average
+      const totalHours = meldekortData.reduce((sum, mk) => sum + mk.hours, 0);
+      const avgHours = totalHours / meldekortData.length;
+      const workPct = (avgHours / 75) * 100;
+      const uforegrad = Math.round((100 - workPct) / 5) * 5;
+      setAvgUforegrad(uforegrad);
+      setUforegradPerioder(null);
+      return;
+    }
+
+    // Calculate uforegrad for each period
+    const perioder = meldekortData.map((mk, index) => {
+      const workPct = (mk.hours / 75) * 100;
+      const uforegrad = Math.round((100 - workPct) / 5) * 5;
+      return {
+        uforegrad,
+        hours: mk.hours,
+        fraDato: mk.fraDato,
+        tilDato: mk.tilDato,
+        index
+      };
+    });
+
+    // Detect significant changes (>15% over 3 periods)
+    const significantPeriods: Array<{
+      uforegrad: number;
+      fraIndex: number;
+      tilIndex: number;
+      fraDato: string;
+      tilDato: string;
+    }> = [];
+
+    let currentPeriodStart = 0;
+    let currentUforegrad = perioder[0].uforegrad;
+
+    for (let i = 1; i < perioder.length; i++) {
+      const gradeDiff = Math.abs(perioder[i].uforegrad - currentUforegrad);
+      
+      // Check if there's a significant change (>15%)
+      if (gradeDiff > 15) {
+        // Add the previous period
+        significantPeriods.push({
+          uforegrad: currentUforegrad,
+          fraIndex: currentPeriodStart,
+          tilIndex: i - 1,
+          fraDato: perioder[currentPeriodStart].fraDato,
+          tilDato: perioder[i - 1].tilDato
+        });
+        
+        // Start new period
+        currentPeriodStart = i;
+        currentUforegrad = perioder[i].uforegrad;
+      }
+    }
+
+    // Add the final period
+    significantPeriods.push({
+      uforegrad: currentUforegrad,
+      fraIndex: currentPeriodStart,
+      tilIndex: perioder.length - 1,
+      fraDato: perioder[currentPeriodStart].fraDato,
+      tilDato: perioder[perioder.length - 1].tilDato
+    });
+
+    // Calculate overall average
+    const totalHours = meldekortData.reduce((sum, mk) => sum + mk.hours, 0);
+    const avgHours = totalHours / meldekortData.length;
+    const overallUforegrad = Math.round(((100 - (avgHours / 75) * 100)) / 5) * 5;
+    
+    setAvgUforegrad(overallUforegrad);
+    
+    // Only set periods if there are actual changes detected
+    if (significantPeriods.length > 1) {
+      setUforegradPerioder(significantPeriods);
+    } else {
+      setUforegradPerioder(null);
+    }
   };
 
   // Compute durations and theoretical sykdato
@@ -211,11 +308,19 @@ export default function Home() {
     setAapFra(''); 
     setAapTil(''); 
     setUforetrygd('');
-    setSoknadRegistrert(''); 
+    setSoknadRegistrert(() => {
+      const today = new Date();
+      const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const d = String(firstOfPreviousMonth.getDate()).padStart(2, '0');
+      const m = String(firstOfPreviousMonth.getMonth() + 1).padStart(2, '0');
+      const y = firstOfPreviousMonth.getFullYear();
+      return `${d}.${m}.${y}`;
+    }); 
     setDurationText(''); 
     setDiffDays(null); 
     setTeoretiskSykdato(''); 
     setAvgUforegrad(null);
+    setUforegradPerioder(null);
     setRawInput('');
     
     toast({
@@ -504,6 +609,63 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Uføregrad Periods - Show if multiple periods detected */}
+            {uforegradPerioder && uforegradPerioder.length > 1 && (
+              <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-center space-x-2 mb-4">
+                  <ChartLine className="text-orange-600 h-5 w-5" />
+                  <h3 className="text-lg font-medium text-orange-800">
+                    Endringer i uføregrad oppdaget
+                  </h3>
+                </div>
+                <p className="text-sm text-orange-700 mb-4">
+                  Systemet har oppdaget betydelige endringer (&gt;15%) i uføregraden over meldekortperiodene. 
+                  Dette kan indikere behov for separate vedtak for ulike perioder.
+                </p>
+                <div className="space-y-3">
+                  {uforegradPerioder.map((periode, index) => (
+                    <div key={index} className="bg-white p-3 rounded border border-orange-200">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">
+                            Periode {index + 1}: {periode.uforegrad}% uføregrad
+                          </p>
+                          <p className="text-xs text-slate-600">
+                            Fra: {periode.fraDato} - Til: {periode.tilDato}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyToClipboard(`${periode.uforegrad}%`)}
+                            className="text-xs px-2 py-1"
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Grad
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyToClipboard(`${periode.fraDato} - ${periode.tilDato}`)}
+                            className="text-xs px-2 py-1"
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Periode
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-orange-100 rounded">
+                  <p className="text-xs text-orange-800">
+                    <strong>Anbefaling:</strong> Vurder om det er nødvendig med separate vedtak for hver periode med betydelig endring i arbeidskapasitet.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Additional Information */}
             <div className="mt-6 p-4 bg-slate-50 rounded-lg">
