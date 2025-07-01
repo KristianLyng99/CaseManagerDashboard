@@ -291,12 +291,25 @@ export default function Home() {
       const diffMs = Math.abs(fra.getTime() - reg.getTime());
       const threeYearsMs = 365 * 24 * 60 * 60 * 1000 * 3;
       if (diffMs > threeYearsMs) {
-        return { text: 'Foreldelse', isValid: false };
+        // Calculate date 3 years back from registration date
+        const threeYearsBack = new Date(reg);
+        threeYearsBack.setFullYear(threeYearsBack.getFullYear() - 3);
+        const etterbetalingsDato = formatDate(threeYearsBack);
+        
+        return { 
+          text: 'Foreldelse', 
+          isValid: false, 
+          etterbetalingFra: etterbetalingsDato
+        };
       } else {
-        return { text: 'Ikke foreldelse', isValid: true };
+        return { 
+          text: 'Ikke foreldelse', 
+          isValid: true, 
+          etterbetalingFra: null
+        };
       }
     }
-    return { text: '', isValid: true };
+    return { text: '', isValid: true, etterbetalingFra: null };
   };
 
   const foreldelseStatus = getForeldelseStatus();
@@ -588,7 +601,7 @@ export default function Home() {
                         foreldelseStatus.isValid ? 'text-green-600' : 'text-red-600'
                       }`} />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h3 className={`text-sm font-medium ${
                         foreldelseStatus.isValid ? 'text-green-800' : 'text-red-800'
                       }`}>
@@ -604,6 +617,32 @@ export default function Home() {
                       }`}>
                         Søknad registrert: {søknadRegistrert}
                       </p>
+                      {!foreldelseStatus.isValid && foreldelseStatus.etterbetalingFra && (
+                        <div className="mt-3 p-2 bg-red-100 rounded border border-red-200">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-red-800">
+                                Etterbetaling fra:
+                              </p>
+                              <p className="text-lg font-semibold text-red-700">
+                                {foreldelseStatus.etterbetalingFra}
+                              </p>
+                              <p className="text-xs text-red-600 mt-1">
+                                (3 år tilbake fra søknad registrert)
+                              </p>
+                            </div>
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(foreldelseStatus.etterbetalingFra!)}
+                              className="text-xs px-2 py-1 bg-red-50 hover:bg-red-100 border-red-300"
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              Kopier dato
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
