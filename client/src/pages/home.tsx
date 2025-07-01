@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2 } from "lucide-react";
+import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -13,6 +13,7 @@ export default function Home() {
   const [aapFra, setAapFra] = useState('');
   const [aapTil, setAapTil] = useState('');
   const [uforetrygd, setUforetrygd] = useState('');
+  const [lonnSykdato, setLonnSykdato] = useState('');
   const [søknadRegistrert, setSoknadRegistrert] = useState(() => {
     const today = new Date();
     const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -314,6 +315,21 @@ export default function Home() {
 
   const foreldelseStatus = getForeldelseStatus();
 
+  // Calculate Karens values
+  const getKarensCalculations = () => {
+    const lonn = parseFloat(lonnSykdato);
+    if (!lonn || isNaN(lonn)) {
+      return { laveste2År: null, laveste1År: null };
+    }
+    
+    const laveste2År = Math.round(lonn / 1.15);
+    const laveste1År = Math.round(lonn / 1.075);
+    
+    return { laveste2År, laveste1År };
+  };
+
+  const karensCalculations = getKarensCalculations();
+
   // Clear all fields
   const handleClear = () => {
     setSykdato(''); 
@@ -321,6 +337,7 @@ export default function Home() {
     setAapFra(''); 
     setAapTil(''); 
     setUforetrygd('');
+    setLonnSykdato('');
     setSoknadRegistrert(() => {
       const today = new Date();
       const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -495,6 +512,44 @@ export default function Home() {
           </CardContent>
         </Card>
 
+        {/* Salary Input Section */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Banknote className="text-primary h-5 w-5" />
+              <h2 className="text-lg font-medium text-slate-800">Lønn og Karens</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="lonnSykdato" className="text-sm font-medium text-slate-700">
+                  Lønn syk dato
+                  <span className="text-slate-500 text-xs ml-1">(kroner)</span>
+                </Label>
+                <div className="flex space-x-2">
+                  <Input 
+                    id="lonnSykdato"
+                    type="number"
+                    value={lonnSykdato}
+                    onChange={(e) => setLonnSykdato(e.target.value)}
+                    placeholder="Årlig lønn i kroner"
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(lonnSykdato)}
+                    disabled={!lonnSykdato}
+                    className="px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    title="Kopier til utklippstavle"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Results Section */}
         <Card>
           <CardContent className="p-6">
@@ -643,6 +698,78 @@ export default function Home() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Karens Calculations */}
+              {(karensCalculations.laveste2År || karensCalculations.laveste1År) && (
+                <div className="md:col-span-2">
+                  <div className="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0">
+                        <Banknote className="text-blue-600 mt-0.5 h-5 w-5" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-blue-800 mb-3">
+                          Karens vurdering lønn
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {karensCalculations.laveste2År && (
+                            <div className="bg-white p-3 rounded border border-blue-200">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-slate-800">
+                                    Laveste lønn 2 år før syk
+                                  </p>
+                                  <p className="text-lg font-semibold text-blue-700">
+                                    {karensCalculations.laveste2År.toLocaleString('no-NO')} kr
+                                  </p>
+                                  <p className="text-xs text-slate-600 mt-1">
+                                    ({lonnSykdato} ÷ 1,15)
+                                  </p>
+                                </div>
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(karensCalculations.laveste2År!.toString())}
+                                  className="text-xs px-2 py-1 bg-blue-50 hover:bg-blue-100 border-blue-200"
+                                >
+                                  <Copy className="h-3 w-3 mr-1" />
+                                  Kopier
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          {karensCalculations.laveste1År && (
+                            <div className="bg-white p-3 rounded border border-blue-200">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-slate-800">
+                                    Laveste lønn 1 år før syk
+                                  </p>
+                                  <p className="text-lg font-semibold text-blue-700">
+                                    {karensCalculations.laveste1År.toLocaleString('no-NO')} kr
+                                  </p>
+                                  <p className="text-xs text-slate-600 mt-1">
+                                    ({lonnSykdato} ÷ 1,075)
+                                  </p>
+                                </div>
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(karensCalculations.laveste1År!.toString())}
+                                  className="text-xs px-2 py-1 bg-blue-50 hover:bg-blue-100 border-blue-200"
+                                >
+                                  <Copy className="h-3 w-3 mr-1" />
+                                  Kopier
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
