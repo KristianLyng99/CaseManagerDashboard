@@ -666,12 +666,12 @@ export default function Home() {
 
   // Calculate ny IF-ytelse based on G-regulated salary
   const calculateNyIFYtelse = () => {
-    if (!gRegulatedCalculation || !fraG || !knekkG || !p1 || !p2) {
+    if (!gRegulatedCalculation || !p1 || !p2) {
       return null;
     }
 
     const salaryHistory = parseSalaryHistory();
-    if (!salaryHistory || salaryHistory.length < 2 || !sykdato) {
+    if (!salaryHistory || !sykdato) {
       return null;
     }
 
@@ -685,57 +685,50 @@ export default function Home() {
     const x = salaryAtSick.percentage; // Stillingsprosent from rådata
     const G = gRegulatedCalculation.gAtSickDate; // G-beløp at sick date
 
-    // Get salary data for calculation
-    const oneYearBefore = new Date(sickDate);
-    oneYearBefore.setFullYear(oneYearBefore.getFullYear() - 1);
-    const twoYearsBefore = new Date(sickDate);
-    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+    // Steg 1: Start with G-regulated salary and adjust to 100% position
+    const gRegulatedSalary100 = gRegulatedCalculation.gRegulatedSalary * (100 / x);
 
-    const salaryOneYearBefore = salaryHistory.find(entry => entry.date <= oneYearBefore);
-    const salaryTwoYearsBefore = salaryHistory.find(entry => entry.date <= twoYearsBefore);
-
-    if (!salaryOneYearBefore || !salaryTwoYearsBefore) return null;
-
-    const lonn_1ar = salaryOneYearBefore.salary;
-    const lonn_2ar = salaryTwoYearsBefore.salary;
+    // Steg 2: Calculate salary ranges using G at sick date
+    const lonn_6G = Math.min(gRegulatedSalary100, 6 * G);
+    const lonn_7_1G = Math.min(gRegulatedSalary100, 7.1 * G);
+    const lonn_12G = Math.min(gRegulatedSalary100, 12 * G);
+    
+    const lonn_6_12G = Math.max(0, lonn_12G - lonn_6G); // Lønn mellom 6-12G
+    const lonn_7_1_12G = Math.max(0, lonn_12G - lonn_7_1G); // Lønn mellom 7.1G-12G
 
     // Input values
-    const fraG_val = parseFloat(fraG);
-    const knekkG_val = parseFloat(knekkG);
     const p1_val = parseFloat(p1);
     const p2_val = parseFloat(p2);
 
-    // Steg 1: Beregn G-regulert lønn
-    const Gfaktor = Math.min(lonn_1ar, lonn_2ar) / G;
-    const L_G = Gfaktor * G * (x / 100);
+    // Calculate IF-ytelse based on selected ranges
+    let ny_IF = 0;
+    let calculationDescription = '';
 
-    // Steg 2: Trekk fra allerede dekket G-grunnlag
-    const L_brukt = G * (x / 100);
-    const L_netto = Math.max(L_G - L_brukt, 0);
-
-    // Steg 3: Konverter til G-enheter
-    const g_netto = L_netto / G;
-
-    // Steg 4: Del opp i to G-intervaller
-    const dg1 = Math.max(Math.min(g_netto, knekkG_val) - fraG_val, 0);
-    const dg2 = Math.max(Math.min(g_netto, 12) - knekkG_val, 0);
-
-    // Steg 5: Regn ut ny IF-ytelse
-    const ny_IF = dg1 * G * (p1_val / 100) + dg2 * G * (p2_val / 100);
+    // Use the knekkG value to determine which calculation to use
+    const knekkG_val = parseFloat(knekkG);
+    
+    if (knekkG_val === 6) {
+      // Using 6G as knekkpunkt
+      ny_IF = (lonn_6G * p1_val / 100) + (lonn_6_12G * p2_val / 100);
+      calculationDescription = `${lonn_6G.toLocaleString('no-NO')} × ${p1}% + ${lonn_6_12G.toLocaleString('no-NO')} × ${p2}%`;
+    } else if (knekkG_val === 7.1) {
+      // Using 7.1G as knekkpunkt
+      ny_IF = (lonn_7_1G * p1_val / 100) + (lonn_7_1_12G * p2_val / 100);
+      calculationDescription = `${lonn_7_1G.toLocaleString('no-NO')} × ${p1}% + ${lonn_7_1_12G.toLocaleString('no-NO')} × ${p2}%`;
+    }
 
     return {
       x,
       G,
-      lonn_1ar,
-      lonn_2ar,
-      Gfaktor: Math.round(Gfaktor * 10000) / 10000, // 4 decimals
-      L_G: Math.round(L_G),
-      L_brukt: Math.round(L_brukt),
-      L_netto: Math.round(L_netto),
-      g_netto: Math.round(g_netto * 100) / 100, // 2 decimals
-      dg1: Math.round(dg1 * 100) / 100,
-      dg2: Math.round(dg2 * 100) / 100,
-      ny_IF: Math.round(ny_IF)
+      gRegulatedSalaryOriginal: gRegulatedCalculation.gRegulatedSalary,
+      gRegulatedSalary100: Math.round(gRegulatedSalary100),
+      lonn_6G: Math.round(lonn_6G),
+      lonn_7_1G: Math.round(lonn_7_1G),
+      lonn_12G: Math.round(lonn_12G),
+      lonn_6_12G: Math.round(lonn_6_12G),
+      lonn_7_1_12G: Math.round(lonn_7_1_12G),
+      ny_IF: Math.round(ny_IF),
+      calculationDescription
     };
   };
 
@@ -1212,38 +1205,24 @@ export default function Home() {
                             </h4>
                             
                             {/* Input form */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                              <div>
-                                <Label htmlFor="fraG" className="text-xs font-medium text-slate-700">
-                                  Fra hvilken G
-                                </Label>
-                                <Input
-                                  id="fraG"
-                                  type="number"
-                                  step="0.1"
-                                  value={fraG}
-                                  onChange={(e) => setFraG(e.target.value)}
-                                  className="text-sm"
-                                  placeholder="0"
-                                />
-                              </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                               <div>
                                 <Label htmlFor="knekkG" className="text-xs font-medium text-slate-700">
                                   Knekkpunkt G
                                 </Label>
-                                <Input
+                                <select
                                   id="knekkG"
-                                  type="number"
-                                  step="0.1"
                                   value={knekkG}
                                   onChange={(e) => setKnekkG(e.target.value)}
-                                  className="text-sm"
-                                  placeholder="7.1"
-                                />
+                                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <option value="6">6G (opp til 6G / mellom 6-12G)</option>
+                                  <option value="7.1">7.1G (opp til 7.1G / mellom 7.1-12G)</option>
+                                </select>
                               </div>
                               <div>
                                 <Label htmlFor="p1" className="text-xs font-medium text-slate-700">
-                                  Prosent i [fraG - knekkpunkt] (%)
+                                  {knekkG === '6' ? 'Prosent opp til 6G (%)' : 'Prosent opp til 7.1G (%)'}
                                 </Label>
                                 <Input
                                   id="p1"
@@ -1257,7 +1236,7 @@ export default function Home() {
                               </div>
                               <div>
                                 <Label htmlFor="p2" className="text-xs font-medium text-slate-700">
-                                  Prosent i [knekkpunkt - 12G] (%)
+                                  {knekkG === '6' ? 'Prosent mellom 6-12G (%)' : 'Prosent mellom 7.1-12G (%)'}
                                 </Label>
                                 <Input
                                   id="p2"
@@ -1288,38 +1267,27 @@ export default function Home() {
                                       <p className="font-semibold text-slate-800">{nyIFYtelseCalc.G.toLocaleString('no-NO')} kr</p>
                                     </div>
                                     <div>
-                                      <p className="text-slate-600">G-faktor</p>
-                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.Gfaktor}</p>
+                                      <p className="text-slate-600">G-regulert lønn (justert til 100%)</p>
+                                      <p className="font-semibold text-blue-700">{nyIFYtelseCalc.gRegulatedSalary100.toLocaleString('no-NO')} kr</p>
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div>
-                                      <p className="text-slate-600">G-regulert lønn (L_G)</p>
-                                      <p className="font-semibold text-blue-700">{nyIFYtelseCalc.L_G.toLocaleString('no-NO')} kr</p>
+                                      <p className="text-slate-600">Lønn opp til 6G</p>
+                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.lonn_6G.toLocaleString('no-NO')} kr</p>
                                     </div>
                                     <div>
-                                      <p className="text-slate-600">Allerede brukt (L_brukt)</p>
-                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.L_brukt.toLocaleString('no-NO')} kr</p>
+                                      <p className="text-slate-600">Lønn opp til 7.1G</p>
+                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.lonn_7_1G.toLocaleString('no-NO')} kr</p>
                                     </div>
                                     <div>
-                                      <p className="text-slate-600">Netto grunnlag (L_netto)</p>
-                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.L_netto.toLocaleString('no-NO')} kr</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                      <p className="text-slate-600">G-enheter netto</p>
-                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.g_netto} G</p>
+                                      <p className="text-slate-600">Lønn mellom 6-12G</p>
+                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.lonn_6_12G.toLocaleString('no-NO')} kr</p>
                                     </div>
                                     <div>
-                                      <p className="text-slate-600">Intervall 1 (dg1)</p>
-                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.dg1} G</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-slate-600">Intervall 2 (dg2)</p>
-                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.dg2} G</p>
+                                      <p className="text-slate-600">Lønn mellom 7.1-12G</p>
+                                      <p className="font-semibold text-slate-800">{nyIFYtelseCalc.lonn_7_1_12G.toLocaleString('no-NO')} kr</p>
                                     </div>
                                   </div>
 
@@ -1328,7 +1296,7 @@ export default function Home() {
                                       Ny IF-ytelse: {nyIFYtelseCalc.ny_IF.toLocaleString('no-NO')} kr
                                     </p>
                                     <p className="text-xs text-blue-700 mt-1">
-                                      = {nyIFYtelseCalc.dg1} × {nyIFYtelseCalc.G.toLocaleString('no-NO')} × {p1}% + {nyIFYtelseCalc.dg2} × {nyIFYtelseCalc.G.toLocaleString('no-NO')} × {p2}%
+                                      = {nyIFYtelseCalc.calculationDescription}
                                     </p>
                                   </div>
                                 </div>
