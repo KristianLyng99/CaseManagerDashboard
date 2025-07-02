@@ -572,6 +572,90 @@ export default function Home() {
     };
   };
 
+  // G-regulation table with dates and amounts
+  const G_REGULATION_TABLE = [
+    { date: '01.05.2025', amount: 130160 },
+    { date: '01.05.2024', amount: 124028 },
+    { date: '01.05.2023', amount: 118620 },
+    { date: '01.05.2022', amount: 111477 },
+    { date: '01.05.2021', amount: 106399 },
+    { date: '01.05.2020', amount: 101351 },
+    { date: '01.05.2019', amount: 99858 },
+    { date: '01.05.2018', amount: 96883 },
+    { date: '01.05.2017', amount: 93634 },
+    { date: '01.05.2016', amount: 92576 },
+    { date: '01.05.2015', amount: 90068 },
+    { date: '01.05.2014', amount: 88370 },
+    { date: '01.05.2013', amount: 85245 },
+    { date: '01.05.2012', amount: 82122 },
+    { date: '01.05.2011', amount: 79216 },
+    { date: '01.05.2010', amount: 75641 },
+    { date: '01.05.2009', amount: 72881 },
+    { date: '01.05.2008', amount: 70256 },
+    { date: '01.05.2007', amount: 66812 },
+    { date: '01.05.2006', amount: 62892 },
+    { date: '01.05.2005', amount: 60699 },
+    { date: '01.05.2004', amount: 58778 },
+    { date: '01.05.2003', amount: 56861 },
+    { date: '01.05.2002', amount: 54170 },
+    { date: '01.05.2001', amount: 51360 },
+    { date: '01.05.2000', amount: 49090 }
+  ];
+
+  // Get G-regulation amount for a specific date
+  const getGRegulationForDate = (targetDate: Date) => {
+    // Find the G-regulation that was active on the target date
+    // Use the most recent G-regulation that was in effect before or on the target date
+    for (const regulation of G_REGULATION_TABLE) {
+      const regulationDate = parseDate(regulation.date);
+      if (regulationDate && regulationDate <= targetDate) {
+        return regulation.amount;
+      }
+    }
+    // Fallback to the oldest G-regulation if no match found
+    return G_REGULATION_TABLE[G_REGULATION_TABLE.length - 1].amount;
+  };
+
+  // Calculate G-regulated salary
+  const calculateGRegulatedSalary = () => {
+    const salaryHistory = parseSalaryHistory();
+    if (!salaryHistory || salaryHistory.length < 2 || !sykdato) {
+      return null;
+    }
+
+    const sickDate = parseDate(sykdato);
+    if (!sickDate) return null;
+
+    const twoYearsBefore = new Date(sickDate);
+    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+
+    // Find salary from 2 years before (most recent before or at 2 years before sick date)
+    const salaryTwoYearsBefore = salaryHistory.find(entry => 
+      entry.date <= twoYearsBefore
+    );
+
+    if (!salaryTwoYearsBefore) return null;
+
+    // Get G-regulation for first sick day
+    const gAtSickDate = getGRegulationForDate(sickDate);
+    
+    // Get G-regulation for when the salary 2 years before was in effect
+    const gAtSalaryDate = getGRegulationForDate(salaryTwoYearsBefore.date);
+
+    // Calculate G-regulated salary: Lønn 2 år før syk / (G per første syke dag / G som gjelder for lønnen 2 år før syk)
+    const gRegulatedSalary = salaryTwoYearsBefore.salary * (gAtSickDate / gAtSalaryDate);
+
+    return {
+      originalSalary: salaryTwoYearsBefore.salary,
+      gRegulatedSalary: Math.round(gRegulatedSalary),
+      gAtSickDate,
+      gAtSalaryDate,
+      salaryDate: formatDate(salaryTwoYearsBefore.date),
+      sickDate: formatDate(sickDate)
+    };
+  };
+
+  const gRegulatedCalculation = calculateGRegulatedSalary();
   const salaryIncreaseCheck = checkSalaryIncrease();
 
   // Clear all fields
@@ -990,6 +1074,48 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
+                        
+                        {/* G-regulated salary calculation when karens needs assessment */}
+                        {salaryIncreaseCheck.isHighIncrease && gRegulatedCalculation && (
+                          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded">
+                            <h4 className="text-sm font-medium text-orange-800 mb-3">
+                              G-regulert lønn beregning
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-slate-600">Original lønn ({gRegulatedCalculation.salaryDate})</p>
+                                <p className="font-semibold text-slate-800">
+                                  {gRegulatedCalculation.originalSalary.toLocaleString('no-NO')} kr
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-600">G-regulert lønn</p>
+                                <p className="font-semibold text-orange-700">
+                                  {gRegulatedCalculation.gRegulatedSalary.toLocaleString('no-NO')} kr
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-600">G ved lønn dato</p>
+                                <p className="font-semibold text-slate-800">
+                                  {gRegulatedCalculation.gAtSalaryDate.toLocaleString('no-NO')} kr
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-600">G ved syk dato</p>
+                                <p className="font-semibold text-slate-800">
+                                  {gRegulatedCalculation.gAtSickDate.toLocaleString('no-NO')} kr
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-3 p-2 bg-orange-100 rounded text-xs text-orange-800">
+                              <strong>Formel:</strong> Lønn 2 år før syk × (G per første sykedag ÷ G som gjelder for lønnen 2 år før syk)
+                              <br />
+                              = {gRegulatedCalculation.originalSalary.toLocaleString('no-NO')} × ({gRegulatedCalculation.gAtSickDate.toLocaleString('no-NO')} ÷ {gRegulatedCalculation.gAtSalaryDate.toLocaleString('no-NO')})
+                              <br />
+                              = <strong>{gRegulatedCalculation.gRegulatedSalary.toLocaleString('no-NO')} kr</strong>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
