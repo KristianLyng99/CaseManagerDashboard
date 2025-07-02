@@ -243,10 +243,33 @@ export default function Home() {
 
   // Analyze disability grade changes across meldekort periods
   const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
-    if (meldekortData.length < 3) {
+    // Filter out meldekort data before foreldelse date if foreldelse is detected
+    let filteredMeldekortData = meldekortData;
+    const foreldelseStatus = getForeldelseStatus();
+    
+    if (foreldelseStatus.etterbetalingFra) {
+      const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
+      if (foreldelseDato) {
+        filteredMeldekortData = meldekortData.filter(mk => {
+          const mkStartDate = parseDate(mk.fraDato);
+          return mkStartDate && mkStartDate >= foreldelseDato;
+        });
+        
+        // Show toast to inform user about filtered data
+        if (filteredMeldekortData.length < meldekortData.length) {
+          toast({
+            title: "Foreldelse detektert",
+            description: `Uføregrad beregnes kun fra ${foreldelseStatus.etterbetalingFra} (${meldekortData.length - filteredMeldekortData.length} meldekort ekskludert)`,
+            duration: 4000,
+          });
+        }
+      }
+    }
+    
+    if (filteredMeldekortData.length < 3) {
       // Not enough data to detect changes, just calculate average
-      const totalHours = meldekortData.reduce((sum, mk) => sum + mk.hours, 0);
-      const avgHours = totalHours / meldekortData.length;
+      const totalHours = filteredMeldekortData.reduce((sum, mk) => sum + mk.hours, 0);
+      const avgHours = filteredMeldekortData.length > 0 ? totalHours / filteredMeldekortData.length : 0;
       const workPct = (avgHours / 75) * 100;
       const uforegrad = Math.round((100 - workPct) / 5) * 5;
       setAvgUforegrad(uforegrad);
@@ -255,7 +278,7 @@ export default function Home() {
     }
 
     // Calculate uforegrad for each period
-    const perioder = meldekortData.map((mk, index) => {
+    const perioder = filteredMeldekortData.map((mk, index) => {
       const workPct = (mk.hours / 75) * 100;
       const uforegrad = Math.round((100 - workPct) / 5) * 5;
       return {
@@ -309,8 +332,8 @@ export default function Home() {
     });
 
     // Calculate overall average
-    const totalHours = meldekortData.reduce((sum, mk) => sum + mk.hours, 0);
-    const avgHours = totalHours / meldekortData.length;
+    const totalHours = filteredMeldekortData.reduce((sum, mk) => sum + mk.hours, 0);
+    const avgHours = totalHours / filteredMeldekortData.length;
     const overallUforegrad = Math.round(((100 - (avgHours / 75) * 100)) / 5) * 5;
     
     setAvgUforegrad(overallUforegrad);
