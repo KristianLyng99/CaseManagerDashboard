@@ -815,55 +815,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Karens Calculations */}
-              {(karensCalculations.laveste2År || karensCalculations.laveste1År) && (
-                <div className="md:col-span-2">
-                  <div className="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <Banknote className="text-blue-600 mt-0.5 h-5 w-5" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-blue-800 mb-3">
-                          Karens vurdering lønn
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {karensCalculations.laveste2År && (
-                            <div className="bg-white p-3 rounded border border-blue-200">
-                              <div>
-                                <p className="text-sm font-medium text-slate-800">
-                                  Laveste lønn 2 år før syk
-                                </p>
-                                <p className="text-lg font-semibold text-blue-700">
-                                  {karensCalculations.laveste2År.toLocaleString('no-NO')} kr
-                                </p>
-                                <p className="text-xs text-slate-600 mt-1">
-                                  (Basert på rådata ÷ 1,15)
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                          {karensCalculations.laveste1År && (
-                            <div className="bg-white p-3 rounded border border-blue-200">
-                              <div>
-                                <p className="text-sm font-medium text-slate-800">
-                                  Laveste lønn 1 år før syk
-                                </p>
-                                <p className="text-lg font-semibold text-blue-700">
-                                  {karensCalculations.laveste1År.toLocaleString('no-NO')} kr
-                                </p>
-                                <p className="text-xs text-slate-600 mt-1">
-                                  (Basert på rådata ÷ 1,075)
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+
 
               {/* Salary Increase Check */}
               {salaryIncreaseCheck && (
