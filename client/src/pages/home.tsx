@@ -449,6 +449,7 @@ export default function Home() {
     setAapTil(''); 
     setUforetrygd('');
     setLonnSykdato('');
+    setRawSalaryData('');
     setSoknadRegistrert(() => {
       const today = new Date();
       const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -871,6 +872,65 @@ export default function Home() {
                               </div>
                             </div>
                           )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Salary Increase Check */}
+              {salaryIncreaseCheck && (
+                <div className="md:col-span-2">
+                  <div className={`p-4 rounded-lg border-l-4 ${
+                    salaryIncreaseCheck.isHighIncrease 
+                      ? 'border-red-500 bg-red-50' 
+                      : 'border-green-500 bg-green-50'
+                  }`}>
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0">
+                        {salaryIncreaseCheck.isHighIncrease ? (
+                          <ShieldCheck className="text-red-600 mt-0.5 h-5 w-5" />
+                        ) : (
+                          <ShieldCheck className="text-green-600 mt-0.5 h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className={`text-sm font-medium mb-3 ${
+                          salaryIncreaseCheck.isHighIncrease 
+                            ? 'text-red-800' 
+                            : 'text-green-800'
+                        }`}>
+                          {salaryIncreaseCheck.isHighIncrease 
+                            ? 'Karens må vurderes' 
+                            : 'Lønn OK'
+                          }
+                        </h3>
+                        <div className="bg-white p-3 rounded border border-slate-200">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="text-slate-600">Lønn 2 år før syk ({salaryIncreaseCheck.twoYearsBeforeDate})</p>
+                              <p className="font-semibold text-slate-800">
+                                {salaryIncreaseCheck.salaryTwoYearsBefore.toLocaleString('no-NO')} kr
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-slate-600">Lønn ved syk dato ({salaryIncreaseCheck.sickDate})</p>
+                              <p className="font-semibold text-slate-800">
+                                {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-slate-600">Økning</p>
+                              <p className={`font-semibold ${
+                                salaryIncreaseCheck.isHighIncrease 
+                                  ? 'text-red-700' 
+                                  : 'text-green-700'
+                              }`}>
+                                {salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}{salaryIncreaseCheck.increasePercentage}%
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
