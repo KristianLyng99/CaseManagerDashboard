@@ -415,91 +415,132 @@ export default function Home() {
     const lines = rawSalaryData.trim().split('\n');
     const salaryData = [];
     
-    // Find the data sections
-    let dateSection = false;
-    let salarySection = false;
-    let percentSection = false;
-    let dates = [];
-    let salaries = [];
-    let percentages = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+    let isTableFormat = false;
+    
+    // Check if this is the new tabular format
+    const headerLine = lines.find(line => 
+      line.includes('Gjelder fra dato') && 
+      line.includes('Lønn') && 
+      line.includes('Stillingsprosent')
+    );
+    
+    if (headerLine) {
+      // New tabular format
+      isTableFormat = true;
       
-      // Skip empty lines
-      if (!line) continue;
-      
-      if (line.includes('Gjelder fra dato')) {
-        dateSection = true;
-        salarySection = false;
-        percentSection = false;
-        continue;
-      } else if (line.includes('Lønn') && !line.includes('FastLønn') && !line.includes('a-melding')) {
-        dateSection = false;
-        salarySection = true;
-        percentSection = false;
-        continue;
-      } else if (line.includes('Stillingsprosent')) {
-        dateSection = false;
-        salarySection = false;
-        percentSection = true;
-        continue;
-      } else if (line.includes('Type lønn')) {
-        // Stop parsing when we reach "Type lønn" section
-        break;
-      }
-
-      if (dateSection && line && !line.includes('Gjelder')) {
-        // Only add valid date patterns
-        if (/^\d{2}\.\d{2}\.\d{4}$/.test(line)) {
-          dates.push(line);
-        }
-      } else if (salarySection && line && !line.includes('Lønn')) {
-        // Clean salary data - remove spaces and handle formatting
-        const cleanSalary = line.replace(/\s/g, '').replace(',', '.');
-        // Only add if it looks like a number
-        if (/^\d+\.?\d*$/.test(cleanSalary)) {
-          salaries.push(cleanSalary);
-        }
-      } else if (percentSection && line && !line.includes('Stillingsprosent')) {
-        // Clean percentage data and filter out non-numeric values
-        const cleanPercent = line.replace(/\s/g, '').replace(',', '.');
-        if (/^\d+\.?\d*$/.test(cleanPercent)) {
-          percentages.push(cleanPercent);
-        } else if (line.includes('FastLønn')) {
-          // Skip lines that contain "FastLønn" but aren't percentages
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) continue;
+        
+        // Skip header line
+        if (trimmedLine.includes('Gjelder fra dato') && 
+            trimmedLine.includes('Lønn') && 
+            trimmedLine.includes('Stillingsprosent')) {
           continue;
         }
+        
+        // Parse data lines that start with a date
+        if (/^\d{2}\.\d{2}\.\d{4}/.test(trimmedLine)) {
+          // Split by tabs first, then by multiple spaces as fallback
+          let parts = trimmedLine.split('\t').filter(part => part.trim());
+          if (parts.length < 3) {
+            parts = trimmedLine.split(/\s{2,}/).filter(part => part.trim());
+          }
+          
+          if (parts.length >= 3) {
+            const dateStr = parts[0].trim();
+            const salaryStr = parts[1].trim().replace(/\s/g, '').replace(',', '.');
+            const percentageStr = parts[2].trim().replace(',', '.');
+            
+            const parsedDate = parseDate(dateStr);
+            const salary = parseFloat(salaryStr);
+            const percentage = parseFloat(percentageStr);
+            
+            if (parsedDate && !isNaN(salary) && !isNaN(percentage)) {
+              salaryData.push({
+                date: parsedDate,
+                salary,
+                percentage
+              });
+            }
+          }
+        }
       }
-    }
+    } else {
+      // Old format - column-based parsing
+      let dateSection = false;
+      let salarySection = false;
+      let percentSection = false;
+      let dates = [];
+      let salaries = [];
+      let percentages = [];
 
-    // Debug logging
-    console.log('Parsed dates:', dates);
-    console.log('Parsed salaries:', salaries);
-    console.log('Parsed percentages:', percentages);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Skip empty lines
+        if (!line) continue;
+        
+        if (line.includes('Gjelder fra dato')) {
+          dateSection = true;
+          salarySection = false;
+          percentSection = false;
+          continue;
+        } else if (line.includes('Lønn') && !line.includes('FastLønn') && !line.includes('a-melding')) {
+          dateSection = false;
+          salarySection = true;
+          percentSection = false;
+          continue;
+        } else if (line.includes('Stillingsprosent')) {
+          dateSection = false;
+          salarySection = false;
+          percentSection = true;
+          continue;
+        } else if (line.includes('Type lønn')) {
+          break;
+        }
 
-    // Combine the data
-    const minLength = Math.min(dates.length, salaries.length);
-    for (let i = 0; i < minLength; i++) {
-      const dateStr = dates[i];
-      const salaryStr = salaries[i];
-      const percentStr = percentages[i] || '100.00';
-      
-      const salary = parseFloat(salaryStr);
-      const percent = parseFloat(percentStr);
-      
-      if (!isNaN(salary) && salary > 0) {
-        const parsedDate = parseDate(dateStr);
-        if (parsedDate) {
-          salaryData.push({
-            date: parsedDate,
-            salary: salary,
-            percentage: percent || 100
-          });
+        if (dateSection && line && !line.includes('Gjelder')) {
+          if (/^\d{2}\.\d{2}\.\d{4}$/.test(line)) {
+            dates.push(line);
+          }
+        } else if (salarySection && line && !line.includes('Lønn')) {
+          const cleanSalary = line.replace(/\s/g, '').replace(',', '.');
+          if (/^\d+\.?\d*$/.test(cleanSalary)) {
+            salaries.push(cleanSalary);
+          }
+        } else if (percentSection && line && !line.includes('Stillingsprosent')) {
+          const cleanPercent = line.replace(/\s/g, '').replace(',', '.');
+          if (/^\d+\.?\d*$/.test(cleanPercent)) {
+            percentages.push(cleanPercent);
+          }
+        }
+      }
+
+      // Combine the data for old format
+      const minLength = Math.min(dates.length, salaries.length);
+      for (let i = 0; i < minLength; i++) {
+        const dateStr = dates[i];
+        const salaryStr = salaries[i];
+        const percentStr = percentages[i] || '100.00';
+        
+        const salary = parseFloat(salaryStr);
+        const percent = parseFloat(percentStr);
+        
+        if (!isNaN(salary) && salary > 0) {
+          const parsedDate = parseDate(dateStr);
+          if (parsedDate) {
+            salaryData.push({
+              date: parsedDate,
+              salary: salary,
+              percentage: percent || 100
+            });
+          }
         }
       }
     }
 
+    console.log('Table format detected:', isTableFormat);
     console.log('Final salary data:', salaryData);
     return salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
   };
@@ -938,7 +979,23 @@ export default function Home() {
                   id="rawSalaryData"
                   value={rawSalaryData}
                   onChange={(e) => setRawSalaryData(e.target.value)}
-                  placeholder="Lim inn rådata fra DSOP med kolonnene: Gjelder fra dato, Lønn, Stillingsprosent"
+                  placeholder="TABELLFORMAT (anbefalt - kopier direkte fra DSOP):
+Gjelder fra dato        Lønn    Stillingsprosent        Type lønn a-melding
+01.01.2025      515010,00       100,00  FastLønn
+01.12.2024      528932,00       100,00  
+
+ELLER KOLONNEFORMAT:
+Gjelder fra dato
+01.03.2025
+01.02.2025
+
+Lønn  
+451066.00
+467545.00
+
+Stillingsprosent
+100.00
+100.00"
                   className="min-h-[120px] font-mono text-sm"
                 />
               </div>
@@ -1413,6 +1470,7 @@ export default function Home() {
                 <li>• <strong>Rød</strong> indikerer verdier som krever oppmerksomhet</li>
                 <li>• Datoer kan skrives som DDMMYYYY og formateres automatisk</li>
                 <li>• Bruk "Autofyll" for å hente data direkte fra NAV-systemer</li>
+                <li>• <strong>Lønnsdata</strong> kan limes inn som tabell fra DSOP med kolonner: Gjelder fra dato, Lønn, Stillingsprosent</li>
                 <li>• Alle datoer kan kopieres til utklippstavlen med kopier-knappen</li>
               </ul>
             </div>
