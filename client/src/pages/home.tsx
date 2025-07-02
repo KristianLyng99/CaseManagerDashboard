@@ -426,12 +426,15 @@ export default function Home() {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
+      // Skip empty lines
+      if (!line) continue;
+      
       if (line.includes('Gjelder fra dato')) {
         dateSection = true;
         salarySection = false;
         percentSection = false;
         continue;
-      } else if (line.includes('Lønn')) {
+      } else if (line.includes('Lønn') && !line.includes('FastLønn') && !line.includes('a-melding')) {
         dateSection = false;
         salarySection = true;
         percentSection = false;
@@ -441,22 +444,46 @@ export default function Home() {
         salarySection = false;
         percentSection = true;
         continue;
+      } else if (line.includes('Type lønn')) {
+        // Stop parsing when we reach "Type lønn" section
+        break;
       }
 
       if (dateSection && line && !line.includes('Gjelder')) {
-        dates.push(line);
+        // Only add valid date patterns
+        if (/^\d{2}\.\d{2}\.\d{4}$/.test(line)) {
+          dates.push(line);
+        }
       } else if (salarySection && line && !line.includes('Lønn')) {
-        salaries.push(line);
+        // Clean salary data - remove spaces and handle formatting
+        const cleanSalary = line.replace(/\s/g, '').replace(',', '.');
+        // Only add if it looks like a number
+        if (/^\d+\.?\d*$/.test(cleanSalary)) {
+          salaries.push(cleanSalary);
+        }
       } else if (percentSection && line && !line.includes('Stillingsprosent')) {
-        percentages.push(line);
+        // Clean percentage data and filter out non-numeric values
+        const cleanPercent = line.replace(/\s/g, '').replace(',', '.');
+        if (/^\d+\.?\d*$/.test(cleanPercent)) {
+          percentages.push(cleanPercent);
+        } else if (line.includes('FastLønn')) {
+          // Skip lines that contain "FastLønn" but aren't percentages
+          continue;
+        }
       }
     }
 
+    // Debug logging
+    console.log('Parsed dates:', dates);
+    console.log('Parsed salaries:', salaries);
+    console.log('Parsed percentages:', percentages);
+
     // Combine the data
-    for (let i = 0; i < Math.min(dates.length, salaries.length, percentages.length); i++) {
+    const minLength = Math.min(dates.length, salaries.length);
+    for (let i = 0; i < minLength; i++) {
       const dateStr = dates[i];
-      const salaryStr = salaries[i].replace(/\s/g, '').replace(',', '.');
-      const percentStr = percentages[i].replace(/\s/g, '').replace(',', '.');
+      const salaryStr = salaries[i];
+      const percentStr = percentages[i] || '100.00';
       
       const salary = parseFloat(salaryStr);
       const percent = parseFloat(percentStr);
@@ -473,6 +500,7 @@ export default function Home() {
       }
     }
 
+    console.log('Final salary data:', salaryData);
     return salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
   };
 

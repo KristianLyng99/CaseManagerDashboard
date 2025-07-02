@@ -1,0 +1,110 @@
+Kundeopplysninger: Telefonnummer: +47-91138045 Kontonummer: 42133908662  
+
+AAP
+
+Uttrekksperiode: 02.05.2014 til 05.06.2028
+
+
+
+Vedtak ID
+
+Fra
+
+Til
+
+Aktivitetsfase
+
+Rettighets Type
+
+Vedtak Status
+
+Vedtak Variant
+
+Vedtak
+
+Utfall
+
+
+17344653 02.05.2014 30.09.2014 Ikke spesif. aktivitetsfase §11-5 nedsatt arbeidsevne Avsluttet  Ny rettighet Ja 
+21712713 02.05.2014 30.09.2014 Vurdering for uføre Arbeidsavklaringspenger Avsluttet  Endring Ja 
+22307714 01.10.2014 01.10.2014 Vurdering for uføre Arbeidsavklaringspenger Iverksatt  Stans Ja 
+35839622 20.10.2020 30.04.2021 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet Innvilgelse av søknad Ny rettighet Ja 
+37483568 01.05.2021 31.07.2021 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Endring Ja 
+38163508 01.08.2021 01.08.2021 Ikke spesif. aktivitetsfase §11-5 nedsatt arbeidsevne Iverksatt  Stans Ja 
+38163388 01.08.2021 01.08.2021 Under arbeidsavklaring Arbeidsavklaringspenger Iverksatt Opphør (Endelig avslag) Stans Ja 
+
+Meldekort
+
+Uttrekksperiode: 02.05.2014 til 05.06.2028
+
+
+
+Meldekort ID
+
+Fra
+
+Til
+
+Antall timer
+
+
+885796052 02.05.2014 11.05.2014 0 
+885796060 12.05.2014 25.05.2014 0 
+885796078 26.05.2014 08.06.2014 0 
+885796086 09.06.2014 22.06.2014 0 
+899766083 23.06.2014 06.07.2014 0 
+899766091 07.07.2014 20.07.2014 0 
+910675842 21.07.2014 03.08.2014 24 
+910675859 04.08.2014 17.08.2014 24 
+913526646 18.08.2014 31.08.2014 8 
+913526653 01.09.2014 14.09.2014 24 
+928312131 15.09.2014 28.09.2014 22 
+931766042 29.09.2014 12.10.2014 4 
+1502721143 19.10.2020 01.11.2020 0 
+1502721150 02.11.2020 15.11.2020 0 
+1508228457 16.11.2020 29.11.2020 0 
+1518806573 30.11.2020 13.12.2020 24 
+1518806581 14.12.2020 27.12.2020 24 
+1520780444 28.12.2020 10.01.2021 11 
+1520780451 11.01.2021 24.01.2021 6 
+1528659897 25.01.2021 07.02.2021 0 
+1528659905 08.02.2021 21.02.2021 0 
+1537144428 22.02.2021 07.03.2021 0 
+1543954711 08.03.2021 21.03.2021 0 
+1543954729 22.03.2021 04.04.2021 0 
+1549805370 05.04.2021 18.04.2021 0 
+1549805388 19.04.2021 02.05.2021 0 
+1558071732 03.05.2021 16.05.2021 0 
+1558071740 17.05.2021 30.05.2021 0 
+1565953435 31.05.2021 13.06.2021 0 
+1565953443 14.06.2021 27.06.2021 0 
+1573467477 28.06.2021 11.07.2021 0 
+1573467485 12.07.2021 25.07.2021 0 
+1581126388 26.07.2021 08.08.2021 0 
+
+Uføretrygd
+
+Første virkningstidspunkt: 01.10.2014
+
+
+
+ferdiglignetInntekt
+
+fom
+
+ifu
+
+inntektBruktIAvkortingen
+
+klagebehandles
+
+tom
+
+uforegrad
+
+uforetidspunkt
+
+
+ 01.10.2014 411800  False 31.12.2014 80 01.01.2008 
+False 01.01.2015 411800 0 False 31.07.2021 80 01.01.2008 
+False 01.08.2021 615481 0 False 01.01.0001 100 01.11.2019 
