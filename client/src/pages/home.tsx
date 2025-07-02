@@ -1226,7 +1226,7 @@ export default function Home() {
                                     : 'text-green-700'
                                 }`}>
                                   {salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}{salaryIncreaseCheck.increasePercentage}%
-                              </p>
+                                </p>
                             </div>
                           </div>
                         </div>
