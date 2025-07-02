@@ -565,26 +565,26 @@ export default function Home() {
 
     if (!salaryTwoYearsBefore || salaryTwoYearsBefore.salary === 0) {
       console.log('Salary 2 years before is 0 or missing, looking for next valid entry...');
-      // Find the earliest salary entry we have (since we don't have data going back 2 years)
-      const earliestSalary = salaryHistory[salaryHistory.length - 1]; // Last item is earliest due to desc sort
+      // Find the next salary entry that is not 0
+      const validTwoYearsBefore = salaryHistory.find(entry => 
+        entry.date <= twoYearsBefore && entry.salary > 0
+      );
       
-      if (!earliestSalary || earliestSalary.salary === 0) {
-        console.log('No valid salary found for comparison');
+      if (!validTwoYearsBefore) {
+        console.log('No valid salary found for 2 years before period');
         return null;
       }
       
-      console.log('Using earliest available salary for comparison:', earliestSalary);
-      
-      const increasePercentage = ((salaryAtSick.salary - earliestSalary.salary) / earliestSalary.salary) * 100;
+      const increasePercentage = ((salaryAtSick.salary - validTwoYearsBefore.salary) / validTwoYearsBefore.salary) * 100;
       const isHighIncrease = increasePercentage > 15;
 
       return {
         salaryAtSick: salaryAtSick.salary,
-        salaryTwoYearsBefore: earliestSalary.salary,
+        salaryTwoYearsBefore: validTwoYearsBefore.salary,
         increasePercentage: Math.round(increasePercentage * 100) / 100,
         isHighIncrease,
         sickDate: formatDate(sickDate),
-        twoYearsBeforeDate: formatDate(earliestSalary.date)
+        twoYearsBeforeDate: formatDate(validTwoYearsBefore.date)
       };
     }
 
