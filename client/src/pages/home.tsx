@@ -928,22 +928,7 @@ export default function Home() {
                   id="rawSalaryData"
                   value={rawSalaryData}
                   onChange={(e) => setRawSalaryData(e.target.value)}
-                  placeholder="Lim inn lønnsdata fra DSOP i kolonneformat:
-
-Gjelder fra dato
-01.01.2025
-01.07.2024
-...
-
-Lønn
-125784,00
-224004,00
-...
-
-Stillingsprosent
-26,74
-52,92
-..."
+                  placeholder="Lim inn lønnsdata"
                   className="min-h-[120px] font-mono text-sm"
                 />
               </div>
