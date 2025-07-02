@@ -14,6 +14,7 @@ export default function Home() {
   const [aapTil, setAapTil] = useState('');
   const [uforetrygd, setUforetrygd] = useState('');
   const [lonnSykdato, setLonnSykdato] = useState('');
+  const [rawSalaryData, setRawSalaryData] = useState('');
   const [søknadRegistrert, setSoknadRegistrert] = useState(() => {
     const today = new Date();
     const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -330,6 +331,116 @@ export default function Home() {
 
   const karensCalculations = getKarensCalculations();
 
+  // Parse salary history and check for 15% increase
+  const parseSalaryHistory = () => {
+    if (!rawSalaryData.trim() || !sykdato) return null;
+
+    const lines = rawSalaryData.trim().split('\n');
+    const salaryData = [];
+    
+    // Find the data sections
+    let dateSection = false;
+    let salarySection = false;
+    let percentSection = false;
+    let dates = [];
+    let salaries = [];
+    let percentages = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (line.includes('Gjelder fra dato')) {
+        dateSection = true;
+        salarySection = false;
+        percentSection = false;
+        continue;
+      } else if (line.includes('Lønn')) {
+        dateSection = false;
+        salarySection = true;
+        percentSection = false;
+        continue;
+      } else if (line.includes('Stillingsprosent')) {
+        dateSection = false;
+        salarySection = false;
+        percentSection = true;
+        continue;
+      }
+
+      if (dateSection && line && !line.includes('Gjelder')) {
+        dates.push(line);
+      } else if (salarySection && line && !line.includes('Lønn')) {
+        salaries.push(line);
+      } else if (percentSection && line && !line.includes('Stillingsprosent')) {
+        percentages.push(line);
+      }
+    }
+
+    // Combine the data
+    for (let i = 0; i < Math.min(dates.length, salaries.length, percentages.length); i++) {
+      const dateStr = dates[i];
+      const salaryStr = salaries[i].replace(/\s/g, '').replace(',', '.');
+      const percentStr = percentages[i].replace(/\s/g, '').replace(',', '.');
+      
+      const salary = parseFloat(salaryStr);
+      const percent = parseFloat(percentStr);
+      
+      if (!isNaN(salary) && salary > 0) {
+        const parsedDate = parseDate(dateStr);
+        if (parsedDate) {
+          salaryData.push({
+            date: parsedDate,
+            salary: salary,
+            percentage: percent || 100
+          });
+        }
+      }
+    }
+
+    return salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
+  };
+
+  // Check for 15% salary increase from 2 years before sick date
+  const checkSalaryIncrease = () => {
+    const salaryHistory = parseSalaryHistory();
+    if (!salaryHistory || salaryHistory.length < 2 || !sykdato) {
+      return null;
+    }
+
+    const sickDate = parseDate(sykdato);
+    if (!sickDate) return null;
+
+    const twoYearsBefore = new Date(sickDate);
+    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+
+    // Find salary at sick date (most recent before or at sick date)
+    const salaryAtSick = salaryHistory.find(entry => 
+      entry.date <= sickDate
+    );
+
+    // Find salary from 2 years before (most recent before or at 2 years before sick date)
+    const salaryTwoYearsBefore = salaryHistory.find(entry => 
+      entry.date <= twoYearsBefore
+    );
+
+    if (!salaryAtSick || !salaryTwoYearsBefore || salaryTwoYearsBefore.salary === 0) {
+      return null;
+    }
+
+    const increasePercentage = ((salaryAtSick.salary - salaryTwoYearsBefore.salary) / salaryTwoYearsBefore.salary) * 100;
+    const isHighIncrease = increasePercentage > 15;
+
+    return {
+      salaryAtSick: salaryAtSick.salary,
+      salaryTwoYearsBefore: salaryTwoYearsBefore.salary,
+      increasePercentage: Math.round(increasePercentage * 100) / 100,
+      isHighIncrease,
+      sickDate: formatDate(sickDate),
+      twoYearsBeforeDate: formatDate(twoYearsBefore)
+    };
+  };
+
+  const salaryIncreaseCheck = checkSalaryIncrease();
+
   // Clear all fields
   const handleClear = () => {
     setSykdato(''); 
@@ -545,6 +656,20 @@ export default function Home() {
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="rawSalaryData" className="text-sm font-medium text-slate-700">
+                  Rådata lønn
+                  <span className="text-slate-500 text-xs ml-1">(lim inn data fra DSOP)</span>
+                </Label>
+                <Textarea
+                  id="rawSalaryData"
+                  value={rawSalaryData}
+                  onChange={(e) => setRawSalaryData(e.target.value)}
+                  placeholder="Lim inn rådata fra DSOP med kolonnene: Gjelder fra dato, Lønn, Stillingsprosent"
+                  className="min-h-[120px] font-mono text-sm"
+                />
               </div>
             </div>
           </CardContent>
