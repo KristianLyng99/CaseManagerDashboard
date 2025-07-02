@@ -526,6 +526,11 @@ export default function Home() {
   const checkSalaryIncrease = () => {
     const salaryHistory = parseSalaryHistory();
     if (!salaryHistory || salaryHistory.length < 2 || !sykdato) {
+      console.log('Early exit from checkSalaryIncrease:', { 
+        hasHistory: !!salaryHistory, 
+        historyLength: salaryHistory?.length, 
+        hasSykdato: !!sykdato 
+      });
       return null;
     }
 
@@ -545,8 +550,42 @@ export default function Home() {
       entry.date <= twoYearsBefore
     );
 
-    if (!salaryAtSick || !salaryTwoYearsBefore || salaryTwoYearsBefore.salary === 0) {
+    console.log('Salary check details:', {
+      sickDate: formatDate(sickDate),
+      twoYearsBefore: formatDate(twoYearsBefore),
+      salaryAtSick,
+      salaryTwoYearsBefore
+    });
+
+    // Skip entries with 0 salary and find next valid entry
+    if (!salaryAtSick || salaryAtSick.salary === 0) {
+      console.log('Salary at sick date is 0 or missing, skipping...');
       return null;
+    }
+
+    if (!salaryTwoYearsBefore || salaryTwoYearsBefore.salary === 0) {
+      console.log('Salary 2 years before is 0 or missing, looking for next valid entry...');
+      // Find the next salary entry that is not 0
+      const validTwoYearsBefore = salaryHistory.find(entry => 
+        entry.date <= twoYearsBefore && entry.salary > 0
+      );
+      
+      if (!validTwoYearsBefore) {
+        console.log('No valid salary found for 2 years before period');
+        return null;
+      }
+      
+      const increasePercentage = ((salaryAtSick.salary - validTwoYearsBefore.salary) / validTwoYearsBefore.salary) * 100;
+      const isHighIncrease = increasePercentage > 15;
+
+      return {
+        salaryAtSick: salaryAtSick.salary,
+        salaryTwoYearsBefore: validTwoYearsBefore.salary,
+        increasePercentage: Math.round(increasePercentage * 100) / 100,
+        isHighIncrease,
+        sickDate: formatDate(sickDate),
+        twoYearsBeforeDate: formatDate(validTwoYearsBefore.date)
+      };
     }
 
     const increasePercentage = ((salaryAtSick.salary - salaryTwoYearsBefore.salary) / salaryTwoYearsBefore.salary) * 100;
