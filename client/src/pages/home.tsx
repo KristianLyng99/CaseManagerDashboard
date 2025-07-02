@@ -119,11 +119,58 @@ export default function Home() {
       tilDato: string;
     }> = [];
 
+    // Check for the new structured format
+    const hasStructuredFormat = rawInput.includes('AAP') && rawInput.includes('Uttrekksperiode:');
+    
+    // Parse sick date
     const sykdatoMatch = rawInput.match(/Første sykedag:\s*(\d{2}\.\d{2}\.\d{4})/i);
     if (sykdatoMatch) setSykdato(sykdatoMatch[1]);
     
     const soknMatch = rawInput.match(/første melding om uførhet:\s*(\d{2}\.\d{2}\.\d{4})/i);
     if (soknMatch) setSoknadRegistrert(soknMatch[1]);
+
+    // Parse new structured format for AAP and Uføretrygd
+    if (hasStructuredFormat) {
+      // Parse AAP period from "Uttrekksperiode: DD.MM.YYYY til DD.MM.YYYY"
+      const aapPeriodMatch = rawInput.match(/Uttrekksperiode:\s*(\d{2}\.\d{2}\.\d{4})\s+til\s+(\d{2}\.\d{2}\.\d{4})/);
+      if (aapPeriodMatch) {
+        const [, fraStr, tilStr] = aapPeriodMatch;
+        applyVedtakDates(fraStr, tilStr);
+        vedtakFra = fraStr;
+        tilDates.push(tilStr);
+      }
+
+      // Parse Uføretrygd data
+      const uforeSection = rawInput.indexOf('Uføretrygd');
+      if (uforeSection !== -1) {
+        const uforeSectionText = rawInput.substring(uforeSection);
+        
+        // Look for "Første virkningstidspunkt" first
+        const virkningMatch = uforeSectionText.match(/Første virkningstidspunkt:\s*(\d{2}\.\d{2}\.\d{4})/);
+        if (virkningMatch) {
+          setUforetrygd(virkningMatch[1]);
+        } else {
+          // Fallback to parsing data rows
+          const uforeLines = uforeSectionText.split('\n');
+          for (const line of uforeLines) {
+            const trimmed = line.trim();
+            // Skip empty lines and headers
+            if (!trimmed || trimmed.includes('ferdiglignetInntekt') || trimmed.includes('fom')) continue;
+            
+            // Parse structured uføretrygd data: " 01.04.2013 331300  False 31.12.2014 50 01.12.2009"
+            // Split by whitespace and find date patterns
+            const parts = trimmed.split(/\s+/);
+            const datePattern = /^\d{2}\.\d{2}\.\d{4}$/;
+            const firstDate = parts.find(part => datePattern.test(part));
+            
+            if (firstDate) {
+              setUforetrygd(firstDate);
+              break; // Take the first valid date
+            }
+          }
+        }
+      }
+    }
 
     let inVedtak = false;
     let inMeldekort = false;
