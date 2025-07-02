@@ -316,21 +316,6 @@ export default function Home() {
 
   const foreldelseStatus = getForeldelseStatus();
 
-  // Calculate Karens values
-  const getKarensCalculations = () => {
-    const lonn = parseFloat(lonnSykdato);
-    if (!lonn || isNaN(lonn)) {
-      return { laveste2År: null, laveste1År: null };
-    }
-    
-    const laveste2År = Math.round(lonn / 1.15);
-    const laveste1År = Math.round(lonn / 1.075);
-    
-    return { laveste2År, laveste1År };
-  };
-
-  const karensCalculations = getKarensCalculations();
-
   // Parse salary history and check for 15% increase
   const parseSalaryHistory = () => {
     if (!rawSalaryData.trim() || !sykdato) return null;
@@ -398,6 +383,34 @@ export default function Home() {
 
     return salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
   };
+
+  // Calculate Karens values based on salary from raw data
+  const getKarensCalculations = () => {
+    const salaryHistory = parseSalaryHistory();
+    if (!salaryHistory || salaryHistory.length === 0 || !sykdato) {
+      return { laveste2År: null, laveste1År: null };
+    }
+
+    const sickDate = parseDate(sykdato);
+    if (!sickDate) return { laveste2År: null, laveste1År: null };
+
+    // Find salary at sick date (most recent before or at sick date)
+    const salaryAtSick = salaryHistory.find(entry => 
+      entry.date <= sickDate
+    );
+
+    if (!salaryAtSick) {
+      return { laveste2År: null, laveste1År: null };
+    }
+    
+    const lonn = salaryAtSick.salary;
+    const laveste2År = Math.round(lonn / 1.15);
+    const laveste1År = Math.round(lonn / 1.075);
+    
+    return { laveste2År, laveste1År };
+  };
+
+  const karensCalculations = getKarensCalculations();
 
   // Check for 15% salary increase from 2 years before sick date
   const checkSalaryIncrease = () => {
@@ -633,33 +646,6 @@ export default function Home() {
             </div>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="lonnSykdato" className="text-sm font-medium text-slate-700">
-                  Lønn syk dato
-                  <span className="text-slate-500 text-xs ml-1">(kroner)</span>
-                </Label>
-                <div className="flex space-x-2">
-                  <Input 
-                    id="lonnSykdato"
-                    type="number"
-                    value={lonnSykdato}
-                    onChange={(e) => setLonnSykdato(e.target.value)}
-                    placeholder="Årlig lønn i kroner"
-                    className="flex-1"
-                  />
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(lonnSykdato)}
-                    disabled={!lonnSykdato}
-                    className="px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    title="Kopier til utklippstavle"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div>
                 <Label htmlFor="rawSalaryData" className="text-sm font-medium text-slate-700">
                   Rådata lønn
                   <span className="text-slate-500 text-xs ml-1">(lim inn data fra DSOP)</span>
@@ -852,7 +838,7 @@ export default function Home() {
                                   {karensCalculations.laveste2År.toLocaleString('no-NO')} kr
                                 </p>
                                 <p className="text-xs text-slate-600 mt-1">
-                                  ({lonnSykdato} ÷ 1,15)
+                                  (Basert på rådata ÷ 1,15)
                                 </p>
                               </div>
                             </div>
@@ -867,7 +853,7 @@ export default function Home() {
                                   {karensCalculations.laveste1År.toLocaleString('no-NO')} kr
                                 </p>
                                 <p className="text-xs text-slate-600 mt-1">
-                                  ({lonnSykdato} ÷ 1,075)
+                                  (Basert på rådata ÷ 1,075)
                                 </p>
                               </div>
                             </div>
