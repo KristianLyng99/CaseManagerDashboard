@@ -1386,7 +1386,7 @@ export default function Home() {
                 </div>
                   )
                 )}
-            </div>
+              </div>
 
             {/* Uføregrad Periods - Show if multiple periods detected */}
             {(() => {
