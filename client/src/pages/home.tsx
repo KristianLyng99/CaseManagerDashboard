@@ -979,23 +979,7 @@ export default function Home() {
                   id="rawSalaryData"
                   value={rawSalaryData}
                   onChange={(e) => setRawSalaryData(e.target.value)}
-                  placeholder="TABELLFORMAT (anbefalt - kopier direkte fra DSOP):
-Gjelder fra dato        Lønn    Stillingsprosent        Type lønn a-melding
-01.01.2025      515010,00       100,00  FastLønn
-01.12.2024      528932,00       100,00  
-
-ELLER KOLONNEFORMAT:
-Gjelder fra dato
-01.03.2025
-01.02.2025
-
-Lønn  
-451066.00
-467545.00
-
-Stillingsprosent
-100.00
-100.00"
+                  placeholder="Lim inn lønnsdata fra DSOP her..."
                   className="min-h-[120px] font-mono text-sm"
                 />
               </div>
@@ -1459,21 +1443,7 @@ Stillingsprosent
               );
             })()}
 
-            {/* Additional Information */}
-            <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-              <h3 className="text-sm font-medium text-slate-800 mb-2">
-                <InfoIcon className="inline text-slate-600 mr-2 h-4 w-4" />
-                Veiledning
-              </h3>
-              <ul className="text-sm text-slate-600 space-y-1">
-                <li>• <strong>Grønn</strong> indikerer verdier innenfor normale parametere</li>
-                <li>• <strong>Rød</strong> indikerer verdier som krever oppmerksomhet</li>
-                <li>• Datoer kan skrives som DDMMYYYY og formateres automatisk</li>
-                <li>• Bruk "Autofyll" for å hente data direkte fra NAV-systemer</li>
-                <li>• <strong>Lønnsdata</strong> kan limes inn som tabell fra DSOP med kolonner: Gjelder fra dato, Lønn, Stillingsprosent</li>
-                <li>• Alle datoer kan kopieres til utklippstavlen med kopier-knappen</li>
-              </ul>
-            </div>
+
           </CardContent>
         </Card>
       </main>
