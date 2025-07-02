@@ -131,13 +131,35 @@ export default function Home() {
 
     // Parse new structured format for AAP and Uføretrygd
     if (hasStructuredFormat) {
-      // Parse AAP period from "Uttrekksperiode: DD.MM.YYYY til DD.MM.YYYY"
-      const aapPeriodMatch = rawInput.match(/Uttrekksperiode:\s*(\d{2}\.\d{2}\.\d{4})\s+til\s+(\d{2}\.\d{2}\.\d{4})/);
-      if (aapPeriodMatch) {
-        const [, fraStr, tilStr] = aapPeriodMatch;
-        applyVedtakDates(fraStr, tilStr);
-        vedtakFra = fraStr;
-        tilDates.push(tilStr);
+      // First try to find actual AAP vedtak with "Innvilgelse av søknad"
+      let aapFound = false;
+      const vedtakSection = rawInput.indexOf('Vedtak ID');
+      if (vedtakSection !== -1) {
+        const vedtakLines = rawInput.substring(vedtakSection).split('\n');
+        for (const line of vedtakLines) {
+          if (line.includes('Innvilgelse av søknad') && line.includes('Arbeidsavklaringspenger')) {
+            const vedtakMatch = line.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
+            if (vedtakMatch) {
+              const [, fraStr, tilStr] = vedtakMatch;
+              applyVedtakDates(fraStr, tilStr);
+              vedtakFra = fraStr;
+              tilDates.push(tilStr);
+              aapFound = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Fallback to Uttrekksperiode if no "Innvilgelse av søknad" found
+      if (!aapFound) {
+        const aapPeriodMatch = rawInput.match(/Uttrekksperiode:\s*(\d{2}\.\d{2}\.\d{4})\s+til\s+(\d{2}\.\d{2}\.\d{4})/);
+        if (aapPeriodMatch) {
+          const [, fraStr, tilStr] = aapPeriodMatch;
+          applyVedtakDates(fraStr, tilStr);
+          vedtakFra = fraStr;
+          tilDates.push(tilStr);
+        }
       }
 
       // Parse Uføretrygd data
