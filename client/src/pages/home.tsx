@@ -133,6 +133,8 @@ export default function Home() {
     if (hasStructuredFormat) {
       // First try to find actual AAP vedtak with "Innvilgelse av søknad"
       let aapFound = false;
+      const aapDatesFromVedtak: string[] = [];
+      
       const vedtakSection = rawInput.indexOf('Vedtak ID');
       if (vedtakSection !== -1) {
         const vedtakLines = rawInput.substring(vedtakSection).split('\n');
@@ -141,13 +143,20 @@ export default function Home() {
             const vedtakMatch = line.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
             if (vedtakMatch) {
               const [, fraStr, tilStr] = vedtakMatch;
-              applyVedtakDates(fraStr, tilStr);
-              vedtakFra = fraStr;
+              aapDatesFromVedtak.push(fraStr);
               tilDates.push(tilStr);
               aapFound = true;
-              break;
             }
           }
+        }
+        
+        // Use the second date as AAP FRA if we have multiple AAP dates
+        if (aapDatesFromVedtak.length >= 2) {
+          applyVedtakDates(aapDatesFromVedtak[1], tilDates[tilDates.length - 1]);
+          vedtakFra = aapDatesFromVedtak[1];
+        } else if (aapDatesFromVedtak.length === 1) {
+          applyVedtakDates(aapDatesFromVedtak[0], tilDates[tilDates.length - 1]);
+          vedtakFra = aapDatesFromVedtak[0];
         }
       }
       
@@ -196,6 +205,7 @@ export default function Home() {
 
     let inVedtak = false;
     let inMeldekort = false;
+    const aapDatesFromOldFormat: string[] = [];
 
     lines.forEach(line => {
       const t = line.trim();
@@ -208,7 +218,9 @@ export default function Home() {
         if (m) {
           const [, fraStr, tilStr] = m;
           tilDates.push(tilStr);
-          if (/Innvilgelse av søknad/i.test(t) && !vedtakFra) vedtakFra = fraStr;
+          if (/Innvilgelse av søknad/i.test(t)) {
+            aapDatesFromOldFormat.push(fraStr);
+          }
         }
       }
       
@@ -225,8 +237,11 @@ export default function Home() {
       }
     });
 
-    if (vedtakFra && tilDates.length > 0) {
-      applyVedtakDates(vedtakFra, tilDates[tilDates.length - 1]);
+    // For old format parsing, use second date as AAP FRA if available
+    if (aapDatesFromOldFormat.length >= 2 && tilDates.length > 0) {
+      applyVedtakDates(aapDatesFromOldFormat[1], tilDates[tilDates.length - 1]);
+    } else if (aapDatesFromOldFormat.length === 1 && tilDates.length > 0) {
+      applyVedtakDates(aapDatesFromOldFormat[0], tilDates[tilDates.length - 1]);
     }
     
     // Analyze meldekort data for disability grade changes
