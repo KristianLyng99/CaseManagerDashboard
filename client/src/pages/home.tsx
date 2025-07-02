@@ -139,7 +139,8 @@ export default function Home() {
       if (vedtakSection !== -1) {
         const vedtakLines = rawInput.substring(vedtakSection).split('\n');
         for (const line of vedtakLines) {
-          if (line.includes('Innvilgelse av søknad') && line.includes('Arbeidsavklaringspenger')) {
+          // Look for lines containing AAP-related keywords
+          if (line.includes('Arbeidsavklaringspenger') || line.includes('§11-5 nedsatt arbeidsevne')) {
             const vedtakMatch = line.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
             if (vedtakMatch) {
               const [, fraStr, tilStr] = vedtakMatch;
@@ -218,7 +219,8 @@ export default function Home() {
         if (m) {
           const [, fraStr, tilStr] = m;
           tilDates.push(tilStr);
-          if (/Innvilgelse av søknad/i.test(t)) {
+          // Look for AAP-related keywords
+          if (t.includes('Arbeidsavklaringspenger') || t.includes('§11-5 nedsatt arbeidsevne') || /Innvilgelse av søknad/i.test(t)) {
             aapDatesFromOldFormat.push(fraStr);
           }
         }
