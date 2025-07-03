@@ -523,6 +523,7 @@ export default function Home() {
 
   // Check for meldekort warnings
   const checkMeldekortWarnings = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+    console.log('Checking meldekort warnings for:', meldekortData.length, 'meldekort');
     const warnings = [];
     
     // Check for 30+ day gaps between meldekort
@@ -532,7 +533,14 @@ export default function Home() {
       
       if (currentEnd && nextStart) {
         const gapDays = Math.floor((nextStart.getTime() - currentEnd.getTime()) / (1000 * 60 * 60 * 24));
+        console.log(`Gap between meldekort ${i + 1} and ${i + 2}:`, {
+          currentEnd: meldekortData[i].tilDato,
+          nextStart: meldekortData[i + 1].fraDato,
+          gapDays: gapDays
+        });
+        
         if (gapDays >= 30) {
+          console.log('Gap warning triggered:', gapDays, 'days');
           warnings.push({
             type: 'gap',
             message: `${gapDays} dagers gap mellom meldekort ${i + 1} og ${i + 2}`,
@@ -543,16 +551,27 @@ export default function Home() {
     }
     
     // Check for 2+ meldekort with uføregrad below 20%
-    const lowUforegradCount = meldekortData.filter(mk => {
+    const lowUforegradMeldekort = meldekortData.filter(mk => {
       const workPct = (mk.hours / 75) * 100;
       const uforegrad = 100 - workPct;
       return uforegrad < 20;
-    }).length;
+    });
     
-    if (lowUforegradCount >= 2) {
+    console.log('Low uføregrad check:', {
+      totalMeldekort: meldekortData.length,
+      lowUforegradCount: lowUforegradMeldekort.length,
+      examples: lowUforegradMeldekort.slice(0, 3).map(mk => ({
+        hours: mk.hours,
+        uforegrad: 100 - (mk.hours / 75) * 100,
+        period: `${mk.fraDato} - ${mk.tilDato}`
+      }))
+    });
+    
+    if (lowUforegradMeldekort.length >= 2) {
+      console.log('Low uføregrad warning triggered:', lowUforegradMeldekort.length, 'meldekort');
       warnings.push({
         type: 'low_uforegrad',
-        message: `${lowUforegradCount} meldekort viser uføregrad under 20%`,
+        message: `${lowUforegradMeldekort.length} meldekort viser uføregrad under 20%`,
         detail: `Dette kan påvirke retten til uføretrygd`
       });
     }
