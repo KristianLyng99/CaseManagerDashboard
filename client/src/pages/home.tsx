@@ -1378,7 +1378,7 @@ export default function Home() {
                                 <div className="space-y-3 text-sm">
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
-                                      <p className="text-slate-600">Stillingsprosent (fra rådata)</p>
+                                      <p className="text-slate-600">Stillingsprosent syk dato</p>
                                       <p className="font-semibold text-slate-800">{nyIFYtelseCalc.x}%</p>
                                     </div>
                                     <div>
@@ -1410,23 +1410,13 @@ export default function Home() {
                                     </div>
                                   </div>
 
-                                  <div className="space-y-3">
-                                    <div className="p-3 bg-blue-100 rounded">
-                                      <p className="text-blue-800 font-medium text-sm">
-                                        IF-ytelse (100% stilling): {nyIFYtelseCalc.ny_IF_100.toLocaleString('no-NO')} kr
-                                      </p>
-                                      <p className="text-xs text-blue-700 mt-1">
-                                        = {nyIFYtelseCalc.calculationDescription.split(' × ')[0]}
-                                      </p>
-                                    </div>
-                                    <div className="p-3 bg-green-100 rounded">
-                                      <p className="text-green-800 font-semibold text-lg">
-                                        Ny IF-ytelse (justert for stillingsprosent): {nyIFYtelseCalc.ny_IF.toLocaleString('no-NO')} kr
-                                      </p>
-                                      <p className="text-xs text-green-700 mt-1">
-                                        = {nyIFYtelseCalc.ny_IF_100.toLocaleString('no-NO')} × {nyIFYtelseCalc.x}% = <strong>{nyIFYtelseCalc.ny_IF.toLocaleString('no-NO')} kr</strong>
-                                      </p>
-                                    </div>
+                                  <div className="p-3 bg-blue-100 rounded">
+                                    <p className="text-blue-800 font-semibold text-lg">
+                                      Ny IF-ytelse: {nyIFYtelseCalc.ny_IF.toLocaleString('no-NO')} kr
+                                    </p>
+                                    <p className="text-xs text-blue-700 mt-1">
+                                      = {nyIFYtelseCalc.calculationDescription}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
