@@ -28,6 +28,7 @@ export default function Home() {
   const [teoretiskSykdato, setTeoretiskSykdato] = useState('');
   const [avgUforegrad, setAvgUforegrad] = useState<number | null>(null);
   const [avgUforegradExact, setAvgUforegradExact] = useState<number | null>(null);
+  const [uforegradDateRange, setUforegradDateRange] = useState<{fraDato: string; tilDato: string} | null>(null);
   const [uforegradPerioder, setUforegradPerioder] = useState<Array<{
     uforegrad: number;
     fraIndex: number;
@@ -323,6 +324,10 @@ export default function Home() {
       const uforegrad = Math.round(uforegradExact / 5) * 5;
       setAvgUforegrad(uforegrad);
       setAvgUforegradExact(uforegradExact);
+      setUforegradDateRange(filteredMeldekortData.length > 0 ? {
+        fraDato: filteredMeldekortData[0].fraDato,
+        tilDato: filteredMeldekortData[filteredMeldekortData.length - 1].tilDato
+      } : null);
       setUforegradPerioder(null);
       return;
     }
@@ -339,6 +344,10 @@ export default function Home() {
       const uforegrad = Math.round(uforegradExact / 5) * 5;
       setAvgUforegrad(uforegrad);
       setAvgUforegradExact(uforegradExact);
+      setUforegradDateRange(analyseData.length > 0 ? {
+        fraDato: analyseData[0].fraDato,
+        tilDato: analyseData[analyseData.length - 1].tilDato
+      } : null);
       setUforegradPerioder(null);
       return;
     }
@@ -471,6 +480,10 @@ export default function Home() {
     
     setAvgUforegrad(overallUforegrad);
     setAvgUforegradExact(overallUforegradExact);
+    setUforegradDateRange({
+      fraDato: analyseData[0].fraDato,
+      tilDato: analyseData[analyseData.length - 1].tilDato
+    });
     
     // Set periods if there are actual changes detected
     if (finalSegments.length > 1) {
@@ -1235,6 +1248,11 @@ export default function Home() {
                       </p>
                       <p className="text-xs text-amber-600 mt-1">
                         Beregnet fra meldekort data
+                        {uforegradDateRange && (
+                          <span className="block mt-1">
+                            Periode: {uforegradDateRange.fraDato} - {uforegradDateRange.tilDato}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
