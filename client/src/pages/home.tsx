@@ -718,12 +718,17 @@ export default function Home() {
     // Get G-regulation for when the salary 2 years before was in effect
     const gAtSalaryDate = getGRegulationForDate(salaryTwoYearsBefore.date);
 
-    // Calculate G-regulated salary: Lønn 2 år før syk / (G per første syke dag / G som gjelder for lønnen 2 år før syk)
+    // Calculate G-regulated salary: Lønn 2 år før syk × (G per første syke dag ÷ G som gjelder for lønnen 2 år før syk)
     const gRegulatedSalary = salaryTwoYearsBefore.salary * (gAtSickDate / gAtSalaryDate);
+    
+    // Convert G-regulated salary to 100% position using the work percentage from 2 years before
+    const gRegulatedSalary100 = (gRegulatedSalary * 100) / salaryTwoYearsBefore.percentage;
 
     return {
       originalSalary: salaryTwoYearsBefore.salary,
+      originalPercentage: salaryTwoYearsBefore.percentage,
       gRegulatedSalary: Math.round(gRegulatedSalary),
+      gRegulatedSalary100: Math.round(gRegulatedSalary100),
       gAtSickDate,
       gAtSalaryDate,
       salaryDate: formatDate(salaryTwoYearsBefore.date),
@@ -758,11 +763,11 @@ export default function Home() {
     const salaryAtSick = salaryHistory.find(entry => entry.date <= sickDate);
     if (!salaryAtSick) return null;
 
-    const x = salaryAtSick.percentage; // Stillingsprosent from rådata
+    const x = salaryAtSick.percentage; // Stillingsprosent from rådata (for display)
     const G = gRegulatedCalculation.gAtSickDate; // G-beløp at sick date
 
-    // Steg 1: Start with G-regulated salary and adjust to 100% position
-    const gRegulatedSalary100 = gRegulatedCalculation.gRegulatedSalary * (100 / x);
+    // Use the pre-calculated G-regulated salary at 100% (already corrected with work percentage from 2 years before)
+    const gRegulatedSalary100 = gRegulatedCalculation.gRegulatedSalary100;
 
     // Steg 2: Calculate salary ranges using G at sick date
     const lonn_6G = Math.min(gRegulatedSalary100, 6 * G);
@@ -1250,17 +1255,32 @@ export default function Home() {
                             <h4 className="text-sm font-medium text-orange-800 mb-3">
                               G-regulert lønn beregning
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
                               <div>
                                 <p className="text-slate-600">Original lønn ({gRegulatedCalculation.salaryDate})</p>
                                 <p className="font-semibold text-slate-800">
                                   {gRegulatedCalculation.originalSalary.toLocaleString('no-NO')} kr
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {gRegulatedCalculation.originalPercentage}% stilling
                                 </p>
                               </div>
                               <div>
                                 <p className="text-slate-600">G-regulert lønn</p>
                                 <p className="font-semibold text-orange-700">
                                   {gRegulatedCalculation.gRegulatedSalary.toLocaleString('no-NO')} kr
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {gRegulatedCalculation.originalPercentage}% stilling
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-600">G-regulert 100%</p>
+                                <p className="font-semibold text-blue-700">
+                                  {gRegulatedCalculation.gRegulatedSalary100.toLocaleString('no-NO')} kr
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  100% stilling
                                 </p>
                               </div>
                               <div>
@@ -1277,11 +1297,17 @@ export default function Home() {
                               </div>
                             </div>
                             <div className="mt-3 p-2 bg-orange-100 rounded text-xs text-orange-800">
-                              <strong>Formel:</strong> Lønn 2 år før syk × (G per første sykedag ÷ G som gjelder for lønnen 2 år før syk)
+                              <strong>Steg 1 - G-regulering:</strong> Lønn 2 år før syk × (G per første sykedag ÷ G som gjelder for lønnen 2 år før syk)
                               <br />
                               = {gRegulatedCalculation.originalSalary.toLocaleString('no-NO')} × ({gRegulatedCalculation.gAtSickDate.toLocaleString('no-NO')} ÷ {gRegulatedCalculation.gAtSalaryDate.toLocaleString('no-NO')})
                               <br />
                               = <strong>{gRegulatedCalculation.gRegulatedSalary.toLocaleString('no-NO')} kr</strong>
+                              <br /><br />
+                              <strong>Steg 2 - 100% stilling:</strong> G-regulert lønn × (100% ÷ stillingsprosent fra 2 år før syk)
+                              <br />
+                              = {gRegulatedCalculation.gRegulatedSalary.toLocaleString('no-NO')} × (100% ÷ {gRegulatedCalculation.originalPercentage}%)
+                              <br />
+                              = <strong>{gRegulatedCalculation.gRegulatedSalary100.toLocaleString('no-NO')} kr</strong>
                             </div>
                           </div>
                         )}
