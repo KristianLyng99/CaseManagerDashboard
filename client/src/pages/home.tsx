@@ -782,7 +782,7 @@ export default function Home() {
     const p2_val = parseFloat(p2);
 
     // Calculate IF-ytelse based on selected ranges
-    let ny_IF = 0;
+    let ny_IF_100 = 0;
     let calculationDescription = '';
 
     // Use the knekkG value to determine which calculation to use
@@ -790,13 +790,16 @@ export default function Home() {
     
     if (knekkG_val === 6) {
       // Using 6G as knekkpunkt
-      ny_IF = (lonn_6G * p1_val / 100) + (lonn_6_12G * p2_val / 100);
-      calculationDescription = `${lonn_6G.toLocaleString('no-NO')} × ${p1}% + ${lonn_6_12G.toLocaleString('no-NO')} × ${p2}%`;
+      ny_IF_100 = (lonn_6G * p1_val / 100) + (lonn_6_12G * p2_val / 100);
+      calculationDescription = `(${lonn_6G.toLocaleString('no-NO')} × ${p1}% + ${lonn_6_12G.toLocaleString('no-NO')} × ${p2}%) × ${x}%`;
     } else if (knekkG_val === 7.1) {
       // Using 7.1G as knekkpunkt
-      ny_IF = (lonn_7_1G * p1_val / 100) + (lonn_7_1_12G * p2_val / 100);
-      calculationDescription = `${lonn_7_1G.toLocaleString('no-NO')} × ${p1}% + ${lonn_7_1_12G.toLocaleString('no-NO')} × ${p2}%`;
+      ny_IF_100 = (lonn_7_1G * p1_val / 100) + (lonn_7_1_12G * p2_val / 100);
+      calculationDescription = `(${lonn_7_1G.toLocaleString('no-NO')} × ${p1}% + ${lonn_7_1_12G.toLocaleString('no-NO')} × ${p2}%) × ${x}%`;
     }
+
+    // Final step: Multiply by stillingsprosent at sick date
+    const ny_IF = ny_IF_100 * (x / 100);
 
     return {
       x,
@@ -808,6 +811,7 @@ export default function Home() {
       lonn_12G: Math.round(lonn_12G),
       lonn_6_12G: Math.round(lonn_6_12G),
       lonn_7_1_12G: Math.round(lonn_7_1_12G),
+      ny_IF_100: Math.round(ny_IF_100),
       ny_IF: Math.round(ny_IF),
       calculationDescription
     };
@@ -1406,13 +1410,23 @@ export default function Home() {
                                     </div>
                                   </div>
 
-                                  <div className="p-3 bg-blue-100 rounded">
-                                    <p className="text-blue-800 font-semibold text-lg">
-                                      Ny IF-ytelse: {nyIFYtelseCalc.ny_IF.toLocaleString('no-NO')} kr
-                                    </p>
-                                    <p className="text-xs text-blue-700 mt-1">
-                                      = {nyIFYtelseCalc.calculationDescription}
-                                    </p>
+                                  <div className="space-y-3">
+                                    <div className="p-3 bg-blue-100 rounded">
+                                      <p className="text-blue-800 font-medium text-sm">
+                                        IF-ytelse (100% stilling): {nyIFYtelseCalc.ny_IF_100.toLocaleString('no-NO')} kr
+                                      </p>
+                                      <p className="text-xs text-blue-700 mt-1">
+                                        = {nyIFYtelseCalc.calculationDescription.split(' × ')[0]}
+                                      </p>
+                                    </div>
+                                    <div className="p-3 bg-green-100 rounded">
+                                      <p className="text-green-800 font-semibold text-lg">
+                                        Ny IF-ytelse (justert for stillingsprosent): {nyIFYtelseCalc.ny_IF.toLocaleString('no-NO')} kr
+                                      </p>
+                                      <p className="text-xs text-green-700 mt-1">
+                                        = {nyIFYtelseCalc.ny_IF_100.toLocaleString('no-NO')} × {nyIFYtelseCalc.x}% = <strong>{nyIFYtelseCalc.ny_IF.toLocaleString('no-NO')} kr</strong>
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
