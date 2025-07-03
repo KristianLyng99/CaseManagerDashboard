@@ -36,6 +36,11 @@ export default function Home() {
     fraDato: string;
     tilDato: string;
   }> | null>(null);
+  const [meldekortWarnings, setMeldekortWarnings] = useState<Array<{
+    type: 'gap' | 'low_uforegrad';
+    message: string;
+    detail: string;
+  }>>([]);
   const [rawInput, setRawInput] = useState('');
   const { toast } = useToast();
 
@@ -524,7 +529,11 @@ export default function Home() {
   // Check for meldekort warnings
   const checkMeldekortWarnings = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
     console.log('Checking meldekort warnings for:', meldekortData.length, 'meldekort');
-    const warnings = [];
+    const warnings: Array<{
+      type: 'gap' | 'low_uforegrad';
+      message: string;
+      detail: string;
+    }> = [];
     
     // Check for 30+ day gaps between meldekort
     for (let i = 0; i < meldekortData.length - 1; i++) {
@@ -542,7 +551,7 @@ export default function Home() {
         if (gapDays >= 30) {
           console.log('Gap warning triggered:', gapDays, 'days');
           warnings.push({
-            type: 'gap',
+            type: 'gap' as const,
             message: `${gapDays} dagers gap mellom meldekort ${i + 1} og ${i + 2}`,
             detail: `Fra ${meldekortData[i].tilDato} til ${meldekortData[i + 1].fraDato}`
           });
@@ -570,23 +579,15 @@ export default function Home() {
     if (lowUforegradMeldekort.length >= 2) {
       console.log('Low uføregrad warning triggered:', lowUforegradMeldekort.length, 'meldekort');
       warnings.push({
-        type: 'low_uforegrad',
+        type: 'low_uforegrad' as const,
         message: `${lowUforegradMeldekort.length} meldekort viser uføregrad under 20%`,
         detail: `Dette kan påvirke retten til uføretrygd`
       });
     }
     
-    // Show warnings as toasts
+    // Store warnings in state to display in the uføregrad card
     console.log('Final warnings to display:', warnings);
-    warnings.forEach(warning => {
-      console.log('Displaying warning toast:', warning);
-      toast({
-        title: warning.type === 'gap' ? "⚠️ Advarsel: Hull i meldekort" : "⚠️ Advarsel: Lav uføregrad",
-        description: `${warning.message}. ${warning.detail}`,
-        duration: 8000,
-        className: "bg-red-50 border-red-200 text-red-900",
-      });
-    });
+    setMeldekortWarnings(warnings);
   };
 
   // Compute durations and theoretical sykdato
@@ -1371,6 +1372,30 @@ export default function Home() {
                           </span>
                         )}
                       </p>
+                      
+                      {/* Display meldekort warnings */}
+                      {meldekortWarnings.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {meldekortWarnings.map((warning, index) => (
+                            <div key={index} className="p-2 bg-red-50 border border-red-200 rounded text-xs">
+                              <div className="flex items-start space-x-2">
+                                <span className="text-red-600 font-medium">⚠️</span>
+                                <div>
+                                  <p className="font-medium text-red-800">
+                                    {warning.type === 'gap' ? 'Hull i meldekort' : 'Lav uføregrad'}
+                                  </p>
+                                  <p className="text-red-700 mt-1">
+                                    {warning.message}
+                                  </p>
+                                  <p className="text-red-600 mt-1">
+                                    {warning.detail}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
