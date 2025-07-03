@@ -577,7 +577,9 @@ export default function Home() {
     }
     
     // Show warnings as toasts
+    console.log('Final warnings to display:', warnings);
     warnings.forEach(warning => {
+      console.log('Displaying warning toast:', warning);
       toast({
         title: warning.type === 'gap' ? "Advarsel: Hull i meldekort" : "Advarsel: Lav uføregrad",
         description: `${warning.message}. ${warning.detail}`,
