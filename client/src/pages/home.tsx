@@ -581,10 +581,10 @@ export default function Home() {
     warnings.forEach(warning => {
       console.log('Displaying warning toast:', warning);
       toast({
-        title: warning.type === 'gap' ? "Advarsel: Hull i meldekort" : "Advarsel: Lav uføregrad",
+        title: warning.type === 'gap' ? "⚠️ Advarsel: Hull i meldekort" : "⚠️ Advarsel: Lav uføregrad",
         description: `${warning.message}. ${warning.detail}`,
-        duration: 6000,
-        variant: "destructive"
+        duration: 8000,
+        className: "bg-red-50 border-red-200 text-red-900",
       });
     });
   };
