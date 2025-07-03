@@ -516,6 +516,56 @@ export default function Home() {
     } else {
       setUforegradPerioder(null);
     }
+
+    // Check for warnings
+    checkMeldekortWarnings(filteredMeldekortData);
+  };
+
+  // Check for meldekort warnings
+  const checkMeldekortWarnings = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+    const warnings = [];
+    
+    // Check for 30+ day gaps between meldekort
+    for (let i = 0; i < meldekortData.length - 1; i++) {
+      const currentEnd = parseDate(meldekortData[i].tilDato);
+      const nextStart = parseDate(meldekortData[i + 1].fraDato);
+      
+      if (currentEnd && nextStart) {
+        const gapDays = Math.floor((nextStart.getTime() - currentEnd.getTime()) / (1000 * 60 * 60 * 24));
+        if (gapDays >= 30) {
+          warnings.push({
+            type: 'gap',
+            message: `${gapDays} dagers gap mellom meldekort ${i + 1} og ${i + 2}`,
+            detail: `Fra ${meldekortData[i].tilDato} til ${meldekortData[i + 1].fraDato}`
+          });
+        }
+      }
+    }
+    
+    // Check for 2+ meldekort with uføregrad below 20%
+    const lowUforegradCount = meldekortData.filter(mk => {
+      const workPct = (mk.hours / 75) * 100;
+      const uforegrad = 100 - workPct;
+      return uforegrad < 20;
+    }).length;
+    
+    if (lowUforegradCount >= 2) {
+      warnings.push({
+        type: 'low_uforegrad',
+        message: `${lowUforegradCount} meldekort viser uføregrad under 20%`,
+        detail: `Dette kan påvirke retten til uføretrygd`
+      });
+    }
+    
+    // Show warnings as toasts
+    warnings.forEach(warning => {
+      toast({
+        title: warning.type === 'gap' ? "Advarsel: Hull i meldekort" : "Advarsel: Lav uføregrad",
+        description: `${warning.message}. ${warning.detail}`,
+        duration: 6000,
+        variant: "destructive"
+      });
+    });
   };
 
   // Compute durations and theoretical sykdato
