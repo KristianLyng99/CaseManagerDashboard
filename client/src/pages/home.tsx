@@ -592,12 +592,27 @@ export default function Home() {
         return null;
       }
       
-      const increasePercentage = ((salaryAtSick.salary - validTwoYearsBefore.salary) / validTwoYearsBefore.salary) * 100;
+      // Convert both salaries to 100% positions for comparison
+      const salaryAtSick100 = (salaryAtSick.salary * 100) / salaryAtSick.percentage;
+      const salaryTwoYearsBefore100 = (validTwoYearsBefore.salary * 100) / validTwoYearsBefore.percentage;
+      
+      console.log('Salary conversion details:', {
+        salaryAtSick: salaryAtSick.salary,
+        salaryAtSickPercentage: salaryAtSick.percentage,
+        salaryAtSick100: salaryAtSick100,
+        salaryTwoYearsBefore: validTwoYearsBefore.salary,
+        salaryTwoYearsBeforePercentage: validTwoYearsBefore.percentage,
+        salaryTwoYearsBefore100: salaryTwoYearsBefore100
+      });
+      
+      const increasePercentage = ((salaryAtSick100 - salaryTwoYearsBefore100) / salaryTwoYearsBefore100) * 100;
       const isHighIncrease = increasePercentage > 15;
 
       return {
         salaryAtSick: salaryAtSick.salary,
+        salaryAtSick100: Math.round(salaryAtSick100),
         salaryTwoYearsBefore: validTwoYearsBefore.salary,
+        salaryTwoYearsBefore100: Math.round(salaryTwoYearsBefore100),
         increasePercentage: Math.round(increasePercentage * 100) / 100,
         isHighIncrease,
         sickDate: formatDate(sickDate),
@@ -605,12 +620,27 @@ export default function Home() {
       };
     }
 
-    const increasePercentage = ((salaryAtSick.salary - salaryTwoYearsBefore.salary) / salaryTwoYearsBefore.salary) * 100;
+    // Convert both salaries to 100% positions for comparison
+    const salaryAtSick100 = (salaryAtSick.salary * 100) / salaryAtSick.percentage;
+    const salaryTwoYearsBefore100 = (salaryTwoYearsBefore.salary * 100) / salaryTwoYearsBefore.percentage;
+    
+    console.log('Salary conversion details:', {
+      salaryAtSick: salaryAtSick.salary,
+      salaryAtSickPercentage: salaryAtSick.percentage,
+      salaryAtSick100: salaryAtSick100,
+      salaryTwoYearsBefore: salaryTwoYearsBefore.salary,
+      salaryTwoYearsBeforePercentage: salaryTwoYearsBefore.percentage,
+      salaryTwoYearsBefore100: salaryTwoYearsBefore100
+    });
+    
+    const increasePercentage = ((salaryAtSick100 - salaryTwoYearsBefore100) / salaryTwoYearsBefore100) * 100;
     const isHighIncrease = increasePercentage > 15;
 
     return {
       salaryAtSick: salaryAtSick.salary,
+      salaryAtSick100: Math.round(salaryAtSick100),
       salaryTwoYearsBefore: salaryTwoYearsBefore.salary,
+      salaryTwoYearsBefore100: Math.round(salaryTwoYearsBefore100),
       increasePercentage: Math.round(increasePercentage * 100) / 100,
       isHighIncrease,
       sickDate: formatDate(sickDate),
@@ -1181,21 +1211,34 @@ export default function Home() {
                               <p className="font-semibold text-slate-800">
                                 {salaryIncreaseCheck.salaryTwoYearsBefore.toLocaleString('no-NO')} kr
                               </p>
+                              {salaryIncreaseCheck.salaryTwoYearsBefore100 && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  100% stilling: {salaryIncreaseCheck.salaryTwoYearsBefore100.toLocaleString('no-NO')} kr
+                                </p>
+                              )}
                             </div>
                             <div>
                               <p className="text-slate-600">Lønn ved syk dato ({salaryIncreaseCheck.sickDate})</p>
                               <p className="font-semibold text-slate-800">
                                 {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
                               </p>
+                              {salaryIncreaseCheck.salaryAtSick100 && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  100% stilling: {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                                </p>
+                              )}
                             </div>
                             <div>
-                              <p className="text-slate-600">Økning</p>
+                              <p className="text-slate-600">Økning (100% stilling)</p>
                               <p className={`font-semibold ${
                                 salaryIncreaseCheck.isHighIncrease 
                                   ? 'text-red-700' 
                                   : 'text-green-700'
                               }`}>
                                 {salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}{salaryIncreaseCheck.increasePercentage}%
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                Beregnet på 100% stillinger
                               </p>
                             </div>
                           </div>
