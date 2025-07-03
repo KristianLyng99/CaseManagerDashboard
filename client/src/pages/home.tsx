@@ -258,7 +258,7 @@ export default function Home() {
     });
   };
 
-  // Analyze disability grade changes across meldekort periods
+  // Analyze disability grade changes across meldekort periods using sophisticated algorithm
   const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
     // Filter out meldekort data before foreldelse date if foreldelse is detected
     let filteredMeldekortData = meldekortData;
@@ -294,70 +294,150 @@ export default function Home() {
       return;
     }
 
-    // Calculate uforegrad for each period
-    const perioder = filteredMeldekortData.map((mk, index) => {
-      const workPct = (mk.hours / 75) * 100;
+    // Step 0: Skip first meldekort (start from kort #2)
+    const analyseData = filteredMeldekortData.slice(1);
+    
+    if (analyseData.length < 2) {
+      // Not enough data after skipping first
+      const totalHours = analyseData.reduce((sum, mk) => sum + mk.hours, 0);
+      const avgHours = analyseData.length > 0 ? totalHours / analyseData.length : 0;
+      const workPct = (avgHours / 75) * 100;
       const uforegrad = Math.round((100 - workPct) / 5) * 5;
+      setAvgUforegrad(uforegrad);
+      setUforegradPerioder(null);
+      return;
+    }
+
+    // Step 1: Convert timer to work percentage (prosent[i] = timer[i] / 75)
+    const prosent = analyseData.map(mk => mk.hours / 75);
+    
+    // Step 2: Smooth signal with window k=2 (5-point window)
+    const k = 2;
+    const glatt = prosent.map((_, i) => {
+      const start = Math.max(0, i - k);
+      const end = Math.min(prosent.length - 1, i + k);
+      let sum = 0;
+      let count = 0;
+      for (let j = start; j <= end; j++) {
+        sum += prosent[j];
+        count++;
+      }
+      return sum / count;
+    });
+    
+    // Step 3: Find changes > Δ (20%)
+    const delta = 0.20;
+    const change = glatt.map((val, i) => {
+      if (i === 0) return false;
+      return Math.abs(val - glatt[i-1]) > delta;
+    });
+    
+    // Step 4: Segment with persistence requirements
+    const min_len_old = 3;
+    const min_len_new = 2;
+    const segments = [];
+    let start = 0;
+    
+    for (let i = 1; i < change.length - 1; i++) {
+      if (change[i] && 
+          (i - start) >= min_len_old && 
+          (change.length - i) >= min_len_new) {
+        
+        // Check stability of next min_len_new values
+        let stable = true;
+        for (let j = i + 1; j < Math.min(i + 1 + min_len_new, glatt.length); j++) {
+          if (Math.abs(glatt[j] - glatt[i]) > delta / 2) {
+            stable = false;
+            break;
+          }
+        }
+        
+        if (stable) {
+          segments.push({ start, end: i - 1 });
+          start = i;
+          i += min_len_new; // Skip the new kort
+        }
+      }
+    }
+    
+    // Add final segment
+    if (start < glatt.length) {
+      segments.push({ start, end: glatt.length - 1 });
+    }
+    
+    // Step 5: Merge short segments if needed
+    const mergedSegments = [];
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      const length = seg.end - seg.start + 1;
+      
+      if (length < min_len_old && segments.length > 1) {
+        // Find nearest neighbor by uføregrad distance
+        let nearestIdx = -1;
+        let minDistance = Infinity;
+        
+        const segmentValues = glatt.slice(seg.start, seg.end + 1);
+        const segUfore = 1 - segmentValues.reduce((a, b) => a + b, 0) / segmentValues.length;
+        
+        for (let j = 0; j < segments.length; j++) {
+          if (j === i) continue;
+          const otherSeg = segments[j];
+          const otherSegmentValues = glatt.slice(otherSeg.start, otherSeg.end + 1);
+          const otherUfore = 1 - otherSegmentValues.reduce((a, b) => a + b, 0) / otherSegmentValues.length;
+          const distance = Math.abs(segUfore - otherUfore);
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestIdx = j;
+          }
+        }
+        
+        if (nearestIdx !== -1) {
+          const nearestSeg = segments[nearestIdx];
+          const mergedSeg = {
+            start: Math.min(seg.start, nearestSeg.start),
+            end: Math.max(seg.end, nearestSeg.end)
+          };
+          
+          segments.splice(Math.max(i, nearestIdx), 1);
+          segments.splice(Math.min(i, nearestIdx), 1, mergedSeg);
+          i--;
+        } else {
+          mergedSegments.push(seg);
+        }
+      } else {
+        mergedSegments.push(seg);
+      }
+    }
+    
+    // Step 6: Calculate average work percentage and uføregrad for each segment
+    const finalSegments = (mergedSegments.length > 0 ? mergedSegments : segments).map(seg => {
+      const segmentValues = glatt.slice(seg.start, seg.end + 1);
+      const avgStilling = segmentValues.reduce((a, b) => a + b, 0) / segmentValues.length;
+      const avgUfore = (1 - avgStilling) * 100;
+      const roundedUfore = Math.round(avgUfore / 5) * 5; // Round to nearest 5%
+      
       return {
-        uforegrad,
-        hours: mk.hours,
-        fraDato: mk.fraDato,
-        tilDato: mk.tilDato,
-        index
+        uforegrad: roundedUfore,
+        fraIndex: seg.start,
+        tilIndex: seg.end,
+        fraDato: analyseData[seg.start].fraDato,
+        tilDato: analyseData[seg.end].tilDato,
+        avgStilling: avgStilling * 100,
+        lengde: seg.end - seg.start + 1
       };
     });
 
-    // Detect significant changes (>15% over 3 periods)
-    const significantPeriods: Array<{
-      uforegrad: number;
-      fraIndex: number;
-      tilIndex: number;
-      fraDato: string;
-      tilDato: string;
-    }> = [];
-
-    let currentPeriodStart = 0;
-    let currentUforegrad = perioder[0].uforegrad;
-
-    for (let i = 1; i < perioder.length; i++) {
-      const gradeDiff = Math.abs(perioder[i].uforegrad - currentUforegrad);
-      
-      // Check if there's a significant change (>15%)
-      if (gradeDiff > 15) {
-        // Add the previous period
-        significantPeriods.push({
-          uforegrad: currentUforegrad,
-          fraIndex: currentPeriodStart,
-          tilIndex: i - 1,
-          fraDato: perioder[currentPeriodStart].fraDato,
-          tilDato: perioder[i - 1].tilDato
-        });
-        
-        // Start new period
-        currentPeriodStart = i;
-        currentUforegrad = perioder[i].uforegrad;
-      }
-    }
-
-    // Add the final period
-    significantPeriods.push({
-      uforegrad: currentUforegrad,
-      fraIndex: currentPeriodStart,
-      tilIndex: perioder.length - 1,
-      fraDato: perioder[currentPeriodStart].fraDato,
-      tilDato: perioder[perioder.length - 1].tilDato
-    });
-
-    // Calculate overall average
-    const totalHours = filteredMeldekortData.reduce((sum, mk) => sum + mk.hours, 0);
-    const avgHours = totalHours / filteredMeldekortData.length;
+    // Calculate overall average from all analyzed data
+    const totalHours = analyseData.reduce((sum, mk) => sum + mk.hours, 0);
+    const avgHours = totalHours / analyseData.length;
     const overallUforegrad = Math.round(((100 - (avgHours / 75) * 100)) / 5) * 5;
     
     setAvgUforegrad(overallUforegrad);
     
-    // Only set periods if there are actual changes detected
-    if (significantPeriods.length > 1) {
-      setUforegradPerioder(significantPeriods);
+    // Set periods if there are actual changes detected
+    if (finalSegments.length > 1) {
+      setUforegradPerioder(finalSegments);
     } else {
       setUforegradPerioder(null);
     }
