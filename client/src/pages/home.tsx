@@ -262,10 +262,18 @@ export default function Home() {
 
   // Analyze disability grade changes across meldekort periods using sophisticated algorithm
   const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+    console.log('analyzeUforegradChanges called with:', {
+      meldekortCount: meldekortData.length,
+      firstMeldekort: meldekortData[0],
+      lastMeldekort: meldekortData[meldekortData.length - 1]
+    });
+    
     // In normal cases, use ALL meldekort data
     // Only apply foreldelse filtering when foreldelse is actually detected
     let filteredMeldekortData = meldekortData;
     const foreldelseStatus = getForeldelseStatus();
+    
+    console.log('Foreldelse status in analyze function:', foreldelseStatus);
     
     // Only filter if foreldelse is detected
     if (foreldelseStatus.etterbetalingFra) {
