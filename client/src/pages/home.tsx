@@ -271,6 +271,13 @@ export default function Home() {
     if (foreldelseStatus.etterbetalingFra) {
       const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
       if (foreldelseDato) {
+        console.log('Foreldelse detected:', {
+          etterbetalingFra: foreldelseStatus.etterbetalingFra,
+          foreldelseDato: foreldelseDato,
+          totalMeldekort: meldekortData.length,
+          foreldelseStatus: foreldelseStatus
+        });
+
         // Find the meldekort that contains the "etterbetaling fra" date
         const targetMeldekortIndex = meldekortData.findIndex(mk => {
           const mkStartDate = parseDate(mk.fraDato);
@@ -279,6 +286,8 @@ export default function Home() {
                  mkStartDate <= foreldelseDato && 
                  foreldelseDato <= mkEndDate;
         });
+        
+        console.log('Target meldekort index:', targetMeldekortIndex);
         
         // If we found the target meldekort, include TWO before it (if they exist)
         // This properly compensates for the algorithm skipping the first meldekort in analysis
@@ -291,6 +300,7 @@ export default function Home() {
           startIndex = 0;
         } else {
           // If no meldekort contains the foreldelse date, filter by date as before
+          console.log('No meldekort contains foreldelse date, filtering by date');
           filteredMeldekortData = meldekortData.filter(mk => {
             const mkStartDate = parseDate(mk.fraDato);
             return mkStartDate && mkStartDate >= foreldelseDato;
@@ -299,8 +309,15 @@ export default function Home() {
         
         // Apply the filtering if we found a specific index
         if (targetMeldekortIndex >= 0) {
+          console.log('Applying index-based filtering, startIndex:', startIndex);
           filteredMeldekortData = meldekortData.slice(startIndex);
         }
+        
+        console.log('After filtering:', {
+          originalLength: meldekortData.length,
+          filteredLength: filteredMeldekortData.length,
+          excluded: meldekortData.length - filteredMeldekortData.length
+        });
         
         // Show toast to inform user about filtered data
         if (filteredMeldekortData.length < meldekortData.length) {
@@ -528,28 +545,49 @@ export default function Home() {
   const getForeldelseStatus = () => {
     const reg = parseDate(søknadRegistrert);
     const fra = parseDate(aapFra);
+    console.log('Foreldelse check:', {
+      søknadRegistrert,
+      aapFra,
+      regDate: reg,
+      fraDate: fra
+    });
+    
     if (reg && fra) {
       const diffMs = Math.abs(fra.getTime() - reg.getTime());
       const threeYearsMs = 365 * 24 * 60 * 60 * 1000 * 3;
+      const diffYears = diffMs / (365 * 24 * 60 * 60 * 1000);
+      
+      console.log('Foreldelse calculation:', {
+        diffMs,
+        threeYearsMs,
+        diffYears,
+        hasForeldelse: diffMs > threeYearsMs
+      });
+      
       if (diffMs > threeYearsMs) {
         // Calculate date 3 years back from registration date
         const threeYearsBack = new Date(reg);
         threeYearsBack.setFullYear(threeYearsBack.getFullYear() - 3);
         const etterbetalingsDato = formatDate(threeYearsBack);
         
-        return { 
+        const result = { 
           text: 'Foreldelse', 
           isValid: false, 
           etterbetalingFra: etterbetalingsDato
         };
+        console.log('Foreldelse detected, returning:', result);
+        return result;
       } else {
-        return { 
+        const result = { 
           text: 'Ikke foreldelse', 
           isValid: true, 
           etterbetalingFra: null
         };
+        console.log('No foreldelse, returning:', result);
+        return result;
       }
     }
+    console.log('Missing dates, returning default');
     return { text: '', isValid: true, etterbetalingFra: null };
   };
 
