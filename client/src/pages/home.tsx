@@ -267,16 +267,42 @@ export default function Home() {
     if (foreldelseStatus.etterbetalingFra) {
       const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
       if (foreldelseDato) {
-        filteredMeldekortData = meldekortData.filter(mk => {
+        // Find the meldekort that contains the "etterbetaling fra" date
+        const targetMeldekortIndex = meldekortData.findIndex(mk => {
           const mkStartDate = parseDate(mk.fraDato);
-          return mkStartDate && mkStartDate >= foreldelseDato;
+          const mkEndDate = parseDate(mk.tilDato);
+          return mkStartDate && mkEndDate && 
+                 mkStartDate <= foreldelseDato && 
+                 foreldelseDato <= mkEndDate;
         });
+        
+        // If we found the target meldekort, include the one before it (if it exists)
+        // This compensates for the algorithm skipping the first meldekort in analysis
+        let startIndex = 0;
+        if (targetMeldekortIndex > 0) {
+          startIndex = targetMeldekortIndex - 1;
+        } else if (targetMeldekortIndex === 0) {
+          startIndex = 0;
+        } else {
+          // If no meldekort contains the foreldelse date, filter by date as before
+          filteredMeldekortData = meldekortData.filter(mk => {
+            const mkStartDate = parseDate(mk.fraDato);
+            return mkStartDate && mkStartDate >= foreldelseDato;
+          });
+        }
+        
+        // Apply the filtering if we found a specific index
+        if (targetMeldekortIndex >= 0) {
+          filteredMeldekortData = meldekortData.slice(startIndex);
+        }
         
         // Show toast to inform user about filtered data
         if (filteredMeldekortData.length < meldekortData.length) {
+          const excludedCount = meldekortData.length - filteredMeldekortData.length;
+          const startFromKort = startIndex + 1; // Convert to 1-based numbering
           toast({
             title: "Foreldelse detektert",
-            description: `Uføregrad beregnes kun fra ${foreldelseStatus.etterbetalingFra} (${meldekortData.length - filteredMeldekortData.length} meldekort ekskludert)`,
+            description: `Uføregrad beregnes fra meldekort #${startFromKort} (${excludedCount} meldekort ekskludert)`,
             duration: 4000,
           });
         }
