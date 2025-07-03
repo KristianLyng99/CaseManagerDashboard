@@ -27,6 +27,7 @@ export default function Home() {
   const [diffDays, setDiffDays] = useState<number | null>(null);
   const [teoretiskSykdato, setTeoretiskSykdato] = useState('');
   const [avgUforegrad, setAvgUforegrad] = useState<number | null>(null);
+  const [avgUforegradExact, setAvgUforegradExact] = useState<number | null>(null);
   const [uforegradPerioder, setUforegradPerioder] = useState<Array<{
     uforegrad: number;
     fraIndex: number;
@@ -266,7 +267,7 @@ export default function Home() {
     const foreldelseStatus = getForeldelseStatus();
     
     // Only filter if foreldelse is detected
-    if (foreldelseStatus.hasForeldelse && foreldelseStatus.etterbetalingFra) {
+    if (foreldelseStatus.etterbetalingFra) {
       const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
       if (foreldelseDato) {
         // Find the meldekort that contains the "etterbetaling fra" date
@@ -278,11 +279,13 @@ export default function Home() {
                  foreldelseDato <= mkEndDate;
         });
         
-        // If we found the target meldekort, include the one before it (if it exists)
-        // This compensates for the algorithm skipping the first meldekort in analysis
+        // If we found the target meldekort, include TWO before it (if they exist)
+        // This properly compensates for the algorithm skipping the first meldekort in analysis
         let startIndex = 0;
-        if (targetMeldekortIndex > 0) {
-          startIndex = targetMeldekortIndex - 1;
+        if (targetMeldekortIndex > 1) {
+          startIndex = targetMeldekortIndex - 2;
+        } else if (targetMeldekortIndex === 1) {
+          startIndex = 0;
         } else if (targetMeldekortIndex === 0) {
           startIndex = 0;
         } else {
@@ -316,8 +319,10 @@ export default function Home() {
       const totalHours = filteredMeldekortData.reduce((sum, mk) => sum + mk.hours, 0);
       const avgHours = filteredMeldekortData.length > 0 ? totalHours / filteredMeldekortData.length : 0;
       const workPct = (avgHours / 75) * 100;
-      const uforegrad = Math.round((100 - workPct) / 5) * 5;
+      const uforegradExact = 100 - workPct;
+      const uforegrad = Math.round(uforegradExact / 5) * 5;
       setAvgUforegrad(uforegrad);
+      setAvgUforegradExact(uforegradExact);
       setUforegradPerioder(null);
       return;
     }
@@ -330,8 +335,10 @@ export default function Home() {
       const totalHours = analyseData.reduce((sum, mk) => sum + mk.hours, 0);
       const avgHours = analyseData.length > 0 ? totalHours / analyseData.length : 0;
       const workPct = (avgHours / 75) * 100;
-      const uforegrad = Math.round((100 - workPct) / 5) * 5;
+      const uforegradExact = 100 - workPct;
+      const uforegrad = Math.round(uforegradExact / 5) * 5;
       setAvgUforegrad(uforegrad);
+      setAvgUforegradExact(uforegradExact);
       setUforegradPerioder(null);
       return;
     }
@@ -459,9 +466,11 @@ export default function Home() {
     // Calculate overall average from all analyzed data
     const totalHours = analyseData.reduce((sum, mk) => sum + mk.hours, 0);
     const avgHours = totalHours / analyseData.length;
-    const overallUforegrad = Math.round(((100 - (avgHours / 75) * 100)) / 5) * 5;
+    const overallUforegradExact = 100 - (avgHours / 75) * 100;
+    const overallUforegrad = Math.round(overallUforegradExact / 5) * 5;
     
     setAvgUforegrad(overallUforegrad);
+    setAvgUforegradExact(overallUforegradExact);
     
     // Set periods if there are actual changes detected
     if (finalSegments.length > 1) {
@@ -1213,7 +1222,7 @@ export default function Home() {
               )}
 
               {/* Average Disability Percentage */}
-              {avgUforegrad !== null && (
+              {avgUforegrad !== null && avgUforegradExact !== null && (
                 <div className="p-4 rounded-lg border-l-4 border-amber-500 bg-amber-50">
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
@@ -1222,7 +1231,7 @@ export default function Home() {
                     <div>
                       <h3 className="text-sm font-medium text-amber-800">Gjennomsnittlig uføregrad</h3>
                       <p className="text-lg font-semibold text-amber-700">
-                        {avgUforegrad}%
+                        {avgUforegrad}% (eksakt: {avgUforegradExact.toFixed(1)}%)
                       </p>
                       <p className="text-xs text-amber-600 mt-1">
                         Beregnet fra meldekort data
