@@ -877,12 +877,12 @@ export default function Home() {
     }
 
     // Calculate actual 2 years before sick date for display
-    const twoYearsBefore = new Date(sickDate);
-    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+    const twoYearsBeforeCalc = new Date(sickDate);
+    twoYearsBeforeCalc.setFullYear(twoYearsBeforeCalc.getFullYear() - 2);
     
     // Find salary from exactly 2 years before (most recent before or at 2 years before sick date)
     const actualSalaryTwoYearsBefore = salaryHistory.find(entry => 
-      entry.date <= twoYearsBefore
+      entry.date <= twoYearsBeforeCalc
     );
     
     const actualSalaryTwoYearsBefore100 = actualSalaryTwoYearsBefore 
@@ -908,6 +908,25 @@ export default function Home() {
     // Check if the 2-year comparison specifically violates the 15% threshold
     const twoYearViolation = actualIncreasePercentage ? actualIncreasePercentage > 15 : false;
 
+    // Create "Se alle" list - all salaries between sick date and 2 years before
+    const twoYearsBeforeForList = new Date(sickDate);
+    twoYearsBeforeForList.setFullYear(twoYearsBeforeForList.getFullYear() - 2);
+    
+    const seAlleList = salaryHistory.filter(entry => 
+      entry.date <= sickDate && entry.date >= twoYearsBeforeForList && entry.salary > 0
+    ).map(entry => {
+      const entry100 = (entry.salary * 100) / entry.percentage;
+      const increasePercentage = ((salaryAtSick100 - entry100) / entry100) * 100;
+      
+      return {
+        date: formatDate(entry.date),
+        originalSalary: entry.salary,
+        salary100: Math.round(entry100),
+        increasePercentage: Math.round(increasePercentage * 100) / 100,
+        monthsBeforeSick: Math.round(((sickDate.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10
+      };
+    }).sort((a, b) => a.monthsBeforeSick - b.monthsBeforeSick);
+
     return {
       salaryAtSick: salaryAtSick.salary,
       salaryAtSick100: Math.round(salaryAtSick100),
@@ -918,6 +937,7 @@ export default function Home() {
       mostSignificantViolation,
       isHighIncrease: twoYearViolation, // Use 2-year specific check for main display
       hasOtherViolations: violations.length > 0, // Track if there are other violations
+      seAlleList, // New "Se alle" list with all salaries in 2-year period
       // Show actual 2 years before salary for display
       salaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary || null,
       salaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
@@ -1562,16 +1582,16 @@ export default function Home() {
                           </div>
                         </div>
                         
-                        {/* Show "se alle" button when there are violations (even if 2-year is OK) */}
-                        {salaryIncreaseCheck.hasOtherViolations && (
+                        {/* Show "se alle" button when there are salaries in the 2-year period */}
+                        {salaryIncreaseCheck.seAlleList && salaryIncreaseCheck.seAlleList.length > 0 && (
                             <div className="mt-3 p-2 bg-orange-50 rounded border border-orange-200">
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="text-sm text-orange-800">
-                                    <strong>Totalt {salaryIncreaseCheck.violationsCount} andre overtredelser</strong> funnet i lønnshistorikken
+                                    <strong>{salaryIncreaseCheck.seAlleList.length} lønnsposter</strong> funnet mellom sykdato og 2 år tilbake
                                   </p>
                                   <p className="text-xs text-orange-600 mt-1">
-                                    2-års sammenligningen er OK, men andre perioder har høye økninger.
+                                    Se alle lønnsposter i 2-års perioden med prosentvis økning til sykdato.
                                   </p>
                                 </div>
                                 <Dialog>
@@ -1618,7 +1638,7 @@ export default function Home() {
                                       {/* All violations */}
                                       <div>
                                         <h3 className="font-semibold text-slate-800 mb-3">
-                                          Alle overtredelser (sortert etter dato - nærmest sykdato først)
+                                          Alle lønnsposter (mellom sykdato og 2 år tilbake)
                                         </h3>
                                         {/* Table header */}
                                         <div className="bg-slate-50 p-3 rounded-t-lg border border-slate-200">
@@ -1629,52 +1649,41 @@ export default function Home() {
                                           </div>
                                         </div>
                                         
-                                        {/* Violations list */}
+                                        {/* Salary list */}
                                         <div className="space-y-0">
-                                          {salaryIncreaseCheck.violations
-                                            .sort((a, b) => a.monthsDifference - b.monthsDifference)
-                                            .map((violation, index) => (
+                                          {salaryIncreaseCheck.seAlleList.map((entry, index) => (
                                             <div key={index} className="border-x border-b border-slate-200 p-4 bg-white hover:bg-slate-50 transition-colors">
                                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                                 {/* Column 1: Lønnsperiode */}
                                                 <div>
                                                   <div className="flex items-center space-x-2 mb-2">
-                                                    <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
+                                                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
                                                       #{index + 1}
                                                     </span>
                                                     <span className="text-xs text-slate-500">
-                                                      {violation.monthsDifference} mnd før syk
+                                                      {entry.monthsBeforeSick} mnd før syk
                                                     </span>
                                                   </div>
-                                                  <p className="font-medium text-slate-800">{violation.historicalDate}</p>
-                                                  <p className="text-xs text-slate-600">
-                                                    Terskel: {violation.thresholdPercentage}% 
-                                                    ({violation.monthsDifference >= 24 ? '2+ år' : 
-                                                      violation.monthsDifference >= 12 ? '1+ år' : 
-                                                      violation.monthsDifference >= 6 ? '6+ mnd' : '3-6 mnd'})
-                                                  </p>
+                                                  <p className="font-medium text-slate-800">{entry.date}</p>
                                                 </div>
                                                 
                                                 {/* Column 2: Lønn (100% stilling) */}
                                                 <div>
                                                   <p className="font-semibold text-slate-800 text-lg">
-                                                    {violation.historicalSalary100.toLocaleString('no-NO')} kr
+                                                    {entry.salary100.toLocaleString('no-NO')} kr
                                                   </p>
                                                   <p className="text-xs text-slate-600">
-                                                    Opprinnelig: {violation.historicalSalary.toLocaleString('no-NO')} kr
+                                                    Opprinnelig: {entry.originalSalary.toLocaleString('no-NO')} kr
                                                   </p>
                                                 </div>
                                                 
                                                 {/* Column 3: Økning til sykdato */}
                                                 <div>
-                                                  <p className="font-semibold text-red-700 text-lg">
-                                                    +{violation.increasePercentage}%
-                                                  </p>
-                                                  <p className="text-xs text-red-600">
-                                                    {(violation.increasePercentage - violation.thresholdPercentage).toFixed(1)}% over terskel
+                                                  <p className={`font-semibold text-lg ${entry.increasePercentage > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                                    {entry.increasePercentage > 0 ? '+' : ''}{entry.increasePercentage}%
                                                   </p>
                                                   <p className="text-xs text-slate-600 mt-1">
-                                                    +{((salaryIncreaseCheck.salaryAtSick100 - violation.historicalSalary100) / 1000).toFixed(0)}k kr økning
+                                                    {entry.increasePercentage > 0 ? 'Økning' : 'Reduksjon'} til sykdato
                                                   </p>
                                                 </div>
                                               </div>
