@@ -109,30 +109,49 @@ export default function Home() {
       return;
     }
 
-    // Calculate average salary (weighted by percentage to get actual salary paid)
-    let totalSalary = 0;
-    let totalPercentage = 0;
+    // Calculate average salary weighted by actual days in each month
+    let totalWeightedSalary = 0;
+    let totalWeightedPercentage = 0;
+    let totalDays = 0;
     
     for (const entry of last12MonthsSalaries) {
-      totalSalary += entry.salary;
-      totalPercentage += entry.percentage;
+      // Get number of days in the month for this entry
+      const year = entry.date.getFullYear();
+      const month = entry.date.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      totalWeightedSalary += entry.salary * daysInMonth;
+      totalWeightedPercentage += entry.percentage * daysInMonth;
+      totalDays += daysInMonth;
     }
     
-    const avgSalary = totalSalary / last12MonthsSalaries.length;
-    const avgPercentage = totalPercentage / last12MonthsSalaries.length;
+    const avgSalary = totalWeightedSalary / totalDays;
+    const avgPercentage = totalWeightedPercentage / totalDays;
     const avgSalary100 = (avgSalary * 100) / avgPercentage;
 
-    setNominalSalaryData({
-      salary: Math.round(avgSalary),
-      salary100: Math.round(avgSalary100)
-    });
-    
-    setUseNominalSalary(true);
-    
-    toast({
-      title: "Nomert lønn beregnet",
-      description: `Gjennomsnittslænn siste 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
-    });
+    if (!useNominalSalary) {
+      // Switch to nominal salary
+      setNominalSalaryData({
+        salary: Math.round(avgSalary),
+        salary100: Math.round(avgSalary100)
+      });
+      
+      setUseNominalSalary(true);
+      
+      toast({
+        title: "Nomert lønn aktivert",
+        description: `Dagsveid gjennomsnitt siste 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
+      });
+    } else {
+      // Switch back to actual salary
+      setUseNominalSalary(false);
+      setNominalSalaryData(null);
+      
+      toast({
+        title: "Faktisk lønn aktivert",
+        description: "Bruker nå opprinnelig lønn fra sykdato",
+      });
+    }
   };
 
   // Format user input DDMMYYYY -> DD.MM.YYYY
@@ -1755,10 +1774,14 @@ export default function Home() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleUseNominalSalary()}
-                                  className="text-xs px-3 py-1 bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-800"
+                                  className={`text-xs px-3 py-1 ${
+                                    useNominalSalary 
+                                      ? 'bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-800'
+                                      : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-800'
+                                  }`}
                                 >
                                   <Calculator className="h-3 w-3 mr-1" />
-                                  Bruk nomert lønn
+                                  {useNominalSalary ? 'Bruk faktisk lønn' : 'Bruk nomert lønn'}
                                 </Button>
                               )}
                             </div>

@@ -89,7 +89,13 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
-- July 05, 2025. Upgraded salary assessment (karens) to check all salaries up to 3 months before sick date with time-based percentage thresholds (2+ years: 15%, 1+ years: 7.5%, 6+ months: 5%, 3-6 months: 2.5%)
+- July 05, 2025. Enhanced salary processing with:
+  - Frequent salary changes detection (6+ changes per year) with visual warnings
+  - Nominal salary calculation button with day-weighted averaging for last 12 months  
+  - Toggle functionality between nominal and actual salary
+  - Improved 0% position handling (shows 0 kr salary with N/A percentage)
+  - Three-state salary box colors: red (2-year violation), yellow (other violations), green (OK)
+  - Upgraded salary assessment (karens) to check all salaries up to 3 months before sick date with time-based percentage thresholds (2+ years: 15%, 1+ years: 7.5%, 6+ months: 5%, 3-6 months: 2.5%)
 - July 01, 2025. Initial setup
 
 ## User Preferences
