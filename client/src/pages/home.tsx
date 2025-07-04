@@ -1557,42 +1557,16 @@ export default function Home() {
                           }
                         </h3>
                         <div className="bg-white p-3 rounded border border-slate-200">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <p className="text-slate-600">Lønn 2 år før syk ({salaryIncreaseCheck.twoYearsBeforeDate})</p>
-                              <p className="font-semibold text-slate-800">
-                                {salaryIncreaseCheck.salaryTwoYearsBefore?.toLocaleString('no-NO')} kr
+                          <div className="text-sm">
+                            <p className="text-slate-600 mb-2">Lønn ved syk dato ({salaryIncreaseCheck.sickDate})</p>
+                            <p className="font-semibold text-slate-800 text-lg">
+                              {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr <span className="text-slate-500 text-sm">(opprinnelig)</span>
+                            </p>
+                            {salaryIncreaseCheck.salaryAtSick100 && (
+                              <p className="text-blue-600 font-medium mt-1">
+                                {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr <span className="text-slate-500 text-sm">(justert til 100% stilling)</span>
                               </p>
-                              {salaryIncreaseCheck.salaryTwoYearsBefore100 && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  100% stilling: {salaryIncreaseCheck.salaryTwoYearsBefore100.toLocaleString('no-NO')} kr
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-slate-600">Lønn ved syk dato ({salaryIncreaseCheck.sickDate})</p>
-                              <p className="font-semibold text-slate-800">
-                                {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
-                              </p>
-                              {salaryIncreaseCheck.salaryAtSick100 && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  100% stilling: {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-slate-600">Økning (100% stilling)</p>
-                              <p className={`font-semibold ${
-                                salaryIncreaseCheck.isHighIncrease 
-                                  ? 'text-red-700' 
-                                  : 'text-green-700'
-                              }`}>
-                                {salaryIncreaseCheck.increasePercentage && salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}{salaryIncreaseCheck.increasePercentage}%
-                              </p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                Beregnet på 100% stillinger
-                              </p>
-                            </div>
+                            )}
                           </div>
                         </div>
                         
