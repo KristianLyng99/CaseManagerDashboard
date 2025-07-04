@@ -92,21 +92,61 @@ export default function Home() {
       return;
     }
 
-    // Get the 12 most recent salary entries before or at the sick date
-    // Filter salaries that are on or before the sick date and have salary > 0
-    const relevantSalaries = salaryHistory
-      .filter((entry: any) => entry.date <= sickDate && entry.salary > 0)
-      .sort((a: any, b: any) => b.date.getTime() - a.date.getTime()) // Sort by date descending (newest first)
-      .slice(0, 12); // Take the 12 most recent
+    // Create 12 months of salary data starting from sick month going backwards
+    // Fill missing months with the most recent salary data (forward-fill logic)
+    const sickMonth = sickDate.getMonth(); // 0-based month
+    const sickYear = sickDate.getFullYear();
+    
+    // Sort salary history by date (oldest first) for forward-fill logic
+    const sortedSalaries = salaryHistory
+      .filter((entry: any) => entry.salary > 0)
+      .sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
+    
+    const nominalSalaries = [];
+    
+    // Generate 12 months starting from sick month going backwards
+    for (let i = 0; i < 12; i++) {
+      let targetMonth = sickMonth - i;
+      let targetYear = sickYear;
+      
+      // Handle month overflow
+      if (targetMonth < 0) {
+        targetMonth += 12;
+        targetYear -= 1;
+      }
+      
+      const targetDate = new Date(targetYear, targetMonth, 1);
+      console.log(`Looking for salary for ${targetDate.toISOString().substring(0, 7)}`);
+      
+      // Find the most recent salary entry on or before this target date
+      let applicableSalary = null;
+      for (let j = sortedSalaries.length - 1; j >= 0; j--) {
+        if (sortedSalaries[j].date <= targetDate) {
+          applicableSalary = {
+            date: targetDate,
+            salary: sortedSalaries[j].salary,
+            percentage: sortedSalaries[j].percentage,
+            originalDate: sortedSalaries[j].date
+          };
+          break;
+        }
+      }
+      
+      if (applicableSalary) {
+        console.log(`  Using salary from ${applicableSalary.originalDate.toISOString().substring(0, 10)}: ${applicableSalary.salary} kr`);
+        nominalSalaries.push(applicableSalary);
+      }
+    }
     
     console.log(`Sick date: ${sickDate.toISOString().substring(0, 10)}`);
-    console.log('Relevant salaries (last 12 with salary > 0):', relevantSalaries.map(s => ({
-      date: s.date.toISOString().substring(0, 10),
+    console.log('Generated 12 months of salary data:', nominalSalaries.map(s => ({
+      month: s.date.toISOString().substring(0, 7),
       salary: s.salary,
-      percentage: s.percentage
+      percentage: s.percentage,
+      originalFrom: s.originalDate.toISOString().substring(0, 10)
     })));
 
-    if (relevantSalaries.length === 0) {
+    if (nominalSalaries.length === 0) {
       toast({
         title: "Feil",
         description: "Ingen lønnsdata funnet før sykdato",
@@ -115,7 +155,7 @@ export default function Home() {
       return;
     }
 
-    const last12MonthsSalaries = relevantSalaries;
+    const last12MonthsSalaries = nominalSalaries;
 
     // Calculate simple average salary (not weighted by days)
     let totalSalary = 0;
@@ -141,7 +181,7 @@ export default function Home() {
       
       toast({
         title: "Nomert lønn aktivert",
-        description: `Gjennomsnitt av ${last12MonthsSalaries.length} siste lønninger: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
+        description: `Gjennomsnitt 12 måneder fra sykdato: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
       });
     } else {
       // Switch back to actual salary
