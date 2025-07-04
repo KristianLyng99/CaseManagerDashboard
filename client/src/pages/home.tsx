@@ -1497,7 +1497,18 @@ export default function Home() {
                           }
                         </h3>
                         <div className="bg-white p-3 rounded border border-slate-200">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="text-slate-600">Lønn 2 år før syk ({salaryIncreaseCheck.twoYearsBeforeDate})</p>
+                              <p className="font-semibold text-slate-800">
+                                {salaryIncreaseCheck.salaryTwoYearsBefore?.toLocaleString('no-NO')} kr
+                              </p>
+                              {salaryIncreaseCheck.salaryTwoYearsBefore100 && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  100% stilling: {salaryIncreaseCheck.salaryTwoYearsBefore100.toLocaleString('no-NO')} kr
+                                </p>
+                              )}
+                            </div>
                             <div>
                               <p className="text-slate-600">Lønn ved syk dato ({salaryIncreaseCheck.sickDate})</p>
                               <p className="font-semibold text-slate-800">
@@ -1510,71 +1521,31 @@ export default function Home() {
                               )}
                             </div>
                             <div>
-                              <p className="text-slate-600">Analyserte lønninger</p>
-                              <p className="font-semibold text-slate-800">
-                                {salaryIncreaseCheck.eligibleSalariesCount} lønninger sjekket
+                              <p className="text-slate-600">Økning (100% stilling)</p>
+                              <p className={`font-semibold ${
+                                salaryIncreaseCheck.isHighIncrease 
+                                  ? 'text-red-700' 
+                                  : 'text-green-700'
+                              }`}>
+                                {salaryIncreaseCheck.increasePercentage && salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}{salaryIncreaseCheck.increasePercentage}%
                               </p>
-                              <p className="text-xs text-slate-600 mt-1">
-                                (3+ måneder før syk dato)
+                              <p className="text-xs text-slate-500 mt-1">
+                                Beregnet på 100% stillinger
                               </p>
                             </div>
                           </div>
+                        </div>
                           
-                          {salaryIncreaseCheck.mostSignificantViolation && (
-                            <div className="border-t pt-3">
-                              <p className="text-sm font-medium text-red-800 mb-2">
-                                Høyeste overtredelse funnet:
-                              </p>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                <div>
-                                  <p className="text-slate-600">Historisk lønn ({salaryIncreaseCheck.mostSignificantViolation.historicalDate})</p>
-                                  <p className="font-semibold text-slate-800">
-                                    {salaryIncreaseCheck.mostSignificantViolation.historicalSalary.toLocaleString('no-NO')} kr
-                                  </p>
-                                  <p className="text-xs text-blue-600 mt-1">
-                                    100% stilling: {salaryIncreaseCheck.mostSignificantViolation.historicalSalary100.toLocaleString('no-NO')} kr
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-600">Tidsperiode</p>
-                                  <p className="font-semibold text-slate-800">
-                                    {salaryIncreaseCheck.mostSignificantViolation.monthsDifference} mnd før syk
-                                  </p>
-                                  <p className="text-xs text-orange-600 mt-1">
-                                    Terskel: {salaryIncreaseCheck.mostSignificantViolation.thresholdPercentage}%
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-600">Faktisk økning</p>
-                                  <p className="font-semibold text-red-700">
-                                    +{salaryIncreaseCheck.mostSignificantViolation.increasePercentage}%
-                                  </p>
-                                  <p className="text-xs text-red-600 mt-1">
-                                    {(salaryIncreaseCheck.mostSignificantViolation.increasePercentage - salaryIncreaseCheck.mostSignificantViolation.thresholdPercentage).toFixed(1)}% over terskel
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Show details button for all violations */}
-                          {salaryIncreaseCheck.violationsCount > 0 && (
+                          {/* Show "se alle" button only when there are multiple violations */}
+                          {salaryIncreaseCheck.violationsCount > 1 && (
                             <div className="mt-3 p-2 bg-orange-50 rounded border border-orange-200">
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="text-sm text-orange-800">
-                                    <strong>
-                                      {salaryIncreaseCheck.violationsCount === 1 
-                                        ? '1 overtredelse' 
-                                        : `Totalt ${salaryIncreaseCheck.violationsCount} overtredelser`
-                                      }
-                                    </strong> funnet i lønnshistorikken
+                                    <strong>Totalt {salaryIncreaseCheck.violationsCount} overtredelser</strong> funnet i lønnshistorikken
                                   </p>
                                   <p className="text-xs text-orange-600 mt-1">
-                                    {salaryIncreaseCheck.violationsCount === 1 
-                                      ? 'Klikk for å se detaljert analyse'
-                                      : 'Viser kun den mest signifikante overtredelsen ovenfor'
-                                    }
+                                    Viser sammenligning med 2 år tilbake. Klikk for å se alle overtredelser.
                                   </p>
                                 </div>
                                 <Dialog>
@@ -1585,10 +1556,7 @@ export default function Home() {
                                       className="text-xs px-3 py-1 bg-orange-50 hover:bg-orange-100 border-orange-300"
                                     >
                                       <Eye className="h-3 w-3 mr-1" />
-                                      {salaryIncreaseCheck.violationsCount === 1 
-                                        ? 'Se detaljer' 
-                                        : `Se alle (${salaryIncreaseCheck.violationsCount})`
-                                      }
+                                      Se alle ({salaryIncreaseCheck.violationsCount})
                                     </Button>
                                   </DialogTrigger>
                                   <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
