@@ -876,13 +876,33 @@ export default function Home() {
       }
     }
 
+    // Calculate actual 2 years before sick date for display
+    const twoYearsBefore = new Date(sickDate);
+    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+    
+    // Find salary from exactly 2 years before (most recent before or at 2 years before sick date)
+    const actualSalaryTwoYearsBefore = salaryHistory.find(entry => 
+      entry.date <= twoYearsBefore
+    );
+    
+    const actualSalaryTwoYearsBefore100 = actualSalaryTwoYearsBefore 
+      ? (actualSalaryTwoYearsBefore.salary * 100) / actualSalaryTwoYearsBefore.percentage
+      : null;
+    
+    const actualIncreasePercentage = actualSalaryTwoYearsBefore100
+      ? ((salaryAtSick100 - actualSalaryTwoYearsBefore100) / actualSalaryTwoYearsBefore100) * 100
+      : null;
+
     console.log('Enhanced salary check results:', {
       sickDate: formatDate(sickDate),
       salaryAtSick: salaryAtSick.salary,
       salaryAtSick100: Math.round(salaryAtSick100),
       eligibleSalariesCount: eligibleSalaries.length,
       violationsCount: violations.length,
-      mostSignificantViolation
+      mostSignificantViolation,
+      actualSalaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary,
+      actualSalaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
+      actualIncreasePercentage: actualIncreasePercentage ? Math.round(actualIncreasePercentage * 100) / 100 : null
     });
 
     return {
@@ -894,11 +914,11 @@ export default function Home() {
       violations,
       mostSignificantViolation,
       isHighIncrease: violations.length > 0,
-      // Legacy fields for backward compatibility
-      salaryTwoYearsBefore: mostSignificantViolation?.historicalSalary || null,
-      salaryTwoYearsBefore100: mostSignificantViolation?.historicalSalary100 || null,
-      increasePercentage: mostSignificantViolation?.increasePercentage || null,
-      twoYearsBeforeDate: mostSignificantViolation?.historicalDate || null
+      // Show actual 2 years before salary for display
+      salaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary || null,
+      salaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
+      increasePercentage: actualIncreasePercentage ? Math.round(actualIncreasePercentage * 100) / 100 : null,
+      twoYearsBeforeDate: actualSalaryTwoYearsBefore ? formatDate(actualSalaryTwoYearsBefore.date) : null
     };
   };
 
