@@ -1535,9 +1535,9 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                          
-                          {/* Show "se alle" button only when there are multiple violations */}
-                          {salaryIncreaseCheck.violationsCount > 1 && (
+                        
+                        {/* Show "se alle" button only when there are multiple violations */}
+                        {salaryIncreaseCheck.violationsCount > 1 && (
                             <div className="mt-3 p-2 bg-orange-50 rounded border border-orange-200">
                               <div className="flex items-center justify-between">
                                 <div>
@@ -1667,7 +1667,6 @@ export default function Home() {
                               </div>
                             </div>
                           )}
-                        </div>
                         
                         {/* G-regulated salary calculation when karens needs assessment */}
                         {salaryIncreaseCheck.isHighIncrease && gRegulatedCalculation && (
@@ -1845,6 +1844,7 @@ export default function Home() {
                 </div>
               )}
             </div>
+          </div>
 
             {/* Uføregrad Periods - Show if multiple periods detected */}
             {(() => {
