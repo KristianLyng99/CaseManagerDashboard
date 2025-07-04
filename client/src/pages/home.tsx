@@ -184,6 +184,8 @@ export default function Home() {
     let totalWeightedNominalPercentage = 0;
     let totalNominalDays = 0;
     
+    console.log('=== NOMINAL POSITION PERCENTAGE CALCULATION ===');
+    
     // Generate nominal position percentages for the same 12 months
     for (let i = 0; i < 12; i++) {
       let targetMonth = sickMonth - i;
@@ -196,12 +198,15 @@ export default function Home() {
       }
       
       const targetDate = new Date(targetYear, targetMonth, 1);
+      console.log(`Looking for position % for ${targetDate.toISOString().substring(0, 7)}`);
       
       // Find the most recent position percentage entry on or before this target date
       let applicablePercentage = null;
+      let foundEntry = null;
       for (let j = sortedSalaries.length - 1; j >= 0; j--) {
         if (sortedSalaries[j].date <= targetDate) {
           applicablePercentage = sortedSalaries[j].percentage;
+          foundEntry = sortedSalaries[j];
           break;
         }
       }
@@ -212,12 +217,13 @@ export default function Home() {
         totalWeightedNominalPercentage += applicablePercentage * daysInMonth;
         totalNominalDays += daysInMonth;
         
-        console.log(`  Nominal position month ${targetMonth + 1}/${targetYear}: ${daysInMonth} days, ${applicablePercentage}% position`);
+        console.log(`  Using position % from ${foundEntry.date.toISOString().substring(0, 10)}: ${applicablePercentage}% (${daysInMonth} days)`);
+        console.log(`  Running total: ${totalWeightedNominalPercentage.toFixed(2)} over ${totalNominalDays} days`);
       }
     }
     
     const avgNominalPercentage = totalWeightedNominalPercentage / totalNominalDays;
-    console.log(`Day-weighted nominal position average: ${avgNominalPercentage.toFixed(2)}%`);
+    console.log(`=== FINAL NOMINAL POSITION AVERAGE: ${avgNominalPercentage.toFixed(2)}% ===`);
     
     // Calculate full-time equivalent using nominal percentage
     const avgSalary100 = avgSalary / (avgNominalPercentage / 100);
