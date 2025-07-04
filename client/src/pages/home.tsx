@@ -188,6 +188,9 @@ export default function Home() {
     let totalNominalDays = 0;
     
     console.log('=== NOMINAL POSITION PERCENTAGE CALCULATION ===');
+    console.log('Calculation table:');
+    console.log('Month\t\tDays\tPosition%\tWeighted');
+    console.log('-------------------------------------------');
     
     // Generate nominal position percentages for the same 12 months as salary calculation
     // Use the same months that were used for salary calculation
@@ -195,8 +198,6 @@ export default function Home() {
       const year = salaryEntry.date.getFullYear();
       const month = salaryEntry.date.getMonth();
       const targetDate = new Date(year, month + 1, 0); // Last day of the month
-      
-      console.log(`Looking for position % for ${salaryEntry.date.toISOString().substring(0, 7)}`);
       
       // Find the most recent position percentage entry on or before this target date
       let applicablePercentage = null;
@@ -212,13 +213,19 @@ export default function Home() {
       if (applicablePercentage !== null) {
         // Get number of days in the month
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        totalWeightedNominalPercentage += applicablePercentage * daysInMonth;
+        const weighted = applicablePercentage * daysInMonth;
+        totalWeightedNominalPercentage += weighted;
         totalNominalDays += daysInMonth;
         
-        console.log(`  Using position % from ${foundEntry ? foundEntry.date.toISOString().substring(0, 10) : 'unknown'}: ${applicablePercentage}% (${daysInMonth} days)`);
-        console.log(`  Running total: ${totalWeightedNominalPercentage.toFixed(2)} over ${totalNominalDays} days`);
+        const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+        console.log(`${monthStr}\t\t${daysInMonth}\t${applicablePercentage}%\t\t${weighted.toFixed(2)}`);
       }
     }
+    
+    console.log('-------------------------------------------');
+    console.log(`Total weighted: ${totalWeightedNominalPercentage.toFixed(2)}`);
+    console.log(`Total days: ${totalNominalDays}`);
+    console.log(`Average: ${(totalWeightedNominalPercentage / totalNominalDays).toFixed(2)}%`);
     
     const avgNominalPercentage = totalWeightedNominalPercentage / totalNominalDays;
     console.log(`=== FINAL NOMINAL POSITION AVERAGE: ${avgNominalPercentage.toFixed(2)}% ===`);
