@@ -43,6 +43,8 @@ export default function Home() {
     detail: string;
   }>>([]);
   const [rawInput, setRawInput] = useState('');
+  const [useNominalSalary, setUseNominalSalary] = useState(false);
+  const [nominalSalaryData, setNominalSalaryData] = useState<{salary: number, salary100: number} | null>(null);
   const { toast } = useToast();
 
   // Copy to clipboard utility
@@ -74,6 +76,63 @@ export default function Home() {
         duration: 2000,
       });
     }
+  };
+
+  // Calculate nominal salary (average of last 12 months)
+  const handleUseNominalSalary = () => {
+    const salaryHistory = parseSalaryHistory();
+    const sickDate = parseDate(sykdato);
+    
+    if (!salaryHistory || !sickDate) {
+      toast({
+        title: "Feil",
+        description: "Mangler lønnsdata eller sykdato",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get salaries from the last 12 months including the month of sick date
+    const twelveMonthsBefore = new Date(sickDate);
+    twelveMonthsBefore.setFullYear(twelveMonthsBefore.getFullYear() - 1);
+    
+    const last12MonthsSalaries = salaryHistory.filter((entry: any) => 
+      entry.date >= twelveMonthsBefore && entry.date <= sickDate && entry.salary > 0
+    );
+
+    if (last12MonthsSalaries.length === 0) {
+      toast({
+        title: "Feil",
+        description: "Ingen lønnsdata funnet for de siste 12 månedene",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Calculate average salary (weighted by percentage to get actual salary paid)
+    let totalSalary = 0;
+    let totalPercentage = 0;
+    
+    for (const entry of last12MonthsSalaries) {
+      totalSalary += entry.salary;
+      totalPercentage += entry.percentage;
+    }
+    
+    const avgSalary = totalSalary / last12MonthsSalaries.length;
+    const avgPercentage = totalPercentage / last12MonthsSalaries.length;
+    const avgSalary100 = (avgSalary * 100) / avgPercentage;
+
+    setNominalSalaryData({
+      salary: Math.round(avgSalary),
+      salary100: Math.round(avgSalary100)
+    });
+    
+    setUseNominalSalary(true);
+    
+    toast({
+      title: "Nomert lønn beregnet",
+      description: `Gjennomsnittslænn siste 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
+    });
   };
 
   // Format user input DDMMYYYY -> DD.MM.YYYY
@@ -1616,13 +1675,22 @@ export default function Home() {
                               )}
                             </div>
                             <div>
-                              <p className="text-slate-600">Lønn ved syk dato ({salaryIncreaseCheck.sickDate})</p>
-                              <p className="font-semibold text-slate-800">
-                                {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
+                              <p className="text-slate-600">
+                                {useNominalSalary ? 'Nomert lønn ved syk dato' : 'Lønn ved syk dato'} ({salaryIncreaseCheck.sickDate})
                               </p>
-                              {salaryIncreaseCheck.salaryAtSick100 && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  100% stilling: {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                              <p className="font-semibold text-slate-800">
+                                {useNominalSalary && nominalSalaryData 
+                                  ? nominalSalaryData.salary.toLocaleString('no-NO') 
+                                  : salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
+                              </p>
+                              <p className="text-xs text-blue-600 mt-1">
+                                100% stilling: {useNominalSalary && nominalSalaryData 
+                                  ? nominalSalaryData.salary100.toLocaleString('no-NO') 
+                                  : salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                              </p>
+                              {useNominalSalary && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  Gjennomsnitt siste 12 måneder
                                 </p>
                               )}
                             </div>
@@ -1649,37 +1717,50 @@ export default function Home() {
                               ? 'border-orange-400 bg-orange-50' 
                               : 'border-green-400 bg-green-50'
                           }`}>
-                            <div className="flex items-center space-x-2">
-                              <div className="flex-shrink-0">
-                                {salaryIncreaseCheck.frequentChanges.hasFrequentChanges ? (
-                                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                                ) : (
-                                  <ShieldCheck className="h-4 w-4 text-green-600" />
-                                )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className="flex-shrink-0">
+                                  {salaryIncreaseCheck.frequentChanges.hasFrequentChanges ? (
+                                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                                  ) : (
+                                    <ShieldCheck className="h-4 w-4 text-green-600" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <p className={`text-sm font-medium ${
+                                    salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                      ? 'text-orange-800' 
+                                      : 'text-green-800'
+                                  }`}>
+                                    {salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                      ? 'Lønnen varierer mye' 
+                                      : 'Lønnen er stabil'
+                                    }
+                                  </p>
+                                  <p className={`text-xs mt-1 ${
+                                    salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                      ? 'text-orange-600' 
+                                      : 'text-green-600'
+                                  }`}>
+                                    {salaryIncreaseCheck.frequentChanges.changesPerYear} endringer siste 12 måneder
+                                    {salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                      ? ' (6+ endringer kan indikere ustabil inntekt)'
+                                      : ' (under 6 endringer indikerer stabil inntekt)'
+                                    }
+                                  </p>
+                                </div>
                               </div>
-                              <div className="flex-1">
-                                <p className={`text-sm font-medium ${
-                                  salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
-                                    ? 'text-orange-800' 
-                                    : 'text-green-800'
-                                }`}>
-                                  {salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
-                                    ? 'Lønnen varierer mye' 
-                                    : 'Lønnen er stabil'
-                                  }
-                                </p>
-                                <p className={`text-xs mt-1 ${
-                                  salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
-                                    ? 'text-orange-600' 
-                                    : 'text-green-600'
-                                }`}>
-                                  {salaryIncreaseCheck.frequentChanges.changesPerYear} endringer siste 12 måneder
-                                  {salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
-                                    ? ' (6+ endringer kan indikere ustabil inntekt)'
-                                    : ' (under 6 endringer indikerer stabil inntekt)'
-                                  }
-                                </p>
-                              </div>
+                              {salaryIncreaseCheck.frequentChanges.hasFrequentChanges && (
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUseNominalSalary()}
+                                  className="text-xs px-3 py-1 bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-800"
+                                >
+                                  <Calculator className="h-3 w-3 mr-1" />
+                                  Bruk nomert lønn
+                                </Button>
+                              )}
                             </div>
                           </div>
                         )}
