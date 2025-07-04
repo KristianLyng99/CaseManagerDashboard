@@ -1716,14 +1716,28 @@ export default function Home() {
                             <div>
                               <p className="text-slate-600">Økning (100% stilling)</p>
                               <p className={`font-semibold ${
-                                salaryIncreaseCheck.isHighIncrease 
-                                  ? 'text-red-700' 
-                                  : 'text-green-700'
+                                (() => {
+                                  if (useNominalSalary && nominalSalaryData && salaryIncreaseCheck.salaryTwoYearsBefore100) {
+                                    const nominalIncrease = ((nominalSalaryData.salary100 - salaryIncreaseCheck.salaryTwoYearsBefore100) / salaryIncreaseCheck.salaryTwoYearsBefore100) * 100;
+                                    return nominalIncrease > 15 ? 'text-red-700' : 'text-green-700';
+                                  } else {
+                                    return salaryIncreaseCheck.isHighIncrease ? 'text-red-700' : 'text-green-700';
+                                  }
+                                })()
                               }`}>
-                                {salaryIncreaseCheck.increasePercentage && salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}{salaryIncreaseCheck.increasePercentage}%
+                                {(() => {
+                                  // Calculate percentage based on current salary mode
+                                  if (useNominalSalary && nominalSalaryData && salaryIncreaseCheck.salaryTwoYearsBefore100) {
+                                    const nominalIncrease = ((nominalSalaryData.salary100 - salaryIncreaseCheck.salaryTwoYearsBefore100) / salaryIncreaseCheck.salaryTwoYearsBefore100) * 100;
+                                    const roundedNominalIncrease = Math.round(nominalIncrease * 100) / 100;
+                                    return `${roundedNominalIncrease > 0 ? '+' : ''}${roundedNominalIncrease}%`;
+                                  } else {
+                                    return `${salaryIncreaseCheck.increasePercentage && salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}${salaryIncreaseCheck.increasePercentage}%`;
+                                  }
+                                })()}
                               </p>
                               <p className="text-xs text-slate-500 mt-1">
-                                Beregnet på 100% stillinger
+                                {useNominalSalary ? 'Beregnet med nomert lønn' : 'Beregnet på 100% stillinger'}
                               </p>
                             </div>
                           </div>
