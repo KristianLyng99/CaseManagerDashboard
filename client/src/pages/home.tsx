@@ -1573,12 +1573,16 @@ export default function Home() {
                   <div className={`p-4 rounded-lg border-l-4 ${
                     salaryIncreaseCheck.isHighIncrease 
                       ? 'border-red-500 bg-red-50' 
-                      : 'border-green-500 bg-green-50'
+                      : salaryIncreaseCheck.hasOtherViolations
+                        ? 'border-yellow-500 bg-yellow-50'
+                        : 'border-green-500 bg-green-50'
                   }`}>
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0">
                         {salaryIncreaseCheck.isHighIncrease ? (
                           <ShieldCheck className="text-red-600 mt-0.5 h-5 w-5" />
+                        ) : salaryIncreaseCheck.hasOtherViolations ? (
+                          <ShieldCheck className="text-yellow-600 mt-0.5 h-5 w-5" />
                         ) : (
                           <ShieldCheck className="text-green-600 mt-0.5 h-5 w-5" />
                         )}
@@ -1587,7 +1591,9 @@ export default function Home() {
                         <h3 className={`text-sm font-medium mb-3 ${
                           salaryIncreaseCheck.isHighIncrease 
                             ? 'text-red-800' 
-                            : 'text-green-800'
+                            : salaryIncreaseCheck.hasOtherViolations
+                              ? 'text-yellow-800'
+                              : 'text-green-800'
                         }`}>
                           {salaryIncreaseCheck.isHighIncrease 
                             ? 'Karens må vurderes (2 år sammenligning)' 
