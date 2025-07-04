@@ -787,7 +787,7 @@ export default function Home() {
 
   const karensCalculations = getKarensCalculations();
 
-  // Check for 15% salary increase from 2 years before sick date
+  // Enhanced salary increase check - checks all salaries up to 3 months before sick date
   const checkSalaryIncrease = () => {
     const salaryHistory = parseSalaryHistory();
     if (!salaryHistory || salaryHistory.length < 2 || !sykdato) {
@@ -802,97 +802,102 @@ export default function Home() {
     const sickDate = parseDate(sykdato);
     if (!sickDate) return null;
 
-    const twoYearsBefore = new Date(sickDate);
-    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
-
     // Find salary at sick date (most recent before or at sick date)
     const salaryAtSick = salaryHistory.find(entry => 
       entry.date <= sickDate
     );
 
-    // Find salary from 2 years before (most recent before or at 2 years before sick date)
-    const salaryTwoYearsBefore = salaryHistory.find(entry => 
-      entry.date <= twoYearsBefore
-    );
-
-    console.log('Salary check details:', {
-      sickDate: formatDate(sickDate),
-      twoYearsBefore: formatDate(twoYearsBefore),
-      salaryAtSick,
-      salaryTwoYearsBefore
-    });
-
-    // Skip entries with 0 salary and find next valid entry
     if (!salaryAtSick || salaryAtSick.salary === 0) {
       console.log('Salary at sick date is 0 or missing, skipping...');
       return null;
     }
 
-    if (!salaryTwoYearsBefore || salaryTwoYearsBefore.salary === 0) {
-      console.log('Salary 2 years before is 0 or missing, looking for next valid entry...');
-      // Find the next salary entry that is not 0
-      const validTwoYearsBefore = salaryHistory.find(entry => 
-        entry.date <= twoYearsBefore && entry.salary > 0
-      );
-      
-      if (!validTwoYearsBefore) {
-        console.log('No valid salary found for 2 years before period');
-        return null;
-      }
-      
-      // Convert both salaries to 100% positions for comparison
-      const salaryAtSick100 = (salaryAtSick.salary * 100) / salaryAtSick.percentage;
-      const salaryTwoYearsBefore100 = (validTwoYearsBefore.salary * 100) / validTwoYearsBefore.percentage;
-      
-      console.log('Salary conversion details:', {
-        salaryAtSick: salaryAtSick.salary,
-        salaryAtSickPercentage: salaryAtSick.percentage,
-        salaryAtSick100: salaryAtSick100,
-        salaryTwoYearsBefore: validTwoYearsBefore.salary,
-        salaryTwoYearsBeforePercentage: validTwoYearsBefore.percentage,
-        salaryTwoYearsBefore100: salaryTwoYearsBefore100
-      });
-      
-      const increasePercentage = ((salaryAtSick100 - salaryTwoYearsBefore100) / salaryTwoYearsBefore100) * 100;
-      const isHighIncrease = increasePercentage > 15;
+    // Calculate cutoff date (3 months before sick date)
+    const threeMonthsBefore = new Date(sickDate);
+    threeMonthsBefore.setMonth(threeMonthsBefore.getMonth() - 3);
 
-      return {
-        salaryAtSick: salaryAtSick.salary,
-        salaryAtSick100: Math.round(salaryAtSick100),
-        salaryTwoYearsBefore: validTwoYearsBefore.salary,
-        salaryTwoYearsBefore100: Math.round(salaryTwoYearsBefore100),
-        increasePercentage: Math.round(increasePercentage * 100) / 100,
-        isHighIncrease,
-        sickDate: formatDate(sickDate),
-        twoYearsBeforeDate: formatDate(validTwoYearsBefore.date)
-      };
+    // Filter salary history to only include entries up to 3 months before sick date
+    const eligibleSalaries = salaryHistory.filter(entry => 
+      entry.date <= threeMonthsBefore && entry.salary > 0
+    );
+
+    if (eligibleSalaries.length === 0) {
+      console.log('No eligible salary entries found (3+ months before sick date)');
+      return null;
     }
 
-    // Convert both salaries to 100% positions for comparison
+    // Convert sick date salary to 100% position
     const salaryAtSick100 = (salaryAtSick.salary * 100) / salaryAtSick.percentage;
-    const salaryTwoYearsBefore100 = (salaryTwoYearsBefore.salary * 100) / salaryTwoYearsBefore.percentage;
+
+    // Function to get threshold percentage based on time difference
+    const getThresholdPercentage = (monthsDifference: number) => {
+      if (monthsDifference >= 24) return 15.0; // 2+ years: 15%
+      if (monthsDifference >= 12) return 7.5;  // 1+ years: 7.5%
+      if (monthsDifference >= 6) return 5.0;   // 6+ months: 5%
+      return 2.5; // 3-6 months: 2.5%
+    };
+
+    // Check each eligible salary for threshold violations
+    const violations = [];
     
-    console.log('Salary conversion details:', {
+    for (const historicalSalary of eligibleSalaries) {
+      const historicalSalary100 = (historicalSalary.salary * 100) / historicalSalary.percentage;
+      
+      // Calculate time difference in months
+      const timeDiffMs = sickDate.getTime() - historicalSalary.date.getTime();
+      const monthsDifference = timeDiffMs / (1000 * 60 * 60 * 24 * 30.44); // Average days per month
+      
+      const thresholdPercentage = getThresholdPercentage(monthsDifference);
+      const increasePercentage = ((salaryAtSick100 - historicalSalary100) / historicalSalary100) * 100;
+      
+      if (increasePercentage > thresholdPercentage) {
+        violations.push({
+          historicalSalary: historicalSalary.salary,
+          historicalSalary100: Math.round(historicalSalary100),
+          historicalDate: formatDate(historicalSalary.date),
+          monthsDifference: Math.round(monthsDifference * 10) / 10,
+          thresholdPercentage,
+          increasePercentage: Math.round(increasePercentage * 100) / 100,
+          exceedsThreshold: true
+        });
+      }
+    }
+
+    // Find the most significant violation (highest percentage over threshold)
+    let mostSignificantViolation = null;
+    let highestExcess = 0;
+
+    for (const violation of violations) {
+      const excess = violation.increasePercentage - violation.thresholdPercentage;
+      if (excess > highestExcess) {
+        highestExcess = excess;
+        mostSignificantViolation = violation;
+      }
+    }
+
+    console.log('Enhanced salary check results:', {
+      sickDate: formatDate(sickDate),
       salaryAtSick: salaryAtSick.salary,
-      salaryAtSickPercentage: salaryAtSick.percentage,
-      salaryAtSick100: salaryAtSick100,
-      salaryTwoYearsBefore: salaryTwoYearsBefore.salary,
-      salaryTwoYearsBeforePercentage: salaryTwoYearsBefore.percentage,
-      salaryTwoYearsBefore100: salaryTwoYearsBefore100
+      salaryAtSick100: Math.round(salaryAtSick100),
+      eligibleSalariesCount: eligibleSalaries.length,
+      violationsCount: violations.length,
+      mostSignificantViolation
     });
-    
-    const increasePercentage = ((salaryAtSick100 - salaryTwoYearsBefore100) / salaryTwoYearsBefore100) * 100;
-    const isHighIncrease = increasePercentage > 15;
 
     return {
       salaryAtSick: salaryAtSick.salary,
       salaryAtSick100: Math.round(salaryAtSick100),
-      salaryTwoYearsBefore: salaryTwoYearsBefore.salary,
-      salaryTwoYearsBefore100: Math.round(salaryTwoYearsBefore100),
-      increasePercentage: Math.round(increasePercentage * 100) / 100,
-      isHighIncrease,
       sickDate: formatDate(sickDate),
-      twoYearsBeforeDate: formatDate(twoYearsBefore)
+      eligibleSalariesCount: eligibleSalaries.length,
+      violationsCount: violations.length,
+      violations,
+      mostSignificantViolation,
+      isHighIncrease: violations.length > 0,
+      // Legacy fields for backward compatibility
+      salaryTwoYearsBefore: mostSignificantViolation?.historicalSalary || null,
+      salaryTwoYearsBefore100: mostSignificantViolation?.historicalSalary100 || null,
+      increasePercentage: mostSignificantViolation?.increasePercentage || null,
+      twoYearsBeforeDate: mostSignificantViolation?.historicalDate || null
     };
   };
 
@@ -1491,18 +1496,7 @@ export default function Home() {
                           }
                         </h3>
                         <div className="bg-white p-3 rounded border border-slate-200">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <p className="text-slate-600">Lønn 2 år før syk ({salaryIncreaseCheck.twoYearsBeforeDate})</p>
-                              <p className="font-semibold text-slate-800">
-                                {salaryIncreaseCheck.salaryTwoYearsBefore.toLocaleString('no-NO')} kr
-                              </p>
-                              {salaryIncreaseCheck.salaryTwoYearsBefore100 && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  100% stilling: {salaryIncreaseCheck.salaryTwoYearsBefore100.toLocaleString('no-NO')} kr
-                                </p>
-                              )}
-                            </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                             <div>
                               <p className="text-slate-600">Lønn ved syk dato ({salaryIncreaseCheck.sickDate})</p>
                               <p className="font-semibold text-slate-800">
@@ -1515,19 +1509,63 @@ export default function Home() {
                               )}
                             </div>
                             <div>
-                              <p className="text-slate-600">Økning (100% stilling)</p>
-                              <p className={`font-semibold ${
-                                salaryIncreaseCheck.isHighIncrease 
-                                  ? 'text-red-700' 
-                                  : 'text-green-700'
-                              }`}>
-                                {salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}{salaryIncreaseCheck.increasePercentage}%
+                              <p className="text-slate-600">Analyserte lønninger</p>
+                              <p className="font-semibold text-slate-800">
+                                {salaryIncreaseCheck.eligibleSalariesCount} lønninger sjekket
                               </p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                Beregnet på 100% stillinger
+                              <p className="text-xs text-slate-600 mt-1">
+                                (3+ måneder før syk dato)
                               </p>
                             </div>
                           </div>
+                          
+                          {salaryIncreaseCheck.mostSignificantViolation && (
+                            <div className="border-t pt-3">
+                              <p className="text-sm font-medium text-red-800 mb-2">
+                                Høyeste overtredelse funnet:
+                              </p>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                  <p className="text-slate-600">Historisk lønn ({salaryIncreaseCheck.mostSignificantViolation.historicalDate})</p>
+                                  <p className="font-semibold text-slate-800">
+                                    {salaryIncreaseCheck.mostSignificantViolation.historicalSalary.toLocaleString('no-NO')} kr
+                                  </p>
+                                  <p className="text-xs text-blue-600 mt-1">
+                                    100% stilling: {salaryIncreaseCheck.mostSignificantViolation.historicalSalary100.toLocaleString('no-NO')} kr
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-600">Tidsperiode</p>
+                                  <p className="font-semibold text-slate-800">
+                                    {salaryIncreaseCheck.mostSignificantViolation.monthsDifference} mnd før syk
+                                  </p>
+                                  <p className="text-xs text-orange-600 mt-1">
+                                    Terskel: {salaryIncreaseCheck.mostSignificantViolation.thresholdPercentage}%
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-600">Faktisk økning</p>
+                                  <p className="font-semibold text-red-700">
+                                    +{salaryIncreaseCheck.mostSignificantViolation.increasePercentage}%
+                                  </p>
+                                  <p className="text-xs text-red-600 mt-1">
+                                    {(salaryIncreaseCheck.mostSignificantViolation.increasePercentage - salaryIncreaseCheck.mostSignificantViolation.thresholdPercentage).toFixed(1)}% over terskel
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {salaryIncreaseCheck.violationsCount > 1 && (
+                            <div className="mt-3 p-2 bg-orange-50 rounded border border-orange-200">
+                              <p className="text-sm text-orange-800">
+                                <strong>Totalt {salaryIncreaseCheck.violationsCount} overtredelser</strong> funnet i lønnshistorikken
+                              </p>
+                              <p className="text-xs text-orange-600 mt-1">
+                                Viser kun den mest signifikante overtredelsen ovenfor
+                              </p>
+                            </div>
+                          )}
                         </div>
                         
                         {/* G-regulated salary calculation when karens needs assessment */}
@@ -1795,8 +1833,8 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              );
-            })()}
+            );
+          })()}
 
 
           </CardContent>

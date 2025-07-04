@@ -89,6 +89,7 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- July 05, 2025. Upgraded salary assessment (karens) to check all salaries up to 3 months before sick date with time-based percentage thresholds (2+ years: 15%, 1+ years: 7.5%, 6+ months: 5%, 3-6 months: 2.5%)
 - July 01, 2025. Initial setup
 
 ## User Preferences
