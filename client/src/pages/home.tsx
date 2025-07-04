@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye } from "lucide-react";
+import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -906,6 +906,41 @@ export default function Home() {
       actualSalaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
       actualIncreasePercentage: actualIncreasePercentage ? Math.round(actualIncreasePercentage * 100) / 100 : null
     });
+    
+    // Check for frequent salary changes (6+ times per year)
+    const checkFrequentSalaryChanges = (salaryHistory: any[], sickDate: Date) => {
+      if (!salaryHistory || salaryHistory.length === 0) return { hasFrequentChanges: false, changesPerYear: 0 };
+      
+      // Get salaries from the last 12 months before sick date
+      const oneYearBefore = new Date(sickDate);
+      oneYearBefore.setFullYear(oneYearBefore.getFullYear() - 1);
+      
+      const lastYearSalaries = salaryHistory.filter(entry => 
+        entry.date >= oneYearBefore && entry.date <= sickDate
+      ).sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      if (lastYearSalaries.length < 2) return { hasFrequentChanges: false, changesPerYear: 0 };
+      
+      // Count salary changes (when salary or percentage changes from previous entry)
+      let changes = 0;
+      for (let i = 1; i < lastYearSalaries.length; i++) {
+        const current = lastYearSalaries[i];
+        const previous = lastYearSalaries[i - 1];
+        
+        // Consider it a change if salary or percentage changed
+        if (current.salary !== previous.salary || current.percentage !== previous.percentage) {
+          changes++;
+        }
+      }
+      
+      return {
+        hasFrequentChanges: changes >= 6,
+        changesPerYear: changes
+      };
+    };
+    
+    const frequentChangesResult = checkFrequentSalaryChanges(salaryHistory, sickDate);
+    console.log('Frequent salary changes check:', frequentChangesResult);
 
     // Check if the 2-year comparison specifically violates the 15% threshold
     const twoYearViolation = actualIncreasePercentage ? actualIncreasePercentage > 15 : false;
@@ -960,7 +995,8 @@ export default function Home() {
       salaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary || null,
       salaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
       increasePercentage: actualIncreasePercentage ? Math.round(actualIncreasePercentage * 100) / 100 : null,
-      twoYearsBeforeDate: actualSalaryTwoYearsBefore ? formatDate(actualSalaryTwoYearsBefore.date) : null
+      twoYearsBeforeDate: actualSalaryTwoYearsBefore ? formatDate(actualSalaryTwoYearsBefore.date) : null,
+      frequentChanges: frequentChangesResult
     };
   };
 
@@ -1599,6 +1635,48 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Frequent salary changes warning */}
+                        {salaryIncreaseCheck.frequentChanges && (
+                          <div className={`mt-3 p-3 rounded-lg border ${
+                            salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                              ? 'border-orange-400 bg-orange-50' 
+                              : 'border-green-400 bg-green-50'
+                          }`}>
+                            <div className="flex items-center space-x-2">
+                              <div className="flex-shrink-0">
+                                {salaryIncreaseCheck.frequentChanges.hasFrequentChanges ? (
+                                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                                ) : (
+                                  <ShieldCheck className="h-4 w-4 text-green-600" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <p className={`text-sm font-medium ${
+                                  salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                    ? 'text-orange-800' 
+                                    : 'text-green-800'
+                                }`}>
+                                  {salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                    ? 'Lønnen varierer mye' 
+                                    : 'Lønnen er stabil'
+                                  }
+                                </p>
+                                <p className={`text-xs mt-1 ${
+                                  salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                    ? 'text-orange-600' 
+                                    : 'text-green-600'
+                                }`}>
+                                  {salaryIncreaseCheck.frequentChanges.changesPerYear} endringer siste 12 måneder
+                                  {salaryIncreaseCheck.frequentChanges.hasFrequentChanges 
+                                    ? ' (6+ endringer kan indikere ustabil inntekt)'
+                                    : ' (under 6 endringer indikerer stabil inntekt)'
+                                  }
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         
                         {/* Show "se alle" button when there are salaries in the 2-year period */}
                         {salaryIncreaseCheck.seAlleList && salaryIncreaseCheck.seAlleList.length > 0 && (
