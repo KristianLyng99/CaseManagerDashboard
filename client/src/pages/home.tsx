@@ -179,7 +179,48 @@ export default function Home() {
     const avgPercentage = totalWeightedPercentage / totalDays;
     
     console.log(`Day-weighted average: ${Math.round(avgSalary)} kr over ${totalDays} total days`);
-    const avgSalary100 = (avgSalary * 100) / avgPercentage;
+    
+    // Calculate nominal position percentage using same forward-fill and day-weighted logic
+    let totalWeightedNominalPercentage = 0;
+    let totalNominalDays = 0;
+    
+    // Generate nominal position percentages for the same 12 months
+    for (let i = 0; i < 12; i++) {
+      let targetMonth = sickMonth - i;
+      let targetYear = sickYear;
+      
+      // Handle month overflow
+      if (targetMonth < 0) {
+        targetMonth += 12;
+        targetYear -= 1;
+      }
+      
+      const targetDate = new Date(targetYear, targetMonth, 1);
+      
+      // Find the most recent position percentage entry on or before this target date
+      let applicablePercentage = null;
+      for (let j = sortedSalaries.length - 1; j >= 0; j--) {
+        if (sortedSalaries[j].date <= targetDate) {
+          applicablePercentage = sortedSalaries[j].percentage;
+          break;
+        }
+      }
+      
+      if (applicablePercentage !== null) {
+        // Get number of days in the month
+        const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+        totalWeightedNominalPercentage += applicablePercentage * daysInMonth;
+        totalNominalDays += daysInMonth;
+        
+        console.log(`  Nominal position month ${targetMonth + 1}/${targetYear}: ${daysInMonth} days, ${applicablePercentage}% position`);
+      }
+    }
+    
+    const avgNominalPercentage = totalWeightedNominalPercentage / totalNominalDays;
+    console.log(`Day-weighted nominal position average: ${avgNominalPercentage.toFixed(2)}%`);
+    
+    // Calculate full-time equivalent using nominal percentage
+    const avgSalary100 = avgSalary / (avgNominalPercentage / 100);
 
     if (!useNominalSalary) {
       // Switch to nominal salary
@@ -192,7 +233,7 @@ export default function Home() {
       
       toast({
         title: "Nomert lønn aktivert",
-        description: `Dagsveid gjennomsnitt 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
+        description: `Dagsveid gjennomsnitt 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (${avgNominalPercentage.toFixed(1)}%) → 100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr`,
       });
     } else {
       // Switch back to actual salary
