@@ -1654,25 +1654,6 @@ export default function Home() {
                                         <h3 className="font-semibold text-slate-800 mb-3">
                                           Alle lønnsposter (mellom sykdato og 2 år tilbake)
                                         </h3>
-                                        
-                                        {/* Summary section */}
-                                        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                          <h4 className="font-medium text-blue-800 mb-2">Sammendrag - Lønn på sykdato</h4>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                              <p className="text-blue-700 font-medium">Opprinnelig lønn</p>
-                                              <p className="text-lg font-semibold text-slate-800">
-                                                {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
-                                              </p>
-                                            </div>
-                                            <div>
-                                              <p className="text-blue-700 font-medium">Justert til 100% stilling</p>
-                                              <p className="text-lg font-semibold text-slate-800">
-                                                {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </div>
                                         {/* Table header */}
                                         <div className="bg-slate-50 p-3 rounded-t-lg border border-slate-200">
                                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium text-slate-600 uppercase tracking-wide">
