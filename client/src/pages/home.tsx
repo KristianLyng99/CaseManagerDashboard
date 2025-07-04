@@ -938,7 +938,7 @@ export default function Home() {
           salaryData.push({
             date: parsedDate,
             salary: salary,
-            percentage: percent || 100
+            percentage: isNaN(percent) ? 100 : percent  // Only default to 100 if percent is NaN, preserve 0
           });
         }
       }
