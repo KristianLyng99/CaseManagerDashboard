@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -1556,14 +1557,146 @@ export default function Home() {
                             </div>
                           )}
                           
-                          {salaryIncreaseCheck.violationsCount > 1 && (
+                          {/* Show details button for all violations */}
+                          {salaryIncreaseCheck.violationsCount > 0 && (
                             <div className="mt-3 p-2 bg-orange-50 rounded border border-orange-200">
-                              <p className="text-sm text-orange-800">
-                                <strong>Totalt {salaryIncreaseCheck.violationsCount} overtredelser</strong> funnet i lønnshistorikken
-                              </p>
-                              <p className="text-xs text-orange-600 mt-1">
-                                Viser kun den mest signifikante overtredelsen ovenfor
-                              </p>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-orange-800">
+                                    <strong>
+                                      {salaryIncreaseCheck.violationsCount === 1 
+                                        ? '1 overtredelse' 
+                                        : `Totalt ${salaryIncreaseCheck.violationsCount} overtredelser`
+                                      }
+                                    </strong> funnet i lønnshistorikken
+                                  </p>
+                                  <p className="text-xs text-orange-600 mt-1">
+                                    {salaryIncreaseCheck.violationsCount === 1 
+                                      ? 'Klikk for å se detaljert analyse'
+                                      : 'Viser kun den mest signifikante overtredelsen ovenfor'
+                                    }
+                                  </p>
+                                </div>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button 
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs px-3 py-1 bg-orange-50 hover:bg-orange-100 border-orange-300"
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      {salaryIncreaseCheck.violationsCount === 1 
+                                        ? 'Se detaljer' 
+                                        : `Se alle (${salaryIncreaseCheck.violationsCount})`
+                                      }
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle className="text-lg font-semibold text-red-800">
+                                        Alle lønnsovertredelser - Karens vurdering
+                                      </DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      {/* Summary */}
+                                      <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                                        <h3 className="font-semibold text-red-800 mb-2">Sammendrag</h3>
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                          <div>
+                                            <p className="text-slate-600">Lønn ved syk dato</p>
+                                            <p className="font-semibold text-slate-800">
+                                              {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
+                                            </p>
+                                            <p className="text-xs text-blue-600">
+                                              100% stilling: {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <p className="text-slate-600">Syk dato</p>
+                                            <p className="font-semibold text-slate-800">{salaryIncreaseCheck.sickDate}</p>
+                                            <p className="text-xs text-slate-600">
+                                              {salaryIncreaseCheck.eligibleSalariesCount} lønninger analysert
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* All violations */}
+                                      <div>
+                                        <h3 className="font-semibold text-slate-800 mb-3">
+                                          Alle overtredelser (sortert etter alvorlighet)
+                                        </h3>
+                                        <div className="space-y-3">
+                                          {salaryIncreaseCheck.violations
+                                            .sort((a, b) => (b.increasePercentage - b.thresholdPercentage) - (a.increasePercentage - a.thresholdPercentage))
+                                            .map((violation, index) => (
+                                            <div key={index} className="border rounded-lg p-4 bg-white">
+                                              <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center space-x-2">
+                                                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
+                                                    Overtredelse #{index + 1}
+                                                  </span>
+                                                  <span className="text-xs text-slate-600">
+                                                    {violation.monthsDifference} måneder før syk
+                                                  </span>
+                                                </div>
+                                                <div className="text-right">
+                                                  <p className="text-sm font-semibold text-red-700">
+                                                    +{violation.increasePercentage}%
+                                                  </p>
+                                                  <p className="text-xs text-red-600">
+                                                    {(violation.increasePercentage - violation.thresholdPercentage).toFixed(1)}% over terskel
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              
+                                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                                                <div>
+                                                  <p className="text-slate-600 font-medium">Dato</p>
+                                                  <p className="text-slate-800">{violation.historicalDate}</p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-slate-600 font-medium">Lønn</p>
+                                                  <p className="text-slate-800">{violation.historicalSalary.toLocaleString('no-NO')} kr</p>
+                                                  <p className="text-xs text-blue-600">
+                                                    100%: {violation.historicalSalary100.toLocaleString('no-NO')} kr
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-slate-600 font-medium">Terskel</p>
+                                                  <p className="text-orange-700 font-semibold">{violation.thresholdPercentage}%</p>
+                                                  <p className="text-xs text-slate-600">
+                                                    {violation.monthsDifference >= 24 ? '2+ år' : 
+                                                     violation.monthsDifference >= 12 ? '1+ år' : 
+                                                     violation.monthsDifference >= 6 ? '6+ mnd' : '3-6 mnd'}
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-slate-600 font-medium">Økning</p>
+                                                  <p className="text-red-700 font-semibold">+{violation.increasePercentage}%</p>
+                                                  <p className="text-xs text-slate-600">
+                                                    {((salaryIncreaseCheck.salaryAtSick100 - violation.historicalSalary100) / 1000).toFixed(0)}k kr økning
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Recommendation */}
+                                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                        <h3 className="font-semibold text-blue-800 mb-2">Anbefaling</h3>
+                                        <p className="text-sm text-blue-700">
+                                          Med {salaryIncreaseCheck.violationsCount} overtredelser funnet, bør karens vurderes grundig. 
+                                          Den mest signifikante overtredelsen viser en økning på {salaryIncreaseCheck.mostSignificantViolation?.increasePercentage}% 
+                                          mot en terskel på {salaryIncreaseCheck.mostSignificantViolation?.thresholdPercentage}%.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
                             </div>
                           )}
                         </div>
