@@ -92,13 +92,39 @@ export default function Home() {
       return;
     }
 
-    // Get salaries from the last 12 months including the month of sick date
-    const twelveMonthsBefore = new Date(sickDate);
-    twelveMonthsBefore.setFullYear(twelveMonthsBefore.getFullYear() - 1);
+    // Get salaries from the month of sick date and 11 months back
+    // For sick date 07.05.2023, we want salaries from 01.05.2023, 01.04.2023, ..., 01.06.2022
+    const sickMonth = sickDate.getMonth(); // 0-based month
+    const sickYear = sickDate.getFullYear();
     
-    const last12MonthsSalaries = salaryHistory.filter((entry: any) => 
-      entry.date >= twelveMonthsBefore && entry.date <= sickDate && entry.salary > 0
-    );
+    const nominalSalaries = [];
+    
+    // Get 12 months of salary data starting from sick month
+    for (let i = 0; i < 12; i++) {
+      const targetMonth = sickMonth - i;
+      const targetYear = sickYear - Math.floor(-targetMonth / 12);
+      const adjustedMonth = ((targetMonth % 12) + 12) % 12;
+      
+      // Find salary entry for this month
+      const monthSalary = salaryHistory.find((entry: any) => {
+        const entryMonth = entry.date.getMonth();
+        const entryYear = entry.date.getFullYear();
+        return entryMonth === adjustedMonth && entryYear === targetYear;
+      });
+      
+      if (monthSalary && monthSalary.salary > 0) {
+        nominalSalaries.push(monthSalary);
+      }
+    }
+    
+    const last12MonthsSalaries = nominalSalaries;
+    
+    // Debug log to see which months are being used
+    console.log('Nominal salary months:', last12MonthsSalaries.map(s => ({
+      date: s.date.toISOString().substring(0, 10),
+      salary: s.salary,
+      percentage: s.percentage
+    })));
 
     if (last12MonthsSalaries.length === 0) {
       toast({
@@ -109,24 +135,17 @@ export default function Home() {
       return;
     }
 
-    // Calculate average salary weighted by actual days in each month
-    let totalWeightedSalary = 0;
-    let totalWeightedPercentage = 0;
-    let totalDays = 0;
+    // Calculate simple average salary (not weighted by days)
+    let totalSalary = 0;
+    let totalPercentage = 0;
     
     for (const entry of last12MonthsSalaries) {
-      // Get number of days in the month for this entry
-      const year = entry.date.getFullYear();
-      const month = entry.date.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      
-      totalWeightedSalary += entry.salary * daysInMonth;
-      totalWeightedPercentage += entry.percentage * daysInMonth;
-      totalDays += daysInMonth;
+      totalSalary += entry.salary;
+      totalPercentage += entry.percentage;
     }
     
-    const avgSalary = totalWeightedSalary / totalDays;
-    const avgPercentage = totalWeightedPercentage / totalDays;
+    const avgSalary = totalSalary / last12MonthsSalaries.length;
+    const avgPercentage = totalPercentage / last12MonthsSalaries.length;
     const avgSalary100 = (avgSalary * 100) / avgPercentage;
 
     if (!useNominalSalary) {
@@ -140,7 +159,7 @@ export default function Home() {
       
       toast({
         title: "Nomert lønn aktivert",
-        description: `Dagsveid gjennomsnitt siste 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
+        description: `Gjennomsnitt 12 måneder fra sykdato: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
       });
     } else {
       // Switch back to actual salary
