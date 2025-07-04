@@ -1844,47 +1844,49 @@ export default function Home() {
                 </div>
               )}
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-            {/* Uføregrad Periods - Show if multiple periods detected */}
-            {(() => {
-              if (!uforegradPerioder || uforegradPerioder.length <= 1) return null;
-              
-              // Filter periods to only show those after foreldelse date
-              const foreldelseStatus = getForeldelseStatus();
-              let filteredPeriods = uforegradPerioder;
-              
-              if (foreldelseStatus.etterbetalingFra) {
-                const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
-                if (foreldelseDato) {
-                  filteredPeriods = uforegradPerioder.filter(periode => {
-                    const periodeStartDate = parseDate(periode.fraDato);
-                    return periodeStartDate && periodeStartDate >= foreldelseDato;
-                  });
-                }
-              }
-              
-              if (filteredPeriods.length === 0) return null;
-              
-              return (
-                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <ChartLine className="text-orange-600 h-5 w-5" />
-                    <h3 className="text-lg font-medium text-orange-800">
-                      Endringer i uføregrad oppdaget
-                      {foreldelseStatus.etterbetalingFra && (
-                        <span className="text-sm font-normal text-orange-600 ml-2">
-                          (etter foreldelse: {foreldelseStatus.etterbetalingFra})
-                        </span>
-                      )}
-                    </h3>
-                  </div>
-                  <p className="text-sm text-orange-700 mb-4">
-                    Systemet har oppdaget betydelige endringer (&gt;15%) i uføregraden over meldekortperiodene{foreldelseStatus.etterbetalingFra ? ' etter foreldelsesdatoen' : ''}. 
-                    Dette kan indikere behov for separate vedtak for ulike perioder.
-                  </p>
-                  <div className="space-y-3">
-                    {filteredPeriods.map((periode, index) => (
+        {/* Uføregrad Periods - Show if multiple periods detected */}
+        {(() => {
+          if (!uforegradPerioder || uforegradPerioder.length <= 1) return null;
+          
+          // Filter periods to only show those after foreldelse date
+          const foreldelseStatus = getForeldelseStatus();
+          let filteredPeriods = uforegradPerioder;
+          
+          if (foreldelseStatus.etterbetalingFra) {
+            const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
+            if (foreldelseDato) {
+              filteredPeriods = uforegradPerioder.filter(periode => {
+                const periodeStartDate = parseDate(periode.fraDato);
+                return periodeStartDate && periodeStartDate >= foreldelseDato;
+              });
+            }
+          }
+          
+          if (filteredPeriods.length === 0) return null;
+          
+          return (
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <ChartLine className="text-orange-600 h-5 w-5" />
+                  <h3 className="text-lg font-medium text-orange-800">
+                    Endringer i uføregrad oppdaget
+                    {foreldelseStatus.etterbetalingFra && (
+                      <span className="text-sm font-normal text-orange-600 ml-2">
+                        (etter foreldelse: {foreldelseStatus.etterbetalingFra})
+                      </span>
+                    )}
+                  </h3>
+                </div>
+                <p className="text-sm text-orange-700 mb-4">
+                  Systemet har oppdaget betydelige endringer (&gt;15%) i uføregraden over meldekortperiodene{foreldelseStatus.etterbetalingFra ? ' etter foreldelsesdatoen' : ''}. 
+                  Dette kan indikere behov for separate vedtak for ulike perioder.
+                </p>
+                <div className="space-y-3">
+                  {filteredPeriods.map((periode, index) => (
                     <div key={index} className="bg-white p-3 rounded border border-orange-200">
                       <div className="flex justify-between items-center">
                         <div>
@@ -1933,16 +1935,11 @@ export default function Home() {
                     <strong>Anbefaling:</strong> Vurder om det er nødvendig med separate vedtak for hver periode med betydelig endring i arbeidskapasitet.
                   </p>
                 </div>
-              </div>
-            );
-          })()}
-
-
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          );
+        })()}
       </main>
-
-
     </div>
   );
 }
