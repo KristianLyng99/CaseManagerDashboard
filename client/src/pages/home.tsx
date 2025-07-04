@@ -92,48 +92,30 @@ export default function Home() {
       return;
     }
 
-    // Get salaries from the month of sick date and 11 months back
-    // For sick date 07.05.2023, we want salaries from 01.05.2023, 01.04.2023, ..., 01.06.2022
-    const sickMonth = sickDate.getMonth(); // 0-based month
-    const sickYear = sickDate.getFullYear();
+    // Get the 12 most recent salary entries before or at the sick date
+    // Filter salaries that are on or before the sick date and have salary > 0
+    const relevantSalaries = salaryHistory
+      .filter((entry: any) => entry.date <= sickDate && entry.salary > 0)
+      .sort((a: any, b: any) => b.date.getTime() - a.date.getTime()) // Sort by date descending (newest first)
+      .slice(0, 12); // Take the 12 most recent
     
-    const nominalSalaries = [];
-    
-    // Get 12 months of salary data starting from sick month
-    for (let i = 0; i < 12; i++) {
-      const targetMonth = sickMonth - i;
-      const targetYear = sickYear - Math.floor(-targetMonth / 12);
-      const adjustedMonth = ((targetMonth % 12) + 12) % 12;
-      
-      // Find salary entry for this month
-      const monthSalary = salaryHistory.find((entry: any) => {
-        const entryMonth = entry.date.getMonth();
-        const entryYear = entry.date.getFullYear();
-        return entryMonth === adjustedMonth && entryYear === targetYear;
-      });
-      
-      if (monthSalary && monthSalary.salary > 0) {
-        nominalSalaries.push(monthSalary);
-      }
-    }
-    
-    const last12MonthsSalaries = nominalSalaries;
-    
-    // Debug log to see which months are being used
-    console.log('Nominal salary months:', last12MonthsSalaries.map(s => ({
+    console.log(`Sick date: ${sickDate.toISOString().substring(0, 10)}`);
+    console.log('Relevant salaries (last 12 with salary > 0):', relevantSalaries.map(s => ({
       date: s.date.toISOString().substring(0, 10),
       salary: s.salary,
       percentage: s.percentage
     })));
 
-    if (last12MonthsSalaries.length === 0) {
+    if (relevantSalaries.length === 0) {
       toast({
         title: "Feil",
-        description: "Ingen lønnsdata funnet for de siste 12 månedene",
+        description: "Ingen lønnsdata funnet før sykdato",
         variant: "destructive",
       });
       return;
     }
+
+    const last12MonthsSalaries = relevantSalaries;
 
     // Calculate simple average salary (not weighted by days)
     let totalSalary = 0;
@@ -159,7 +141,7 @@ export default function Home() {
       
       toast({
         title: "Nomert lønn aktivert",
-        description: `Gjennomsnitt 12 måneder fra sykdato: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
+        description: `Gjennomsnitt av ${last12MonthsSalaries.length} siste lønninger: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
       });
     } else {
       // Switch back to actual salary
