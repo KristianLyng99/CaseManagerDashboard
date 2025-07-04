@@ -80,8 +80,11 @@ export default function Home() {
 
   // Calculate nominal salary (average of last 12 months)
   const handleUseNominalSalary = () => {
+    console.log('=== NOMINAL SALARY BUTTON CLICKED ===');
     const salaryHistory = parseSalaryHistory();
     const sickDate = parseDate(sykdato);
+    console.log('Parsed salary history length:', salaryHistory ? salaryHistory.length : 'null');
+    console.log('Sick date:', sickDate);
     
     if (!salaryHistory || !sickDate) {
       toast({
@@ -217,7 +220,7 @@ export default function Home() {
         totalWeightedNominalPercentage += applicablePercentage * daysInMonth;
         totalNominalDays += daysInMonth;
         
-        console.log(`  Using position % from ${foundEntry.date.toISOString().substring(0, 10)}: ${applicablePercentage}% (${daysInMonth} days)`);
+        console.log(`  Using position % from ${foundEntry ? foundEntry.date.toISOString().substring(0, 10) : 'unknown'}: ${applicablePercentage}% (${daysInMonth} days)`);
         console.log(`  Running total: ${totalWeightedNominalPercentage.toFixed(2)} over ${totalNominalDays} days`);
       }
     }
