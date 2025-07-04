@@ -842,18 +842,20 @@ export default function Home() {
     const violations = [];
     
     for (const historicalSalary of eligibleSalaries) {
-      const historicalSalary100 = (historicalSalary.salary * 100) / historicalSalary.percentage;
+      // If percentage is 0, set salary to 0
+      const adjustedHistoricalSalary = historicalSalary.percentage === 0 ? 0 : historicalSalary.salary;
+      const historicalSalary100 = historicalSalary.percentage === 0 ? 0 : (adjustedHistoricalSalary * 100) / historicalSalary.percentage;
       
       // Calculate time difference in months
       const timeDiffMs = sickDate.getTime() - historicalSalary.date.getTime();
       const monthsDifference = timeDiffMs / (1000 * 60 * 60 * 24 * 30.44); // Average days per month
       
       const thresholdPercentage = getThresholdPercentage(monthsDifference);
-      const increasePercentage = ((salaryAtSick100 - historicalSalary100) / historicalSalary100) * 100;
+      const increasePercentage = historicalSalary100 === 0 ? 0 : ((salaryAtSick100 - historicalSalary100) / historicalSalary100) * 100;
       
       if (increasePercentage > thresholdPercentage) {
         violations.push({
-          historicalSalary: historicalSalary.salary,
+          historicalSalary: adjustedHistoricalSalary,
           historicalSalary100: Math.round(historicalSalary100),
           historicalDate: formatDate(historicalSalary.date),
           monthsDifference: Math.round(monthsDifference * 10) / 10,
@@ -915,8 +917,10 @@ export default function Home() {
     const seAlleList = salaryHistory.filter(entry => 
       entry.date <= sickDate && entry.date >= twoYearsBeforeForList && entry.salary > 0
     ).map(entry => {
-      const entry100 = (entry.salary * 100) / entry.percentage;
-      const increasePercentage = ((salaryAtSick100 - entry100) / entry100) * 100;
+      // If percentage is 0, set salary to null/0
+      const adjustedSalary = entry.percentage === 0 ? 0 : entry.salary;
+      const entry100 = entry.percentage === 0 ? 0 : (adjustedSalary * 100) / entry.percentage;
+      const increasePercentage = entry100 === 0 ? 0 : ((salaryAtSick100 - entry100) / entry100) * 100;
       const monthsBeforeSick = Math.round(((sickDate.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10;
       
       // Apply same threshold logic as karens evaluation
@@ -932,7 +936,7 @@ export default function Home() {
       
       return {
         date: formatDate(entry.date),
-        originalSalary: entry.salary,
+        originalSalary: adjustedSalary,
         salary100: Math.round(entry100),
         increasePercentage: Math.round(increasePercentage * 100) / 100,
         monthsBeforeSick: monthsBeforeSick,
