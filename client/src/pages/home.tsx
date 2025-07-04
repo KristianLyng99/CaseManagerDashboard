@@ -905,6 +905,9 @@ export default function Home() {
       actualIncreasePercentage: actualIncreasePercentage ? Math.round(actualIncreasePercentage * 100) / 100 : null
     });
 
+    // Check if the 2-year comparison specifically violates the 15% threshold
+    const twoYearViolation = actualIncreasePercentage ? actualIncreasePercentage > 15 : false;
+
     return {
       salaryAtSick: salaryAtSick.salary,
       salaryAtSick100: Math.round(salaryAtSick100),
@@ -913,7 +916,8 @@ export default function Home() {
       violationsCount: violations.length,
       violations,
       mostSignificantViolation,
-      isHighIncrease: violations.length > 0,
+      isHighIncrease: twoYearViolation, // Use 2-year specific check for main display
+      hasOtherViolations: violations.length > 0, // Track if there are other violations
       // Show actual 2 years before salary for display
       salaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary || null,
       salaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
@@ -1512,8 +1516,10 @@ export default function Home() {
                             : 'text-green-800'
                         }`}>
                           {salaryIncreaseCheck.isHighIncrease 
-                            ? 'Karens må vurderes' 
-                            : 'Lønn OK'
+                            ? 'Karens må vurderes (2 år sammenligning)' 
+                            : salaryIncreaseCheck.hasOtherViolations
+                              ? 'Lønn 2 år OK (andre overtredelser funnet)'
+                              : 'Lønn OK'
                           }
                         </h3>
                         <div className="bg-white p-3 rounded border border-slate-200">
@@ -1556,16 +1562,16 @@ export default function Home() {
                           </div>
                         </div>
                         
-                        {/* Show "se alle" button only when there are multiple violations */}
-                        {salaryIncreaseCheck.violationsCount > 1 && (
+                        {/* Show "se alle" button when there are violations (even if 2-year is OK) */}
+                        {salaryIncreaseCheck.hasOtherViolations && (
                             <div className="mt-3 p-2 bg-orange-50 rounded border border-orange-200">
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="text-sm text-orange-800">
-                                    <strong>Totalt {salaryIncreaseCheck.violationsCount} overtredelser</strong> funnet i lønnshistorikken
+                                    <strong>Totalt {salaryIncreaseCheck.violationsCount} andre overtredelser</strong> funnet i lønnshistorikken
                                   </p>
                                   <p className="text-xs text-orange-600 mt-1">
-                                    Viser sammenligning med 2 år tilbake. Klikk for å se alle overtredelser.
+                                    2-års sammenligningen er OK, men andre perioder har høye økninger.
                                   </p>
                                 </div>
                                 <Dialog>
