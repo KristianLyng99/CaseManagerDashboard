@@ -915,12 +915,12 @@ export default function Home() {
     twoYearsBeforeForList.setFullYear(twoYearsBeforeForList.getFullYear() - 2);
     
     const seAlleList = salaryHistory.filter(entry => 
-      entry.date <= sickDate && entry.date >= twoYearsBeforeForList && entry.salary > 0
+      entry.date <= sickDate && entry.date >= twoYearsBeforeForList
     ).map(entry => {
-      // If percentage is 0, set salary to null/0
+      // If percentage is 0, set salary to 0 regardless of what's in salary field
       const adjustedSalary = entry.percentage === 0 ? 0 : entry.salary;
       const entry100 = entry.percentage === 0 ? 0 : (adjustedSalary * 100) / entry.percentage;
-      const increasePercentage = entry100 === 0 ? 0 : ((salaryAtSick100 - entry100) / entry100) * 100;
+      const increasePercentage = entry.percentage === 0 ? null : ((salaryAtSick100 - entry100) / entry100) * 100;
       const monthsBeforeSick = Math.round(((sickDate.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10;
       
       // Apply same threshold logic as karens evaluation
@@ -932,13 +932,13 @@ export default function Home() {
       };
       
       const thresholdPercentage = getThresholdForDisplay(monthsBeforeSick);
-      const isOK = increasePercentage <= thresholdPercentage;
+      const isOK = increasePercentage === null ? null : (increasePercentage <= thresholdPercentage);
       
       return {
         date: formatDate(entry.date),
         originalSalary: adjustedSalary,
         salary100: Math.round(entry100),
-        increasePercentage: Math.round(increasePercentage * 100) / 100,
+        increasePercentage: increasePercentage === null ? null : (Math.round(increasePercentage * 100) / 100),
         monthsBeforeSick: monthsBeforeSick,
         thresholdPercentage: thresholdPercentage,
         isOK: isOK
@@ -1694,15 +1694,31 @@ export default function Home() {
                                                 
                                                 {/* Column 3: Økning til sykdato */}
                                                 <div>
-                                                  <p className={`font-semibold text-lg ${entry.isOK ? 'text-green-700' : 'text-red-700'}`}>
-                                                    {entry.increasePercentage > 0 ? '+' : ''}{entry.increasePercentage}%
-                                                  </p>
-                                                  <p className={`text-xs mt-1 ${entry.isOK ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {entry.isOK ? 'OK' : 'Over terskel'} ({entry.thresholdPercentage}%)
-                                                  </p>
-                                                  <p className="text-xs text-slate-600 mt-1">
-                                                    {entry.increasePercentage > 0 ? 'Økning' : 'Reduksjon'} til sykdato
-                                                  </p>
+                                                  {entry.increasePercentage === null ? (
+                                                    <>
+                                                      <p className="font-semibold text-lg text-gray-500">
+                                                        N/A
+                                                      </p>
+                                                      <p className="text-xs mt-1 text-gray-500">
+                                                        0% stilling
+                                                      </p>
+                                                      <p className="text-xs text-slate-600 mt-1">
+                                                        Ingen sammenligning
+                                                      </p>
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <p className={`font-semibold text-lg ${entry.isOK ? 'text-green-700' : 'text-red-700'}`}>
+                                                        {(entry.increasePercentage || 0) > 0 ? '+' : ''}{entry.increasePercentage}%
+                                                      </p>
+                                                      <p className={`text-xs mt-1 ${entry.isOK ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {entry.isOK ? 'OK' : 'Over terskel'} ({entry.thresholdPercentage}%)
+                                                      </p>
+                                                      <p className="text-xs text-slate-600 mt-1">
+                                                        {(entry.increasePercentage || 0) > 0 ? 'Økning' : 'Reduksjon'} til sykdato
+                                                      </p>
+                                                    </>
+                                                  )}
                                                 </div>
                                               </div>
                                             </div>
