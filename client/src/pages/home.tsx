@@ -189,19 +189,14 @@ export default function Home() {
     
     console.log('=== NOMINAL POSITION PERCENTAGE CALCULATION ===');
     
-    // Generate nominal position percentages for the same 12 months
-    for (let i = 0; i < 12; i++) {
-      let targetMonth = sickMonth - i;
-      let targetYear = sickYear;
+    // Generate nominal position percentages for the same 12 months as salary calculation
+    // Use the same months that were used for salary calculation
+    for (const salaryEntry of last12MonthsSalaries) {
+      const year = salaryEntry.date.getFullYear();
+      const month = salaryEntry.date.getMonth();
+      const targetDate = new Date(year, month + 1, 0); // Last day of the month
       
-      // Handle month overflow
-      if (targetMonth < 0) {
-        targetMonth += 12;
-        targetYear -= 1;
-      }
-      
-      const targetDate = new Date(targetYear, targetMonth, 1);
-      console.log(`Looking for position % for ${targetDate.toISOString().substring(0, 7)}`);
+      console.log(`Looking for position % for ${salaryEntry.date.toISOString().substring(0, 7)}`);
       
       // Find the most recent position percentage entry on or before this target date
       let applicablePercentage = null;
@@ -216,7 +211,7 @@ export default function Home() {
       
       if (applicablePercentage !== null) {
         // Get number of days in the month
-        const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
         totalWeightedNominalPercentage += applicablePercentage * daysInMonth;
         totalNominalDays += daysInMonth;
         
