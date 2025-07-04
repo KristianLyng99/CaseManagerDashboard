@@ -1571,17 +1571,17 @@ export default function Home() {
                                         <h3 className="font-semibold text-red-800 mb-2">Sammendrag</h3>
                                         <div className="grid grid-cols-2 gap-4 text-sm">
                                           <div>
-                                            <p className="text-slate-600">Lønn ved syk dato</p>
+                                            <p className="text-slate-600">Lønn 2 år før syk ({salaryIncreaseCheck.twoYearsBeforeDate})</p>
                                             <p className="font-semibold text-slate-800">
-                                              {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
+                                              {salaryIncreaseCheck.salaryTwoYearsBefore?.toLocaleString('no-NO')} kr
                                             </p>
                                             <p className="text-xs text-blue-600">
-                                              100% stilling: {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                                              100% stilling: {salaryIncreaseCheck.salaryTwoYearsBefore100?.toLocaleString('no-NO')} kr
                                             </p>
                                           </div>
                                           <div>
-                                            <p className="text-slate-600">Syk dato</p>
-                                            <p className="font-semibold text-slate-800">{salaryIncreaseCheck.sickDate}</p>
+                                            <p className="text-slate-600">Værste overtredelse</p>
+                                            <p className="font-semibold text-red-700">+{salaryIncreaseCheck.mostSignificantViolation?.increasePercentage}%</p>
                                             <p className="text-xs text-slate-600">
                                               {salaryIncreaseCheck.eligibleSalariesCount} lønninger analysert
                                             </p>
@@ -1592,11 +1592,11 @@ export default function Home() {
                                       {/* All violations */}
                                       <div>
                                         <h3 className="font-semibold text-slate-800 mb-3">
-                                          Alle overtredelser (sortert etter alvorlighet)
+                                          Alle overtredelser (sortert etter dato - nærmest sykdato først)
                                         </h3>
                                         <div className="space-y-3">
                                           {salaryIncreaseCheck.violations
-                                            .sort((a, b) => (b.increasePercentage - b.thresholdPercentage) - (a.increasePercentage - a.thresholdPercentage))
+                                            .sort((a, b) => a.monthsDifference - b.monthsDifference)
                                             .map((violation, index) => (
                                             <div key={index} className="border rounded-lg p-4 bg-white">
                                               <div className="flex items-start justify-between mb-3">
