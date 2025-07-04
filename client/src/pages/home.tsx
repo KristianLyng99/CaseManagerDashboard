@@ -45,6 +45,7 @@ export default function Home() {
   const [rawInput, setRawInput] = useState('');
   const [useNominalSalary, setUseNominalSalary] = useState(false);
   const [nominalSalaryData, setNominalSalaryData] = useState<{salary: number, salary100: number} | null>(null);
+  const [debugTable, setDebugTable] = useState<{month: string, days: number, percentage: number, weighted: number}[] | null>(null);
   const { toast } = useToast();
 
   // Copy to clipboard utility
@@ -188,9 +189,8 @@ export default function Home() {
     let totalNominalDays = 0;
     
     console.log('=== NOMINAL POSITION PERCENTAGE CALCULATION ===');
-    console.log('Calculation table:');
-    console.log('Month\t\tDays\tPosition%\tWeighted');
-    console.log('-------------------------------------------');
+    
+    const debugData: {month: string, days: number, percentage: number, weighted: number}[] = [];
     
     // Generate nominal position percentages for the same 12 months as salary calculation
     // Use the same months that were used for salary calculation
@@ -218,11 +218,20 @@ export default function Home() {
         totalNominalDays += daysInMonth;
         
         const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
-        console.log(`${monthStr}\t\t${daysInMonth}\t${applicablePercentage}%\t\t${weighted.toFixed(2)}`);
+        debugData.push({
+          month: monthStr,
+          days: daysInMonth,
+          percentage: applicablePercentage,
+          weighted: weighted
+        });
+        
+        console.log(`${monthStr}: ${daysInMonth} days, ${applicablePercentage}%, weighted: ${weighted.toFixed(2)}`);
       }
     }
     
-    console.log('-------------------------------------------');
+    // Set debug table for UI display
+    setDebugTable(debugData);
+    
     console.log(`Total weighted: ${totalWeightedNominalPercentage.toFixed(2)}`);
     console.log(`Total days: ${totalNominalDays}`);
     console.log(`Average: ${(totalWeightedNominalPercentage / totalNominalDays).toFixed(2)}%`);
@@ -1451,6 +1460,60 @@ export default function Home() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Debug Table for Nominal Position Percentage Calculation */}
+        {debugTable && (
+          <Card className="mb-6 border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-orange-800">DEBUG: Nomert stillingsprosent beregning</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setDebugTable(null)}
+                  className="text-xs"
+                >
+                  Lukk
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-orange-200">
+                      <th className="text-left p-2 text-orange-800">Måned</th>
+                      <th className="text-right p-2 text-orange-800">Dager</th>
+                      <th className="text-right p-2 text-orange-800">Stilling %</th>
+                      <th className="text-right p-2 text-orange-800">Vektet</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {debugTable.map((row, index) => (
+                      <tr key={index} className="border-b border-orange-100">
+                        <td className="p-2 font-mono text-orange-800">{row.month}</td>
+                        <td className="p-2 text-right text-orange-800">{row.days}</td>
+                        <td className="p-2 text-right text-orange-800">{row.percentage}%</td>
+                        <td className="p-2 text-right text-orange-800">{row.weighted.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-orange-300 font-semibold">
+                      <td className="p-2 text-orange-900">Total</td>
+                      <td className="p-2 text-right text-orange-900">{debugTable.reduce((sum, row) => sum + row.days, 0)}</td>
+                      <td className="p-2 text-right text-orange-900">-</td>
+                      <td className="p-2 text-right text-orange-900">{debugTable.reduce((sum, row) => sum + row.weighted, 0).toFixed(2)}</td>
+                    </tr>
+                    <tr className="bg-orange-100">
+                      <td className="p-2 font-semibold text-orange-900" colSpan={3}>Gjennomsnitt:</td>
+                      <td className="p-2 text-right font-semibold text-orange-900">
+                        {(debugTable.reduce((sum, row) => sum + row.weighted, 0) / debugTable.reduce((sum, row) => sum + row.days, 0)).toFixed(2)}%
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {/* Raw Data Input */}
         <Card className="mb-6">
           <CardContent className="p-6">
