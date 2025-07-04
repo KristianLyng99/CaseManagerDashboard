@@ -1620,56 +1620,61 @@ export default function Home() {
                                         <h3 className="font-semibold text-slate-800 mb-3">
                                           Alle overtredelser (sortert etter dato - nærmest sykdato først)
                                         </h3>
-                                        <div className="space-y-3">
+                                        {/* Table header */}
+                                        <div className="bg-slate-50 p-3 rounded-t-lg border border-slate-200">
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium text-slate-600 uppercase tracking-wide">
+                                            <div>Lønnsperiode</div>
+                                            <div>Lønn (100% stilling)</div>
+                                            <div>Økning til sykdato</div>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Violations list */}
+                                        <div className="space-y-0">
                                           {salaryIncreaseCheck.violations
                                             .sort((a, b) => a.monthsDifference - b.monthsDifference)
                                             .map((violation, index) => (
-                                            <div key={index} className="border rounded-lg p-4 bg-white">
-                                              <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center space-x-2">
-                                                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
-                                                    Overtredelse #{index + 1}
-                                                  </span>
-                                                  <span className="text-xs text-slate-600">
-                                                    {violation.monthsDifference} måneder før syk
-                                                  </span>
+                                            <div key={index} className="border-x border-b border-slate-200 p-4 bg-white hover:bg-slate-50 transition-colors">
+                                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                {/* Column 1: Lønnsperiode */}
+                                                <div>
+                                                  <div className="flex items-center space-x-2 mb-2">
+                                                    <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
+                                                      #{index + 1}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500">
+                                                      {violation.monthsDifference} mnd før syk
+                                                    </span>
+                                                  </div>
+                                                  <p className="font-medium text-slate-800">{violation.historicalDate}</p>
+                                                  <p className="text-xs text-slate-600">
+                                                    Terskel: {violation.thresholdPercentage}% 
+                                                    ({violation.monthsDifference >= 24 ? '2+ år' : 
+                                                      violation.monthsDifference >= 12 ? '1+ år' : 
+                                                      violation.monthsDifference >= 6 ? '6+ mnd' : '3-6 mnd'})
+                                                  </p>
                                                 </div>
-                                                <div className="text-right">
-                                                  <p className="text-sm font-semibold text-red-700">
+                                                
+                                                {/* Column 2: Lønn (100% stilling) */}
+                                                <div>
+                                                  <p className="font-semibold text-slate-800 text-lg">
+                                                    {violation.historicalSalary100.toLocaleString('no-NO')} kr
+                                                  </p>
+                                                  <p className="text-xs text-slate-600">
+                                                    Opprinnelig: {violation.historicalSalary.toLocaleString('no-NO')} kr
+                                                  </p>
+                                                </div>
+                                                
+                                                {/* Column 3: Økning til sykdato */}
+                                                <div>
+                                                  <p className="font-semibold text-red-700 text-lg">
                                                     +{violation.increasePercentage}%
                                                   </p>
                                                   <p className="text-xs text-red-600">
                                                     {(violation.increasePercentage - violation.thresholdPercentage).toFixed(1)}% over terskel
                                                   </p>
-                                                </div>
-                                              </div>
-                                              
-                                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-                                                <div>
-                                                  <p className="text-slate-600 font-medium">Dato</p>
-                                                  <p className="text-slate-800">{violation.historicalDate}</p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-slate-600 font-medium">Lønn</p>
-                                                  <p className="text-slate-800">{violation.historicalSalary.toLocaleString('no-NO')} kr</p>
-                                                  <p className="text-xs text-blue-600">
-                                                    100%: {violation.historicalSalary100.toLocaleString('no-NO')} kr
-                                                  </p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-slate-600 font-medium">Terskel</p>
-                                                  <p className="text-orange-700 font-semibold">{violation.thresholdPercentage}%</p>
-                                                  <p className="text-xs text-slate-600">
-                                                    {violation.monthsDifference >= 24 ? '2+ år' : 
-                                                     violation.monthsDifference >= 12 ? '1+ år' : 
-                                                     violation.monthsDifference >= 6 ? '6+ mnd' : '3-6 mnd'}
-                                                  </p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-slate-600 font-medium">Økning</p>
-                                                  <p className="text-red-700 font-semibold">+{violation.increasePercentage}%</p>
-                                                  <p className="text-xs text-slate-600">
-                                                    {((salaryIncreaseCheck.salaryAtSick100 - violation.historicalSalary100) / 1000).toFixed(0)}k kr økning
+                                                  <p className="text-xs text-slate-600 mt-1">
+                                                    +{((salaryIncreaseCheck.salaryAtSick100 - violation.historicalSalary100) / 1000).toFixed(0)}k kr økning
                                                   </p>
                                                 </div>
                                               </div>
