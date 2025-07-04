@@ -157,17 +157,28 @@ export default function Home() {
 
     const last12MonthsSalaries = nominalSalaries;
 
-    // Calculate simple average salary (not weighted by days)
-    let totalSalary = 0;
-    let totalPercentage = 0;
+    // Calculate day-weighted average salary
+    let totalWeightedSalary = 0;
+    let totalWeightedPercentage = 0;
+    let totalDays = 0;
     
     for (const entry of last12MonthsSalaries) {
-      totalSalary += entry.salary;
-      totalPercentage += entry.percentage;
+      // Get number of days in the month for this entry
+      const year = entry.date.getFullYear();
+      const month = entry.date.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      totalWeightedSalary += entry.salary * daysInMonth;
+      totalWeightedPercentage += entry.percentage * daysInMonth;
+      totalDays += daysInMonth;
+      
+      console.log(`  Month ${month + 1}/${year}: ${daysInMonth} days, salary ${entry.salary} kr`);
     }
     
-    const avgSalary = totalSalary / last12MonthsSalaries.length;
-    const avgPercentage = totalPercentage / last12MonthsSalaries.length;
+    const avgSalary = totalWeightedSalary / totalDays;
+    const avgPercentage = totalWeightedPercentage / totalDays;
+    
+    console.log(`Day-weighted average: ${Math.round(avgSalary)} kr over ${totalDays} total days`);
     const avgSalary100 = (avgSalary * 100) / avgPercentage;
 
     if (!useNominalSalary) {
@@ -181,7 +192,7 @@ export default function Home() {
       
       toast({
         title: "Nomert lønn aktivert",
-        description: `Gjennomsnitt 12 måneder fra sykdato: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
+        description: `Dagsveid gjennomsnitt 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr)`,
       });
     } else {
       // Switch back to actual salary
