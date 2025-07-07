@@ -456,11 +456,13 @@ export default function Home() {
         console.log('analyzeUforegradChanges call completed');
         
         // Show completion toast after analysis is done
-        toast({
-          title: "Autofyll fullført!",
-          description: "Data er hentet fra rådata og fylt inn i feltene",
-          duration: 3000,
-        });
+        setTimeout(() => {
+          toast({
+            title: "Autofyll fullført!",
+            description: "Data er hentet fra rådata og fylt inn i feltene",
+            duration: 3000,
+          });
+        }, 50);
       }, 100);
     } else {
       console.log('NO MELDEKORT DATA TO ANALYZE');
