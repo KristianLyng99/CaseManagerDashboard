@@ -2662,7 +2662,7 @@ export default function Home() {
                                               <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.925} stroke="orange" strokeWidth={2} strokeDasharray="3 3" />
                                               
                                               <Line 
-                                                type="monotone" 
+                                                type="stepAfter" 
                                                 dataKey="salary" 
                                                 stroke="#2563eb" 
                                                 strokeWidth={3}
