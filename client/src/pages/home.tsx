@@ -478,9 +478,10 @@ export default function Home() {
 
   // Analyze disability grade changes across meldekort periods using sophisticated algorithm
   const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+    const callId = Math.random().toString(36).substr(2, 9);
     try {
-      console.error('*** ANALYZE UFOREGRAD CHANGES FUNCTION STARTED ***');
-      console.error('analyzeUforegradChanges called with:', {
+      console.error(`*** ANALYZE UFOREGRAD CHANGES FUNCTION STARTED [${callId}] ***`);
+      console.error(`analyzeUforegradChanges called with [${callId}]:`, {
         meldekortCount: meldekortData.length,
         firstMeldekort: meldekortData[0],
         lastMeldekort: meldekortData[meldekortData.length - 1]
@@ -587,11 +588,17 @@ export default function Home() {
     
     if (filteredMeldekortData.length < 3) {
       // Not enough data to detect changes, just calculate average
+      console.error('EARLY EXIT CALCULATION - filteredMeldekortData.length < 3:', {
+        filteredLength: filteredMeldekortData.length,
+        firstMeldekort: filteredMeldekortData[0],
+        lastMeldekort: filteredMeldekortData[filteredMeldekortData.length - 1]
+      });
       const totalHours = filteredMeldekortData.reduce((sum, mk) => sum + mk.hours, 0);
       const avgHours = filteredMeldekortData.length > 0 ? totalHours / filteredMeldekortData.length : 0;
       const workPct = (avgHours / 75) * 100;
       const uforegradExact = 100 - workPct;
       const uforegrad = Math.round(uforegradExact / 5) * 5;
+      console.error('EARLY EXIT SETTING:', { avgHours, uforegrad });
       setAvgUforegrad(uforegrad);
       setAvgUforegradExact(uforegradExact);
       setUforegradDateRange(filteredMeldekortData.length > 0 ? {
