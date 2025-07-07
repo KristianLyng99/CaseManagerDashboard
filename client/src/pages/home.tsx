@@ -1365,6 +1365,10 @@ export default function Home() {
       };
     }).sort((a, b) => a.monthsBeforeSick - b.monthsBeforeSick);
 
+    // Only consider "recent violations" (within 3 years) for the "andre overtredelser" status
+    // This excludes very old salary changes that are less relevant for current karens assessment
+    const recentViolations = violations.filter(v => v.monthsDifference <= 36); // Last 3 years
+    
     return {
       salaryAtSick: salaryAtSick.salary,
       salaryAtSick100: Math.round(salaryAtSick100),
@@ -1374,7 +1378,7 @@ export default function Home() {
       violations,
       mostSignificantViolation,
       isHighIncrease: twoYearViolation, // Use 2-year specific check for main display
-      hasOtherViolations: violations.length > 0, // Track if there are other violations
+      hasOtherViolations: recentViolations.length > 0 && !twoYearViolation, // Only show "andre overtredelser" for recent violations when 2-year is OK
       seAlleList, // New "Se alle" list with all salaries in 2-year period
       // Show actual 2 years before salary for display
       salaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary || null,
