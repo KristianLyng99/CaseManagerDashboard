@@ -467,8 +467,8 @@ export default function Home() {
 
   // Analyze disability grade changes across meldekort periods using sophisticated algorithm
   const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
-    console.log('*** ANALYZE UFOREGRAD CHANGES FUNCTION STARTED ***');
-    console.log('analyzeUforegradChanges called with:', {
+    console.error('*** ANALYZE UFOREGRAD CHANGES FUNCTION STARTED ***');
+    console.error('analyzeUforegradChanges called with:', {
       meldekortCount: meldekortData.length,
       firstMeldekort: meldekortData[0],
       lastMeldekort: meldekortData[meldekortData.length - 1]
@@ -479,13 +479,13 @@ export default function Home() {
     let filteredMeldekortData = meldekortData;
     const foreldelseStatus = getForeldelseStatus();
     
-    console.log('Foreldelse status in analyze function:', foreldelseStatus);
+    console.error('Foreldelse status in analyze function:', foreldelseStatus);
     
     // Only filter if foreldelse is detected
     if (foreldelseStatus.etterbetalingFra) {
       const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
       if (foreldelseDato) {
-        console.log('FORELDELSE FILTERING WILL BE APPLIED:', {
+        console.error('FORELDELSE FILTERING WILL BE APPLIED:', {
           etterbetalingFra: foreldelseStatus.etterbetalingFra,
           foreldelseDato: foreldelseDato,
           totalMeldekort: meldekortData.length
@@ -570,7 +570,7 @@ export default function Home() {
         }
       }
     } else {
-      console.log('NO FORELDELSE FILTERING APPLIED - etterbetalingFra is null or empty');
+      console.error('NO FORELDELSE FILTERING APPLIED - etterbetalingFra is null or empty');
     }
     
     if (filteredMeldekortData.length < 3) {
