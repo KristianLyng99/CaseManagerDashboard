@@ -1390,12 +1390,12 @@ export default function Home() {
     const twoYearIncreaseDate = twoYearViolation ? findSalaryIncreaseDate(15, twoYearsBeforeCalc) : null;
     const oneYearIncreaseDate = oneYearViolation ? findSalaryIncreaseDate(7.5, oneYearBeforeCalc) : null;
 
-    // Create "Se alle" list - all salaries between sick date and 2 years before
-    const twoYearsBeforeForList = new Date(sickDate);
-    twoYearsBeforeForList.setFullYear(twoYearsBeforeForList.getFullYear() - 2);
+    // Create "Se alle" list - all salaries between sick date and 30 months before (2.5 years)
+    const thirtyMonthsBeforeForList = new Date(sickDate);
+    thirtyMonthsBeforeForList.setMonth(thirtyMonthsBeforeForList.getMonth() - 30);
     
     const seAlleList = salaryHistory.filter(entry => 
-      entry.date <= sickDate && entry.date >= twoYearsBeforeForList
+      entry.date <= sickDate && entry.date >= thirtyMonthsBeforeForList
     ).map(entry => {
       // If percentage is 0, set salary to 0 regardless of what's in salary field
       const adjustedSalary = entry.percentage === 0 ? 0 : entry.salary;
@@ -2133,7 +2133,9 @@ export default function Home() {
                               <div className="space-y-2">
                                 <div className="text-xs space-y-1">
                                   <div className="flex justify-between">
-                                    <span className="text-slate-600">Lønn 2 år før:</span>
+                                    <span className="text-slate-600">
+                                      Lønn 2 år før {salaryIncreaseCheck.twoYearsBeforeDate ? `(${salaryIncreaseCheck.twoYearsBeforeDate})` : ''}:
+                                    </span>
                                     <span className="font-medium">
                                       {salaryIncreaseCheck.actualSalaryTwoYearsBefore100 ? 
                                         `${salaryIncreaseCheck.actualSalaryTwoYearsBefore100.toLocaleString('no-NO')} kr` : 
@@ -2141,13 +2143,8 @@ export default function Home() {
                                       }
                                     </span>
                                   </div>
-                                  {salaryIncreaseCheck.twoYearsBeforeDate && (
-                                    <div className="text-xs text-slate-500">
-                                      Dato: {salaryIncreaseCheck.twoYearsBeforeDate}
-                                    </div>
-                                  )}
                                   <div className="flex justify-between">
-                                    <span className="text-slate-600">Lønn sykdato:</span>
+                                    <span className="text-slate-600">Lønn sykdato ({salaryIncreaseCheck.sickDate}):</span>
                                     <span className="font-medium">
                                       {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
                                     </span>
@@ -2187,7 +2184,9 @@ export default function Home() {
                               <div className="space-y-2">
                                 <div className="text-xs space-y-1">
                                   <div className="flex justify-between">
-                                    <span className="text-slate-600">Lønn 1 år før:</span>
+                                    <span className="text-slate-600">
+                                      Lønn 1 år før {salaryIncreaseCheck.oneYearBeforeDate ? `(${salaryIncreaseCheck.oneYearBeforeDate})` : ''}:
+                                    </span>
                                     <span className="font-medium">
                                       {salaryIncreaseCheck.actualSalaryOneYearBefore100 ? 
                                         `${salaryIncreaseCheck.actualSalaryOneYearBefore100.toLocaleString('no-NO')} kr` : 
@@ -2195,13 +2194,8 @@ export default function Home() {
                                       }
                                     </span>
                                   </div>
-                                  {salaryIncreaseCheck.oneYearBeforeDate && (
-                                    <div className="text-xs text-slate-500">
-                                      Dato: {salaryIncreaseCheck.oneYearBeforeDate}
-                                    </div>
-                                  )}
                                   <div className="flex justify-between">
-                                    <span className="text-slate-600">Lønn sykdato:</span>
+                                    <span className="text-slate-600">Lønn sykdato ({salaryIncreaseCheck.sickDate}):</span>
                                     <span className="font-medium">
                                       {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
                                     </span>
