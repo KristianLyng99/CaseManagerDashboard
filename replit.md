@@ -89,6 +89,12 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- July 07, 2025. Fixed critical foreldelse filtering timing issue:
+  - Resolved race condition where foreldelse filtering only worked on second button press
+  - Fixed state synchronization issue by adding setTimeout delay to ensure state updates complete
+  - Moved toast notification to occur after foreldelse analysis completes
+  - Foreldelse filtering now correctly limits uføregrad calculation to 2 meldekort before foreldelse date on first press
+  - System now processes 20 meldekort instead of all 140 when foreldelse is detected
 - July 05, 2025. Enhanced salary processing with:
   - Frequent salary changes detection (6+ changes per year) with visual warnings
   - Nominal salary calculation with forward-fill logic and day-weighted averaging (missing months use most recent previous salary, weighted by actual days in each month)
