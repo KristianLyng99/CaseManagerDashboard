@@ -2464,8 +2464,8 @@ export default function Home() {
                                             </div>
                                             <div>
                                               <p className="text-blue-700 mb-1"><strong>Blå linje:</strong> Lønn over tid (100% stilling)</p>
-                                              <p className="text-blue-700 mb-1"><strong>Lilla linje:</strong> Lønn på sykdato</p>
-                                              <p className="text-blue-700"><strong>Brun linje:</strong> Lønn 2 år før syk</p>
+                                              <p className="text-blue-700 mb-1"><strong>Lilla prikk:</strong> Lønn på sykdato</p>
+                                              <p className="text-blue-700"><strong>Brun prikk:</strong> Lønn 2 år før syk</p>
                                             </div>
                                             <div>
                                               <p className="text-blue-700 mb-1"><strong>Sykdato lønn:</strong> {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr</p>
@@ -2478,8 +2478,9 @@ export default function Home() {
                                           <ResponsiveContainer width="100%" height="100%">
                                             <LineChart
                                               data={(() => {
-                                                // Start with existing salary data
+                                                // Start with existing salary data, extend to 30 months if available
                                                 const chartData = salaryIncreaseCheck.seAlleList
+                                                  .filter(entry => entry.monthsBeforeSick <= 30) // Include up to 30 months
                                                   .sort((a, b) => b.monthsBeforeSick - a.monthsBeforeSick)
                                                   .map((entry) => ({
                                                     x: entry.monthsBeforeSick,
@@ -2532,8 +2533,6 @@ export default function Home() {
                                               <ReferenceLine x={24} stroke="brown" strokeWidth={2} strokeDasharray="4 4" />
                                               <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.85} stroke="green" strokeWidth={2} strokeDasharray="3 3" />
                                               <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.925} stroke="orange" strokeWidth={2} strokeDasharray="3 3" />
-                                              <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100} stroke="purple" strokeWidth={2} strokeDasharray="2 2" />
-                                              <ReferenceLine y={salaryIncreaseCheck.actualSalaryTwoYearsBefore100} stroke="brown" strokeWidth={2} strokeDasharray="6 2" />
                                               
                                               <Line 
                                                 type="monotone" 
