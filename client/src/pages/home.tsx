@@ -450,23 +450,31 @@ export default function Home() {
     if (meldekortData.length > 0) {
       console.log('CALLING analyzeUforegradChanges with', meldekortData.length, 'meldekort');
       
-      // Use setTimeout to ensure state updates from applyVedtakDates have taken effect
-      setTimeout(() => {
-        // FIRST: Check foreldelse and filter meldekort BEFORE any calculations
-        const foreldelseStatus = getForeldelseStatus();
-        let filteredMeldekort = meldekortData;
+      // DIRECTLY check foreldelse using the dates we just parsed
+      // Don't rely on state that might not be updated yet
+      let filteredMeldekort = meldekortData;
+      let shouldFilter = false;
+      
+      // Check if we have the parsed dates needed for foreldelse calculation
+      if (søknadRegistrert && aapFra) {
+        const regDate = parseDate(søknadRegistrert);
+        const fraDate = parseDate(aapFra);
         
-        if (foreldelseStatus.etterbetalingFra) {
-          const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
-          if (foreldelseDato) {
-            console.error('APPLYING FORELDELSE FILTERING BEFORE CALCULATION');
+        if (regDate && fraDate) {
+          const diffMs = regDate.getTime() - fraDate.getTime();
+          const threeYearsMs = 3 * 365.25 * 24 * 60 * 60 * 1000;
+          
+          if (diffMs > threeYearsMs) {
+            shouldFilter = true;
+            const etterbetalingFra = new Date(regDate.getTime() - threeYearsMs);
+            console.error('DIRECT FORELDELSE CHECK - filtering needed, etterbetalingFra:', etterbetalingFra.toISOString().split('T')[0]);
             
             // Find which meldekort contains the foreldelse date
             let targetIndex = -1;
             for (let i = 0; i < meldekortData.length; i++) {
               const startDate = parseDate(meldekortData[i].fraDato);
               const endDate = parseDate(meldekortData[i].tilDato);
-              if (startDate && endDate && foreldelseDato >= startDate && foreldelseDato <= endDate) {
+              if (startDate && endDate && etterbetalingFra >= startDate && etterbetalingFra <= endDate) {
                 targetIndex = i;
                 console.error('Found foreldelse in meldekort', i + 1, 'period:', meldekortData[i].fraDato, '-', meldekortData[i].tilDato);
                 break;
@@ -474,16 +482,22 @@ export default function Home() {
             }
             
             if (targetIndex !== -1) {
-              // Only keep meldekort from 2 periods before the foreldelse period to the end
               const startIndex = Math.max(0, targetIndex - 2);
               filteredMeldekort = meldekortData.slice(startIndex);
-              console.error('FILTERED TO', filteredMeldekort.length, 'meldekort starting from index', startIndex);
+              console.error('DIRECTLY FILTERED TO', filteredMeldekort.length, 'meldekort starting from index', startIndex);
+              
+              toast({
+                title: "Foreldelse detektert",
+                description: `Uføregrad beregnes fra meldekort #${startIndex + 1} (${meldekortData.length - filteredMeldekort.length} meldekort ekskludert)`,
+                duration: 4000,
+              });
             }
           }
         }
-        
-        // NOW call the analysis function with pre-filtered data
-        // Skip all internal filtering since we've already done it
+      }
+      
+      // Use setTimeout only for the calculation, not for foreldelse logic
+      setTimeout(() => {
         analyzeUforegradChangesSimplified(filteredMeldekort);
         console.log('analyzeUforegradChangesSimplified call completed');
         
