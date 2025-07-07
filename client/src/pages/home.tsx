@@ -1333,6 +1333,7 @@ export default function Home() {
         };
       }
       
+      console.log('Threshold violation check - sick salary:', sickSalary);
       const sortedHistory = [...salaryHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
       // Check 2-year to 1-year period (15% threshold)
@@ -1345,21 +1346,34 @@ export default function Home() {
         entry.date >= twoYearsBefore && entry.date < oneYearBefore
       );
       
+      console.log('2-year to 1-year period:', formatDate(twoYearsBefore), 'to', formatDate(oneYearBefore));
+      console.log('Salaries in 2-year to 1-year period:', twoYearToOneYearSalaries.map(s => ({
+        date: formatDate(s.date),
+        salary: s.salary,
+        percentage: s.percentage
+      })));
+      
       const threshold15 = sickSalary * 0.15;
+      console.log('15% threshold:', threshold15);
       let consecutiveViolations15 = 0;
       let maxConsecutiveViolations15 = 0;
       let violationPeriods15 = [];
       let currentViolationStart15 = null;
       
-      twoYearToOneYearSalaries.forEach(entry => {
+      twoYearToOneYearSalaries.forEach((entry, index) => {
+        console.log(`Entry ${index}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold15, 'below:', entry.salary < threshold15);
         if (entry.salary < threshold15) {
           if (currentViolationStart15 === null) {
             currentViolationStart15 = formatDate(entry.date);
+            console.log('Starting violation period at:', currentViolationStart15);
           }
           consecutiveViolations15++;
           maxConsecutiveViolations15 = Math.max(maxConsecutiveViolations15, consecutiveViolations15);
+          console.log('Consecutive violations now:', consecutiveViolations15);
         } else {
+          console.log('Salary above threshold, checking if we had 3+ violations...');
           if (consecutiveViolations15 >= 3 && currentViolationStart15) {
+            console.log('Adding violation period:', currentViolationStart15, 'to', formatDate(entry.date), 'months:', consecutiveViolations15);
             violationPeriods15.push({
               start: currentViolationStart15,
               months: consecutiveViolations15,
