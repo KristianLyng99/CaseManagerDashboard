@@ -2129,6 +2129,23 @@ export default function Home() {
                                 </div>
                               </div>
                               <div className="space-y-2">
+                                <div className="text-xs space-y-1">
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Lønn 2 år før:</span>
+                                    <span className="font-medium">
+                                      {salaryIncreaseCheck.actualSalaryTwoYearsBefore100 ? 
+                                        `${salaryIncreaseCheck.actualSalaryTwoYearsBefore100.toLocaleString('no-NO')} kr` : 
+                                        'Ikke funnet'
+                                      }
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Lønn sykdato:</span>
+                                    <span className="font-medium">
+                                      {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                                    </span>
+                                  </div>
+                                </div>
                                 <div className="flex justify-between">
                                   <span className="text-slate-600">Økning:</span>
                                   <span className={`font-semibold ${
@@ -2161,6 +2178,23 @@ export default function Home() {
                                 </div>
                               </div>
                               <div className="space-y-2">
+                                <div className="text-xs space-y-1">
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Lønn 1 år før:</span>
+                                    <span className="font-medium">
+                                      {salaryIncreaseCheck.actualSalaryOneYearBefore100 ? 
+                                        `${salaryIncreaseCheck.actualSalaryOneYearBefore100.toLocaleString('no-NO')} kr` : 
+                                        'Ikke funnet'
+                                      }
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Lønn sykdato:</span>
+                                    <span className="font-medium">
+                                      {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                                    </span>
+                                  </div>
+                                </div>
                                 <div className="flex justify-between">
                                   <span className="text-slate-600">Økning:</span>
                                   <span className={`font-semibold ${
