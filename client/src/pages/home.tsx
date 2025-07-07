@@ -492,6 +492,8 @@ export default function Home() {
     let filteredMeldekortData = meldekortData;
     const foreldelseStatus = getForeldelseStatus();
     
+    console.error(`[${callId}] Foreldelse status in analyze function:`, foreldelseStatus);
+    
     console.error('Foreldelse status in analyze function:', foreldelseStatus);
     
     // Only filter if foreldelse is detected
