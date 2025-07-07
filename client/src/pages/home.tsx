@@ -1324,6 +1324,117 @@ export default function Home() {
         changesPerYear: changes
       };
     };
+
+    const checkThresholdViolationDuration = (salaryHistory: any[], sickDate: Date, sickSalary: number) => {
+      if (!salaryHistory || salaryHistory.length === 0) {
+        return {
+          twoYearToOneYear: { hasViolation: false, maxConsecutiveMonths: 0, violationPeriods: [], threshold: 0 },
+          oneYearToSick: { hasViolation: false, maxConsecutiveMonths: 0, violationPeriods: [], threshold: 0 }
+        };
+      }
+      
+      const sortedHistory = [...salaryHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Check 2-year to 1-year period (15% threshold)
+      const twoYearsBefore = new Date(sickDate);
+      twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+      const oneYearBefore = new Date(sickDate);
+      oneYearBefore.setFullYear(oneYearBefore.getFullYear() - 1);
+      
+      const twoYearToOneYearSalaries = sortedHistory.filter(entry => 
+        entry.date >= twoYearsBefore && entry.date < oneYearBefore
+      );
+      
+      const threshold15 = sickSalary * 0.15;
+      let consecutiveViolations15 = 0;
+      let maxConsecutiveViolations15 = 0;
+      let violationPeriods15 = [];
+      let currentViolationStart15 = null;
+      
+      twoYearToOneYearSalaries.forEach(entry => {
+        if (entry.salary < threshold15) {
+          if (currentViolationStart15 === null) {
+            currentViolationStart15 = formatDate(entry.date);
+          }
+          consecutiveViolations15++;
+          maxConsecutiveViolations15 = Math.max(maxConsecutiveViolations15, consecutiveViolations15);
+        } else {
+          if (consecutiveViolations15 >= 3 && currentViolationStart15) {
+            violationPeriods15.push({
+              start: currentViolationStart15,
+              months: consecutiveViolations15,
+              endDate: formatDate(entry.date)
+            });
+          }
+          consecutiveViolations15 = 0;
+          currentViolationStart15 = null;
+        }
+      });
+      
+      // Check final period if it ends with violations
+      if (consecutiveViolations15 >= 3 && currentViolationStart15) {
+        violationPeriods15.push({
+          start: currentViolationStart15,
+          months: consecutiveViolations15,
+          endDate: '1 år før syk'
+        });
+      }
+      
+      // Check 1-year to sick date period (7.5% threshold)
+      const oneYearToSickSalaries = sortedHistory.filter(entry => 
+        entry.date >= oneYearBefore && entry.date <= sickDate
+      );
+      
+      const threshold7_5 = sickSalary * 0.075;
+      let consecutiveViolations7_5 = 0;
+      let maxConsecutiveViolations7_5 = 0;
+      let violationPeriods7_5 = [];
+      let currentViolationStart7_5 = null;
+      
+      oneYearToSickSalaries.forEach(entry => {
+        if (entry.salary < threshold7_5) {
+          if (currentViolationStart7_5 === null) {
+            currentViolationStart7_5 = formatDate(entry.date);
+          }
+          consecutiveViolations7_5++;
+          maxConsecutiveViolations7_5 = Math.max(maxConsecutiveViolations7_5, consecutiveViolations7_5);
+        } else {
+          if (consecutiveViolations7_5 >= 3 && currentViolationStart7_5) {
+            violationPeriods7_5.push({
+              start: currentViolationStart7_5,
+              months: consecutiveViolations7_5,
+              endDate: formatDate(entry.date)
+            });
+          }
+          consecutiveViolations7_5 = 0;
+          currentViolationStart7_5 = null;
+        }
+      });
+      
+      // Check final period if it ends with violations
+      if (consecutiveViolations7_5 >= 3 && currentViolationStart7_5) {
+        violationPeriods7_5.push({
+          start: currentViolationStart7_5,
+          months: consecutiveViolations7_5,
+          endDate: 'sykdato'
+        });
+      }
+      
+      return {
+        twoYearToOneYear: {
+          hasViolation: maxConsecutiveViolations15 >= 3,
+          maxConsecutiveMonths: maxConsecutiveViolations15,
+          violationPeriods: violationPeriods15,
+          threshold: threshold15
+        },
+        oneYearToSick: {
+          hasViolation: maxConsecutiveViolations7_5 >= 3,
+          maxConsecutiveMonths: maxConsecutiveViolations7_5,
+          violationPeriods: violationPeriods7_5,
+          threshold: threshold7_5
+        }
+      };
+    };
     
     const frequentChangesResult = checkFrequentSalaryChanges(salaryHistory, sickDate);
     console.log('Frequent salary changes check:', frequentChangesResult);
@@ -1458,7 +1569,8 @@ export default function Home() {
       salaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
       increasePercentage: actualIncreasePercentage ? Math.round(actualIncreasePercentage * 100) / 100 : null,
       twoYearsBeforeDate: actualSalaryTwoYearsBefore ? formatDate(actualSalaryTwoYearsBefore.date) : null,
-      frequentChanges: frequentChangesResult
+      frequentChanges: frequentChangesResult,
+      thresholdViolations: checkThresholdViolationDuration(salaryHistory, sickDate, salaryAtSick100)
     };
   };
 
@@ -2161,13 +2273,18 @@ export default function Home() {
                                     }
                                   </span>
                                 </div>
-                                {salaryIncreaseCheck.twoYearIncreaseDate && (
-                                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                                    <strong>Lønn økte {salaryIncreaseCheck.twoYearIncreaseDate.date}:</strong><br/>
-                                    {salaryIncreaseCheck.twoYearIncreaseDate.fromSalary.toLocaleString('no-NO')} kr → {salaryIncreaseCheck.twoYearIncreaseDate.toSalary.toLocaleString('no-NO')} kr 
-                                    (+{salaryIncreaseCheck.twoYearIncreaseDate.increasePercentage}%)
+                                {salaryIncreaseCheck.thresholdViolations?.twoYearToOneYear.hasViolation && (
+                                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
+                                    <strong>⚠️ Terskel brudd (15%):</strong><br/>
+                                    Lønn var under 15% terskel i {salaryIncreaseCheck.thresholdViolations.twoYearToOneYear.maxConsecutiveMonths} måneder
+                                    {salaryIncreaseCheck.thresholdViolations.twoYearToOneYear.violationPeriods.map((period, index) => (
+                                      <div key={index} className="text-xs mt-1">
+                                        Fra {period.start} til {period.endDate} ({period.months} mnd)
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
+
                               </div>
                             </div>
                             
@@ -2212,13 +2329,18 @@ export default function Home() {
                                     }
                                   </span>
                                 </div>
-                                {salaryIncreaseCheck.oneYearIncreaseDate && (
-                                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                                    <strong>Lønn økte {salaryIncreaseCheck.oneYearIncreaseDate.date}:</strong><br/>
-                                    {salaryIncreaseCheck.oneYearIncreaseDate.fromSalary.toLocaleString('no-NO')} kr → {salaryIncreaseCheck.oneYearIncreaseDate.toSalary.toLocaleString('no-NO')} kr 
-                                    (+{salaryIncreaseCheck.oneYearIncreaseDate.increasePercentage}%)
+                                {salaryIncreaseCheck.thresholdViolations?.oneYearToSick.hasViolation && (
+                                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
+                                    <strong>⚠️ Terskel brudd (7,5%):</strong><br/>
+                                    Lønn var under 7,5% terskel i {salaryIncreaseCheck.thresholdViolations.oneYearToSick.maxConsecutiveMonths} måneder
+                                    {salaryIncreaseCheck.thresholdViolations.oneYearToSick.violationPeriods.map((period, index) => (
+                                      <div key={index} className="text-xs mt-1">
+                                        Fra {period.start} til {period.endDate} ({period.months} mnd)
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
+
                               </div>
                             </div>
                           </div>
