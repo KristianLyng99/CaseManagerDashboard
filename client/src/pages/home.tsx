@@ -447,7 +447,10 @@ export default function Home() {
     
     // Analyze meldekort data for disability grade changes
     if (meldekortData.length > 0) {
+      console.log('CALLING analyzeUforegradChanges with', meldekortData.length, 'meldekort');
       analyzeUforegradChanges(meldekortData);
+    } else {
+      console.log('NO MELDEKORT DATA TO ANALYZE');
     }
 
     toast({
