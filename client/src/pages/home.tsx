@@ -2302,6 +2302,137 @@ export default function Home() {
                                         Se alle ({salaryIncreaseCheck.violationsCount})
                                       </Button>
                                     </DialogTrigger>
+                                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-lg font-semibold text-slate-800">
+                                          Alle lønnsperioder (mellom sykdato og 2 år tilbake)
+                                        </DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-4">
+                                        {/* Summary section */}
+                                        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                          <h4 className="font-medium text-blue-800 mb-2">Sammendrag - Lønn på sykdato</h4>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                              <p className="text-blue-700 font-medium">Opprinnelig lønn</p>
+                                              <p className="text-lg font-semibold text-slate-800">
+                                                {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
+                                              </p>
+                                            </div>
+                                            <div>
+                                              <p className="text-blue-700 font-medium">Justert til 100% stilling</p>
+                                              <p className="text-lg font-semibold text-slate-800">
+                                                {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Table header */}
+                                        <div className="bg-slate-50 p-3 rounded-t-lg border border-slate-200">
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium text-slate-600 uppercase tracking-wide">
+                                            <div>Lønnsperiode</div>
+                                            <div>Lønn (100% stilling)</div>
+                                            <div>Økning til sykdato</div>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Salary list */}
+                                        <div className="space-y-0">
+                                          {salaryIncreaseCheck.seAlleList.map((entry, index) => (
+                                            <div key={index} className="border-x border-b border-slate-200 p-4 bg-white hover:bg-slate-50 transition-colors">
+                                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                {/* Column 1: Lønnsperiode */}
+                                                <div>
+                                                  <div className="flex items-center space-x-2 mb-2">
+                                                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                                                      #{index + 1}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500">
+                                                      {entry.monthsBeforeSick} mnd før syk
+                                                    </span>
+                                                  </div>
+                                                  <p className="font-medium text-slate-800">{entry.date}</p>
+                                                </div>
+                                                
+                                                {/* Column 2: Lønn (100% stilling) */}
+                                                <div>
+                                                  <p className="font-semibold text-slate-800 text-lg">
+                                                    {entry.salary100.toLocaleString('no-NO')} kr
+                                                  </p>
+                                                  <p className="text-xs text-slate-600">
+                                                    Opprinnelig: {entry.originalSalary.toLocaleString('no-NO')} kr
+                                                  </p>
+                                                </div>
+                                                
+                                                {/* Column 3: Økning til sykdato */}
+                                                <div>
+                                                  {entry.increasePercentage === null ? (
+                                                    <>
+                                                      <p className="font-semibold text-lg text-gray-500">
+                                                        N/A
+                                                      </p>
+                                                      <p className="text-xs mt-1 text-gray-500">
+                                                        0% stilling
+                                                      </p>
+                                                      <p className="text-xs text-slate-600 mt-1">
+                                                        Ingen sammenligning
+                                                      </p>
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <p className={`font-semibold text-lg ${entry.isOK ? 'text-green-700' : 'text-red-700'}`}>
+                                                        {(entry.increasePercentage || 0) > 0 ? '+' : ''}{entry.increasePercentage}%
+                                                      </p>
+                                                      <p className={`text-xs mt-1 ${entry.isOK ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {entry.isOK ? 'OK' : 'Over terskel'} ({entry.thresholdPercentage}%)
+                                                      </p>
+                                                      <p className="text-xs text-slate-600 mt-1">
+                                                        {(entry.increasePercentage || 0) > 0 ? 'Økning' : 'Reduksjon'} til sykdato
+                                                      </p>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+
+                                        {/* Recommendation section */}
+                                        {(salaryIncreaseCheck.isHighIncrease || salaryIncreaseCheck.hasOtherViolations) && (
+                                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                            <h3 className="font-semibold text-blue-800 mb-2">Anbefaling</h3>
+                                            <p className="text-sm text-blue-700">
+                                              {salaryIncreaseCheck.isHighIncrease ? (
+                                                <>
+                                                  {salaryIncreaseCheck.twoYearViolation && salaryIncreaseCheck.oneYearViolation ? (
+                                                    <>
+                                                      Både 2-års (+{salaryIncreaseCheck.twoYearIncreasePercentage}%) og 1-års (+{salaryIncreaseCheck.oneYearIncreasePercentage}%) 
+                                                      sammenligningen overstiger tersklene. Karens må vurderes grundig.
+                                                    </>
+                                                  ) : salaryIncreaseCheck.twoYearViolation ? (
+                                                    <>
+                                                      2-års sammenligningen viser en økning på {salaryIncreaseCheck.twoYearIncreasePercentage}%, 
+                                                      som overstiger terskelen på 15%. Karens må vurderes grundig.
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      1-års sammenligningen viser en økning på {salaryIncreaseCheck.oneYearIncreasePercentage}%, 
+                                                      som overstiger terskelen på 7.5%. Karens må vurderes grundig.
+                                                    </>
+                                                  )}
+                                                </>
+                                              ) : (
+                                                <>
+                                                  Både 2-års og 1-års sammenligningen er innenfor tersklene, men det er funnet andre lønnsøkninger. 
+                                                  Vurder om disse påvirker vurderingen.
+                                                </>
+                                              )}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </DialogContent>
                                   </Dialog>
                                   
                                   <Dialog>
@@ -2389,179 +2520,7 @@ export default function Home() {
                             </div>
                         )}
                         
-                        {/* Show separate dialog for "Se alle" data */}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <div style={{ display: 'none' }}></div>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                      <DialogHeader>
-                                        <DialogTitle className="text-lg font-semibold text-slate-800">
-                                          Alle lønnsperioder (mellom sykdato og 2 år tilbake)
-                                        </DialogTitle>
-                                      </DialogHeader>
-                                      <div className="space-y-4">
-                                        {/* All violations */}
-                                        <div>
-                                
-                                {/* Separate dialog for "Se alle" list */}
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <div style={{ display: 'none' }}></div>
-                                  </DialogTrigger>
-                                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                      <DialogHeader>
-                                        <DialogTitle className="text-lg font-semibold text-slate-800">
-                                          Alle lønnsperioder (mellom sykdato og 2 år tilbake)
-                                        </DialogTitle>
-                                      </DialogHeader>
-                                      <div className="space-y-4">
-                                        
-                                        {/* All violations */}
-                                        <div>
-                                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                    <DialogHeader>
-                                      <DialogTitle className="text-lg font-semibold text-slate-800">
-                                        Alle lønnsperioder (mellom sykdato og 2 år tilbake)
-                                      </DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      
-                                      {/* All violations */}
-                                      <div>
-                                        <h3 className="font-semibold text-slate-800 mb-3">
-                                          Alle lønnsposter (mellom sykdato og 2 år tilbake)
-                                        </h3>
-                                        
-                                        {/* Summary section */}
-                                        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                          <h4 className="font-medium text-blue-800 mb-2">Sammendrag - Lønn på sykdato</h4>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                              <p className="text-blue-700 font-medium">Opprinnelig lønn</p>
-                                              <p className="text-lg font-semibold text-slate-800">
-                                                {salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
-                                              </p>
-                                            </div>
-                                            <div>
-                                              <p className="text-blue-700 font-medium">Justert til 100% stilling</p>
-                                              <p className="text-lg font-semibold text-slate-800">
-                                                {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        {/* Table header */}
-                                        <div className="bg-slate-50 p-3 rounded-t-lg border border-slate-200">
-                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium text-slate-600 uppercase tracking-wide">
-                                            <div>Lønnsperiode</div>
-                                            <div>Lønn (100% stilling)</div>
-                                            <div>Økning til sykdato</div>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Salary list */}
-                                        <div className="space-y-0">
-                                          {salaryIncreaseCheck.seAlleList.map((entry, index) => (
-                                            <div key={index} className="border-x border-b border-slate-200 p-4 bg-white hover:bg-slate-50 transition-colors">
-                                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                                {/* Column 1: Lønnsperiode */}
-                                                <div>
-                                                  <div className="flex items-center space-x-2 mb-2">
-                                                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
-                                                      #{index + 1}
-                                                    </span>
-                                                    <span className="text-xs text-slate-500">
-                                                      {entry.monthsBeforeSick} mnd før syk
-                                                    </span>
-                                                  </div>
-                                                  <p className="font-medium text-slate-800">{entry.date}</p>
-                                                </div>
-                                                
-                                                {/* Column 2: Lønn (100% stilling) */}
-                                                <div>
-                                                  <p className="font-semibold text-slate-800 text-lg">
-                                                    {entry.salary100.toLocaleString('no-NO')} kr
-                                                  </p>
-                                                  <p className="text-xs text-slate-600">
-                                                    Opprinnelig: {entry.originalSalary.toLocaleString('no-NO')} kr
-                                                  </p>
-                                                </div>
-                                                
-                                                {/* Column 3: Økning til sykdato */}
-                                                <div>
-                                                  {entry.increasePercentage === null ? (
-                                                    <>
-                                                      <p className="font-semibold text-lg text-gray-500">
-                                                        N/A
-                                                      </p>
-                                                      <p className="text-xs mt-1 text-gray-500">
-                                                        0% stilling
-                                                      </p>
-                                                      <p className="text-xs text-slate-600 mt-1">
-                                                        Ingen sammenligning
-                                                      </p>
-                                                    </>
-                                                  ) : (
-                                                    <>
-                                                      <p className={`font-semibold text-lg ${entry.isOK ? 'text-green-700' : 'text-red-700'}`}>
-                                                        {(entry.increasePercentage || 0) > 0 ? '+' : ''}{entry.increasePercentage}%
-                                                      </p>
-                                                      <p className={`text-xs mt-1 ${entry.isOK ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {entry.isOK ? 'OK' : 'Over terskel'} ({entry.thresholdPercentage}%)
-                                                      </p>
-                                                      <p className="text-xs text-slate-600 mt-1">
-                                                        {(entry.increasePercentage || 0) > 0 ? 'Økning' : 'Reduksjon'} til sykdato
-                                                      </p>
-                                                    </>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Recommendation - only show if there are actual recent violations or 2-year violation */}
-                                      {(salaryIncreaseCheck.isHighIncrease || salaryIncreaseCheck.hasOtherViolations) && (
-                                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                          <h3 className="font-semibold text-blue-800 mb-2">Anbefaling</h3>
-                                          <p className="text-sm text-blue-700">
-                                            {salaryIncreaseCheck.isHighIncrease ? (
-                                              <>
-                                                {salaryIncreaseCheck.twoYearViolation && salaryIncreaseCheck.oneYearViolation ? (
-                                                  <>
-                                                    Både 2-års (+{salaryIncreaseCheck.twoYearIncreasePercentage}%) og 1-års (+{salaryIncreaseCheck.oneYearIncreasePercentage}%) 
-                                                    sammenligningen overstiger tersklene. Karens må vurderes grundig.
-                                                  </>
-                                                ) : salaryIncreaseCheck.twoYearViolation ? (
-                                                  <>
-                                                    2-års sammenligningen viser en økning på {salaryIncreaseCheck.twoYearIncreasePercentage}%, 
-                                                    som overstiger terskelen på 15%. Karens må vurderes grundig.
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    1-års sammenligningen viser en økning på {salaryIncreaseCheck.oneYearIncreasePercentage}%, 
-                                                    som overstiger terskelen på 7.5%. Karens må vurderes grundig.
-                                                  </>
-                                                )}
-                                              </>
-                                            ) : (
-                                              <>
-                                                Både 2-års og 1-års sammenligningen er innenfor tersklene, men det er funnet andre lønnsøkninger. 
-                                                Vurder om disse påvirker vurderingen.
-                                              </>
-                                            )}
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+
                         
                         {/* G-regulated salary calculation when karens needs assessment */}
                         {salaryIncreaseCheck.isHighIncrease && gRegulatedCalculation && (
