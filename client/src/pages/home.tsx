@@ -497,12 +497,9 @@ export default function Home() {
             }
             
             if (targetIndex !== -1) {
-              // Take the 2 meldekort before the foreldelse date PLUS the one containing it
-              // This gives us exactly 3 meldekort total (2 before + 1 containing foreldelse)
               const startIndex = Math.max(0, targetIndex - 2);
-              const endIndex = targetIndex + 1; // Include the meldekort containing foreldelse date
-              filteredMeldekort = meldekortData.slice(startIndex, endIndex);
-              console.error('CORRECTED FILTERING: Taking meldekort from index', startIndex, 'to', endIndex - 1, '(total:', filteredMeldekort.length, 'meldekort)');
+              filteredMeldekort = meldekortData.slice(startIndex);
+              console.error('FILTERED TO', filteredMeldekort.length, 'meldekort starting from index', startIndex);
               
               toast({
                 title: "Foreldelse detektert",
