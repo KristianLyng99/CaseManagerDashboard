@@ -489,12 +489,25 @@ export default function Home() {
         });
 
         // Find the meldekort that contains the "etterbetaling fra" date
-        const targetMeldekortIndex = meldekortData.findIndex(mk => {
+        console.log('Searching for meldekort containing foreldelse date:', foreldelseDato);
+        const targetMeldekortIndex = meldekortData.findIndex((mk, index) => {
           const mkStartDate = parseDate(mk.fraDato);
           const mkEndDate = parseDate(mk.tilDato);
-          return mkStartDate && mkEndDate && 
+          const contains = mkStartDate && mkEndDate && 
                  mkStartDate <= foreldelseDato && 
                  foreldelseDato <= mkEndDate;
+          
+          if (index < 5 || contains) { // Log first 5 and any matches
+            console.log(`Meldekort ${index}:`, {
+              fraDato: mk.fraDato,
+              tilDato: mk.tilDato,
+              startDate: mkStartDate,
+              endDate: mkEndDate,
+              contains: contains
+            });
+          }
+          
+          return contains;
         });
         
         console.log('Target meldekort index:', targetMeldekortIndex);
@@ -520,7 +533,14 @@ export default function Home() {
         // Apply the filtering if we found a specific index
         if (targetMeldekortIndex >= 0) {
           console.log('Applying index-based filtering, startIndex:', startIndex);
+          console.log('Original meldekort count:', meldekortData.length);
           filteredMeldekortData = meldekortData.slice(startIndex);
+          console.log('Filtered meldekort count:', filteredMeldekortData.length);
+          console.log('First few filtered meldekort:', filteredMeldekortData.slice(0, 3).map(mk => ({
+            fraDato: mk.fraDato,
+            tilDato: mk.tilDato,
+            hours: mk.hours
+          })));
         }
         
         console.log('After filtering:', {
