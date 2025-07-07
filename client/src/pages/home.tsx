@@ -454,16 +454,24 @@ export default function Home() {
       setTimeout(() => {
         analyzeUforegradChanges(meldekortData);
         console.log('analyzeUforegradChanges call completed');
+        
+        // Show completion toast after analysis is done
+        toast({
+          title: "Autofyll fullført!",
+          description: "Data er hentet fra rådata og fylt inn i feltene",
+          duration: 3000,
+        });
       }, 100);
     } else {
       console.log('NO MELDEKORT DATA TO ANALYZE');
+      
+      // Show completion toast immediately if no meldekort data
+      toast({
+        title: "Autofyll fullført!",
+        description: "Data er hentet fra rådata og fylt inn i feltene",
+        duration: 3000,
+      });
     }
-
-    toast({
-      title: "Autofyll fullført!",
-      description: "Data er hentet fra rådata og fylt inn i feltene",
-      duration: 3000,
-    });
   };
 
   // Analyze disability grade changes across meldekort periods using sophisticated algorithm
