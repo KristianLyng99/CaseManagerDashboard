@@ -2455,15 +2455,21 @@ export default function Home() {
                                       <div className="space-y-4">
                                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                                           <h4 className="font-medium text-blue-800 mb-2">Forklaring</h4>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                                             <div>
                                               <p className="text-blue-700 mb-1"><strong>Rød vertikal linje:</strong> 1 år før sykdato</p>
+                                              <p className="text-blue-700 mb-1"><strong>Brun vertikal linje:</strong> 2 år før sykdato</p>
                                               <p className="text-blue-700 mb-1"><strong>Grønn linje:</strong> 85% av sykdato lønn</p>
                                               <p className="text-blue-700"><strong>Orange linje:</strong> 92.5% av sykdato lønn</p>
                                             </div>
                                             <div>
                                               <p className="text-blue-700 mb-1"><strong>Blå linje:</strong> Lønn over tid (100% stilling)</p>
-                                              <p className="text-blue-700"><strong>Sykdato lønn:</strong> {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr</p>
+                                              <p className="text-blue-700 mb-1"><strong>Lilla linje:</strong> Lønn på sykdato</p>
+                                              <p className="text-blue-700"><strong>Brun linje:</strong> Lønn 2 år før syk</p>
+                                            </div>
+                                            <div>
+                                              <p className="text-blue-700 mb-1"><strong>Sykdato lønn:</strong> {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr</p>
+                                              <p className="text-blue-700"><strong>2 år før syk:</strong> {salaryIncreaseCheck.actualSalaryTwoYearsBefore100.toLocaleString('no-NO')} kr</p>
                                             </div>
                                           </div>
                                         </div>
@@ -2498,8 +2504,11 @@ export default function Home() {
                                               />
                                               
                                               <ReferenceLine x={12} stroke="red" strokeWidth={2} strokeDasharray="5 5" />
+                                              <ReferenceLine x={24} stroke="brown" strokeWidth={2} strokeDasharray="4 4" />
                                               <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.85} stroke="green" strokeWidth={2} strokeDasharray="3 3" />
                                               <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.925} stroke="orange" strokeWidth={2} strokeDasharray="3 3" />
+                                              <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100} stroke="purple" strokeWidth={2} strokeDasharray="2 2" />
+                                              <ReferenceLine y={salaryIncreaseCheck.actualSalaryTwoYearsBefore100} stroke="brown" strokeWidth={2} strokeDasharray="6 2" />
                                               
                                               <Line 
                                                 type="monotone" 
