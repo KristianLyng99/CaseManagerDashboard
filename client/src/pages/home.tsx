@@ -476,6 +476,11 @@ export default function Home() {
     if (foreldelseStatus.etterbetalingFra) {
       const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
       if (foreldelseDato) {
+        console.log('FORELDELSE FILTERING WILL BE APPLIED:', {
+          etterbetalingFra: foreldelseStatus.etterbetalingFra,
+          foreldelseDato: foreldelseDato,
+          totalMeldekort: meldekortData.length
+        });
         console.log('Foreldelse detected:', {
           etterbetalingFra: foreldelseStatus.etterbetalingFra,
           foreldelseDato: foreldelseDato,
@@ -494,11 +499,13 @@ export default function Home() {
         
         console.log('Target meldekort index:', targetMeldekortIndex);
         
-        // If we found the target meldekort, include ONE before it (if it exists)
-        // This starts from 1 meldekort before the one containing the foreldelse date
+        // If we found the target meldekort, include TWO before it (if they exist)
+        // This properly compensates for the algorithm skipping the first meldekort in analysis
         let startIndex = 0;
-        if (targetMeldekortIndex > 0) {
-          startIndex = targetMeldekortIndex - 1;
+        if (targetMeldekortIndex > 1) {
+          startIndex = targetMeldekortIndex - 2;
+        } else if (targetMeldekortIndex === 1) {
+          startIndex = 0;
         } else if (targetMeldekortIndex === 0) {
           startIndex = 0;
         } else {
@@ -528,11 +535,13 @@ export default function Home() {
           const startFromKort = startIndex + 1; // Convert to 1-based numbering
           toast({
             title: "Foreldelse detektert",
-            description: `Uføregrad beregnes fra 1 meldekort før foreldelse (meldekort #${startFromKort}). ${excludedCount} meldekort ekskludert`,
+            description: `Uføregrad beregnes fra meldekort #${startFromKort} (${excludedCount} meldekort ekskludert)`,
             duration: 4000,
           });
         }
       }
+    } else {
+      console.log('NO FORELDELSE FILTERING APPLIED - etterbetalingFra is null or empty');
     }
     
     if (filteredMeldekortData.length < 3) {
