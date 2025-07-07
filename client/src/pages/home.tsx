@@ -481,7 +481,7 @@ export default function Home() {
           });
           
           if (diffMs > threeYearsMs) {
-            const etterbetalingFra = new Date(fraDate.getTime() + threeYearsMs);
+            const etterbetalingFra = new Date(regDate.getTime() - threeYearsMs);
             console.error('FORELDELSE FILTERING WILL BE APPLIED - etterbetalingFra:', etterbetalingFra.toISOString().split('T')[0]);
             
             // Find which meldekort contains the foreldelse date
@@ -1020,7 +1020,7 @@ export default function Home() {
     });
     
     if (reg && fra) {
-      const diffMs = Math.abs(fra.getTime() - reg.getTime());
+      const diffMs = reg.getTime() - fra.getTime();
       const threeYearsMs = 365 * 24 * 60 * 60 * 1000 * 3;
       const diffYears = diffMs / (365 * 24 * 60 * 60 * 1000);
       
@@ -1032,10 +1032,10 @@ export default function Home() {
       });
       
       if (diffMs > threeYearsMs) {
-        // Calculate date 3 years forward from AAP start date
-        const threeYearsForward = new Date(fra);
-        threeYearsForward.setFullYear(threeYearsForward.getFullYear() + 3);
-        const etterbetalingsDato = formatDate(threeYearsForward);
+        // Calculate date 3 years back from registration date
+        const threeYearsBack = new Date(reg);
+        threeYearsBack.setFullYear(threeYearsBack.getFullYear() - 3);
+        const etterbetalingsDato = formatDate(threeYearsBack);
         
         const result = { 
           text: 'Foreldelse', 
