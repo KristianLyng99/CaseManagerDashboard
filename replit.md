@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Norwegian case handler (saksbehandler) tool built as a full-stack web application for NAV (Norwegian Labour and Welfare Administration). The application provides date calculation and case management functionality with intelligent data parsing and calculation features. It's designed as a single-page application with a React frontend and Express backend, configured for easy deployment on Replit.
+This is a Norwegian case handler (saksbehandler) tool built as a full-stack web application for DNB liv. The application provides date calculation and case management functionality with intelligent data parsing and calculation features. It's designed as a single-page application with a React frontend and Express backend, configured for easy deployment on Replit.
 
 ## System Architecture
 

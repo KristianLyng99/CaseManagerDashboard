@@ -1329,6 +1329,65 @@ export default function Home() {
 
     // Check if the 2-year comparison specifically violates the 15% threshold
     const twoYearViolation = actualIncreasePercentage ? actualIncreasePercentage > 15 : false;
+    
+    // Check 1-year comparison for 7.5% threshold
+    const oneYearBeforeCalc = new Date(sickDate);
+    oneYearBeforeCalc.setFullYear(oneYearBeforeCalc.getFullYear() - 1);
+    
+    const actualSalaryOneYearBefore = salaryHistory.find(entry => 
+      entry.date <= oneYearBeforeCalc
+    );
+    
+    const actualSalaryOneYearBefore100 = actualSalaryOneYearBefore 
+      ? (actualSalaryOneYearBefore.salary * 100) / actualSalaryOneYearBefore.percentage
+      : null;
+    
+    const oneYearIncreasePercentage = actualSalaryOneYearBefore100
+      ? ((salaryAtSick100 - actualSalaryOneYearBefore100) / actualSalaryOneYearBefore100) * 100
+      : null;
+    
+    const oneYearViolation = oneYearIncreasePercentage ? oneYearIncreasePercentage > 7.5 : false;
+    
+    // Function to find when salary increased above threshold
+    const findSalaryIncreaseDate = (targetPercentage: number, comparisonDate: Date) => {
+      if (!salaryHistory || salaryHistory.length === 0) return null;
+      
+      // Get all salaries between comparison date and sick date
+      const relevantSalaries = salaryHistory.filter(entry => 
+        entry.date >= comparisonDate && entry.date <= sickDate
+      ).sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      if (relevantSalaries.length < 2) return null;
+      
+      // Find the first salary entry that shows an increase above threshold
+      for (let i = 1; i < relevantSalaries.length; i++) {
+        const current = relevantSalaries[i];
+        const previous = relevantSalaries[i - 1];
+        
+        // Skip if either entry has 0% position (no meaningful salary comparison)
+        if (current.percentage === 0 || previous.percentage === 0) continue;
+        
+        const currentSalary100 = (current.salary * 100) / current.percentage;
+        const previousSalary100 = (previous.salary * 100) / previous.percentage;
+        
+        const increasePercentage = ((currentSalary100 - previousSalary100) / previousSalary100) * 100;
+        
+        if (increasePercentage > targetPercentage) {
+          return {
+            date: formatDate(current.date),
+            increasePercentage: Math.round(increasePercentage * 100) / 100,
+            fromSalary: Math.round(previousSalary100),
+            toSalary: Math.round(currentSalary100)
+          };
+        }
+      }
+      
+      return null;
+    };
+    
+    // Find salary increase dates if violations exist
+    const twoYearIncreaseDate = twoYearViolation ? findSalaryIncreaseDate(15, twoYearsBeforeCalc) : null;
+    const oneYearIncreaseDate = oneYearViolation ? findSalaryIncreaseDate(7.5, oneYearBeforeCalc) : null;
 
     // Create "Se alle" list - all salaries between sick date and 2 years before
     const twoYearsBeforeForList = new Date(sickDate);
@@ -1377,8 +1436,20 @@ export default function Home() {
       violationsCount: violations.length,
       violations,
       mostSignificantViolation,
-      isHighIncrease: twoYearViolation, // Use 2-year specific check for main display
-      hasOtherViolations: recentViolations.length > 0 && !twoYearViolation, // Only show "andre overtredelser" for recent violations when 2-year is OK
+      isHighIncrease: twoYearViolation || oneYearViolation, // Either 2-year or 1-year violation triggers main display
+      hasOtherViolations: recentViolations.length > 0 && !twoYearViolation && !oneYearViolation, // Only show "andre overtredelser" for recent violations when both main checks are OK
+      // 2-year comparison data
+      twoYearViolation,
+      actualSalaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary,
+      actualSalaryTwoYearsBefore100: actualSalaryTwoYearsBefore100 ? Math.round(actualSalaryTwoYearsBefore100) : null,
+      twoYearIncreasePercentage: actualIncreasePercentage ? Math.round(actualIncreasePercentage * 100) / 100 : null,
+      twoYearIncreaseDate,
+      // 1-year comparison data
+      oneYearViolation,
+      actualSalaryOneYearBefore: actualSalaryOneYearBefore?.salary,
+      actualSalaryOneYearBefore100: actualSalaryOneYearBefore100 ? Math.round(actualSalaryOneYearBefore100) : null,
+      oneYearIncreasePercentage: oneYearIncreasePercentage ? Math.round(oneYearIncreasePercentage * 100) / 100 : null,
+      oneYearIncreaseDate,
       seAlleList, // New "Se alle" list with all salaries in 2-year period
       // Show actual 2 years before salary for display
       salaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary || null,
@@ -2039,71 +2110,76 @@ export default function Home() {
                               : 'text-green-800'
                         }`}>
                           {salaryIncreaseCheck.isHighIncrease 
-                            ? 'Karens må vurderes (2 år sammenligning)' 
+                            ? 'Karens må vurderes' 
                             : salaryIncreaseCheck.hasOtherViolations
-                              ? 'Lønn 2 år OK (andre overtredelser funnet)'
+                              ? 'Hovedkontroll OK (andre overtredelser funnet)'
                               : 'Lønn OK'
                           }
                         </h3>
                         <div className="bg-white p-3 rounded border border-slate-200">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <p className="text-slate-600">Lønn 2 år før syk ({salaryIncreaseCheck.twoYearsBeforeDate})</p>
-                              <p className="font-semibold text-slate-800">
-                                {salaryIncreaseCheck.salaryTwoYearsBefore?.toLocaleString('no-NO')} kr
-                              </p>
-                              {salaryIncreaseCheck.salaryTwoYearsBefore100 && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  100% stilling: {salaryIncreaseCheck.salaryTwoYearsBefore100.toLocaleString('no-NO')} kr
-                                </p>
-                              )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            {/* 2-year comparison */}
+                            <div className="p-3 bg-slate-50 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-medium text-slate-800">2 år sammenligning</h4>
+                                <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                  salaryIncreaseCheck.twoYearViolation ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                                }`}>
+                                  {salaryIncreaseCheck.twoYearViolation ? 'Over 15%' : 'Under 15%'}
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">Økning:</span>
+                                  <span className={`font-semibold ${
+                                    salaryIncreaseCheck.twoYearViolation ? 'text-red-700' : 'text-green-700'
+                                  }`}>
+                                    {salaryIncreaseCheck.twoYearIncreasePercentage ? 
+                                      `${salaryIncreaseCheck.twoYearIncreasePercentage > 0 ? '+' : ''}${salaryIncreaseCheck.twoYearIncreasePercentage}%` : 
+                                      'Ikke beregnet'
+                                    }
+                                  </span>
+                                </div>
+                                {salaryIncreaseCheck.twoYearIncreaseDate && (
+                                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                                    <strong>Lønn økte {salaryIncreaseCheck.twoYearIncreaseDate.date}:</strong><br/>
+                                    {salaryIncreaseCheck.twoYearIncreaseDate.fromSalary.toLocaleString('no-NO')} kr → {salaryIncreaseCheck.twoYearIncreaseDate.toSalary.toLocaleString('no-NO')} kr 
+                                    (+{salaryIncreaseCheck.twoYearIncreaseDate.increasePercentage}%)
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-slate-600">
-                                {useNominalSalary ? 'Nomert lønn ved syk dato' : 'Lønn ved syk dato'} ({salaryIncreaseCheck.sickDate})
-                              </p>
-                              <p className="font-semibold text-slate-800">
-                                {useNominalSalary && nominalSalaryData 
-                                  ? nominalSalaryData.salary.toLocaleString('no-NO') 
-                                  : salaryIncreaseCheck.salaryAtSick.toLocaleString('no-NO')} kr
-                              </p>
-                              <p className="text-xs text-blue-600 mt-1">
-                                100% stilling: {useNominalSalary && nominalSalaryData 
-                                  ? nominalSalaryData.salary100.toLocaleString('no-NO') 
-                                  : salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr
-                              </p>
-                              {useNominalSalary && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Gjennomsnitt siste 12 måneder
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-slate-600">Økning (100% stilling)</p>
-                              <p className={`font-semibold ${
-                                (() => {
-                                  if (useNominalSalary && nominalSalaryData && salaryIncreaseCheck.salaryTwoYearsBefore100) {
-                                    const nominalIncrease = ((nominalSalaryData.salary100 - salaryIncreaseCheck.salaryTwoYearsBefore100) / salaryIncreaseCheck.salaryTwoYearsBefore100) * 100;
-                                    return nominalIncrease > 15 ? 'text-red-700' : 'text-green-700';
-                                  } else {
-                                    return salaryIncreaseCheck.isHighIncrease ? 'text-red-700' : 'text-green-700';
-                                  }
-                                })()
-                              }`}>
-                                {(() => {
-                                  // Calculate percentage based on current salary mode
-                                  if (useNominalSalary && nominalSalaryData && salaryIncreaseCheck.salaryTwoYearsBefore100) {
-                                    const nominalIncrease = ((nominalSalaryData.salary100 - salaryIncreaseCheck.salaryTwoYearsBefore100) / salaryIncreaseCheck.salaryTwoYearsBefore100) * 100;
-                                    const roundedNominalIncrease = Math.round(nominalIncrease * 100) / 100;
-                                    return `${roundedNominalIncrease > 0 ? '+' : ''}${roundedNominalIncrease}%`;
-                                  } else {
-                                    return `${salaryIncreaseCheck.increasePercentage && salaryIncreaseCheck.increasePercentage > 0 ? '+' : ''}${salaryIncreaseCheck.increasePercentage}%`;
-                                  }
-                                })()}
-                              </p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                {useNominalSalary ? 'Beregnet med nomert lønn' : 'Beregnet på 100% stillinger'}
-                              </p>
+                            
+                            {/* 1-year comparison */}
+                            <div className="p-3 bg-slate-50 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-medium text-slate-800">1 år sammenligning</h4>
+                                <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                  salaryIncreaseCheck.oneYearViolation ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                                }`}>
+                                  {salaryIncreaseCheck.oneYearViolation ? 'Over 7.5%' : 'Under 7.5%'}
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">Økning:</span>
+                                  <span className={`font-semibold ${
+                                    salaryIncreaseCheck.oneYearViolation ? 'text-red-700' : 'text-green-700'
+                                  }`}>
+                                    {salaryIncreaseCheck.oneYearIncreasePercentage ? 
+                                      `${salaryIncreaseCheck.oneYearIncreasePercentage > 0 ? '+' : ''}${salaryIncreaseCheck.oneYearIncreasePercentage}%` : 
+                                      'Ikke beregnet'
+                                    }
+                                  </span>
+                                </div>
+                                {salaryIncreaseCheck.oneYearIncreaseDate && (
+                                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                                    <strong>Lønn økte {salaryIncreaseCheck.oneYearIncreaseDate.date}:</strong><br/>
+                                    {salaryIncreaseCheck.oneYearIncreaseDate.fromSalary.toLocaleString('no-NO')} kr → {salaryIncreaseCheck.oneYearIncreaseDate.toSalary.toLocaleString('no-NO')} kr 
+                                    (+{salaryIncreaseCheck.oneYearIncreaseDate.increasePercentage}%)
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -2300,13 +2376,26 @@ export default function Home() {
                                           <p className="text-sm text-blue-700">
                                             {salaryIncreaseCheck.isHighIncrease ? (
                                               <>
-                                                2-års sammenligningen viser en økning på {salaryIncreaseCheck.increasePercentage}%, 
-                                                som overstiger terskelen på 15%. Karens bør vurderes grundig.
+                                                {salaryIncreaseCheck.twoYearViolation && salaryIncreaseCheck.oneYearViolation ? (
+                                                  <>
+                                                    Både 2-års (+{salaryIncreaseCheck.twoYearIncreasePercentage}%) og 1-års (+{salaryIncreaseCheck.oneYearIncreasePercentage}%) 
+                                                    sammenligningen overstiger tersklene. Karens må vurderes grundig.
+                                                  </>
+                                                ) : salaryIncreaseCheck.twoYearViolation ? (
+                                                  <>
+                                                    2-års sammenligningen viser en økning på {salaryIncreaseCheck.twoYearIncreasePercentage}%, 
+                                                    som overstiger terskelen på 15%. Karens må vurderes grundig.
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    1-års sammenligningen viser en økning på {salaryIncreaseCheck.oneYearIncreasePercentage}%, 
+                                                    som overstiger terskelen på 7.5%. Karens må vurderes grundig.
+                                                  </>
+                                                )}
                                               </>
                                             ) : (
                                               <>
-                                                Selv om 2-års sammenligningen er OK ({salaryIncreaseCheck.increasePercentage}%), 
-                                                er det funnet andre lønnsøkninger som overstiger tersklene. 
+                                                Både 2-års og 1-års sammenligningen er innenfor tersklene, men det er funnet andre lønnsøkninger. 
                                                 Vurder om disse påvirker vurderingen.
                                               </>
                                             )}
