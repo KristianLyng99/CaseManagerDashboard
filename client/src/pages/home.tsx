@@ -452,8 +452,8 @@ export default function Home() {
       
       // Use setTimeout to ensure state updates from applyVedtakDates have taken effect
       setTimeout(() => {
-        analyzeUforegradChanges(meldekortData);
-        console.log('analyzeUforegradChanges call completed');
+        analyzeUforegradChangesFixed(meldekortData);
+        console.log('analyzeUforegradChangesFixed call completed');
         
         // Show completion toast after analysis is done
         setTimeout(() => {
@@ -477,7 +477,7 @@ export default function Home() {
   };
 
   // Analyze disability grade changes across meldekort periods using sophisticated algorithm
-  const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+  const analyzeUforegradChangesFixed = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
     const callId = Math.random().toString(36).substr(2, 9);
     try {
       console.error(`*** ANALYZE UFOREGRAD CHANGES FUNCTION STARTED [${callId}] ***`);
