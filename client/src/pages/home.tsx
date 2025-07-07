@@ -2192,8 +2192,8 @@ export default function Home() {
                                   </DialogTrigger>
                                   <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                                     <DialogHeader>
-                                      <DialogTitle className="text-lg font-semibold text-red-800">
-                                        Alle lønnsovertredelser - Karens vurdering
+                                      <DialogTitle className="text-lg font-semibold text-slate-800">
+                                        Alle lønnsperioder (mellom sykdato og 2 år tilbake)
                                       </DialogTitle>
                                     </DialogHeader>
                                     <div className="space-y-4">
@@ -2293,15 +2293,26 @@ export default function Home() {
                                         </div>
                                       </div>
                                       
-                                      {/* Recommendation */}
-                                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                        <h3 className="font-semibold text-blue-800 mb-2">Anbefaling</h3>
-                                        <p className="text-sm text-blue-700">
-                                          Med {salaryIncreaseCheck.violationsCount} overtredelser funnet, bør karens vurderes grundig. 
-                                          Den mest signifikante overtredelsen viser en økning på {salaryIncreaseCheck.mostSignificantViolation?.increasePercentage}% 
-                                          mot en terskel på {salaryIncreaseCheck.mostSignificantViolation?.thresholdPercentage}%.
-                                        </p>
-                                      </div>
+                                      {/* Recommendation - only show if there are actual recent violations or 2-year violation */}
+                                      {(salaryIncreaseCheck.isHighIncrease || salaryIncreaseCheck.hasOtherViolations) && (
+                                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                          <h3 className="font-semibold text-blue-800 mb-2">Anbefaling</h3>
+                                          <p className="text-sm text-blue-700">
+                                            {salaryIncreaseCheck.isHighIncrease ? (
+                                              <>
+                                                2-års sammenligningen viser en økning på {salaryIncreaseCheck.increasePercentage}%, 
+                                                som overstiger terskelen på 15%. Karens bør vurderes grundig.
+                                              </>
+                                            ) : (
+                                              <>
+                                                Selv om 2-års sammenligningen er OK ({salaryIncreaseCheck.increasePercentage}%), 
+                                                er det funnet andre lønnsøkninger som overstiger tersklene. 
+                                                Vurder om disse påvirker vurderingen.
+                                              </>
+                                            )}
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
                                   </DialogContent>
                                 </Dialog>
