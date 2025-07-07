@@ -748,6 +748,15 @@ export default function Home() {
     const overallUforegradExact = 100 - (avgHours / 75) * 100;
     const overallUforegrad = Math.round(overallUforegradExact / 5) * 5;
     
+    console.error('FINAL CALCULATION DEBUG:', {
+      filteredMeldekortCount: filteredMeldekortData.length,
+      analyseDataCount: analyseData.length,
+      avgHours: avgHours,
+      overallUforegrad: overallUforegrad,
+      firstAnalyseData: analyseData[0],
+      lastAnalyseData: analyseData[analyseData.length - 1]
+    });
+    
     setAvgUforegrad(overallUforegrad);
     setAvgUforegradExact(overallUforegradExact);
     setUforegradDateRange({
