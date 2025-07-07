@@ -2477,13 +2477,38 @@ export default function Home() {
                                         <div style={{ width: '100%', height: '400px' }}>
                                           <ResponsiveContainer width="100%" height="100%">
                                             <LineChart
-                                              data={salaryIncreaseCheck.seAlleList
-                                                .sort((a, b) => b.monthsBeforeSick - a.monthsBeforeSick)
-                                                .map((entry) => ({
-                                                  x: entry.monthsBeforeSick,
-                                                  salary: entry.salary100,
-                                                  date: entry.date
-                                                }))}
+                                              data={(() => {
+                                                // Start with existing salary data
+                                                const chartData = salaryIncreaseCheck.seAlleList
+                                                  .sort((a, b) => b.monthsBeforeSick - a.monthsBeforeSick)
+                                                  .map((entry) => ({
+                                                    x: entry.monthsBeforeSick,
+                                                    salary: entry.salary100,
+                                                    date: entry.date
+                                                  }));
+                                                
+                                                // Add sick date point (x=0) if not already present
+                                                const hasSickDate = chartData.some(point => point.x === 0);
+                                                if (!hasSickDate) {
+                                                  chartData.unshift({
+                                                    x: 0,
+                                                    salary: salaryIncreaseCheck.salaryAtSick100,
+                                                    date: salaryIncreaseCheck.sickDate
+                                                  });
+                                                }
+                                                
+                                                // Add 2-year point (x=24) if not already present
+                                                const hasTwoYear = chartData.some(point => point.x === 24);
+                                                if (!hasTwoYear) {
+                                                  chartData.push({
+                                                    x: 24,
+                                                    salary: salaryIncreaseCheck.actualSalaryTwoYearsBefore100,
+                                                    date: 'Lønn 2 år før syk'
+                                                  });
+                                                }
+                                                
+                                                return chartData.sort((a, b) => b.x - a.x);
+                                              })()}
                                               margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                                             >
                                               <CartesianGrid strokeDasharray="3 3" />
@@ -2515,8 +2540,24 @@ export default function Home() {
                                                 dataKey="salary" 
                                                 stroke="#2563eb" 
                                                 strokeWidth={3}
-                                                dot={{ r: 4 }}
-                                                activeDot={{ r: 6 }}
+                                                dot={(props) => {
+                                                  const { cx, cy, payload } = props;
+                                                  // Special styling for sick date and 2-year points
+                                                  if (payload && (payload.x === 0 || payload.x === 24)) {
+                                                    return (
+                                                      <circle
+                                                        cx={cx}
+                                                        cy={cy}
+                                                        r={6}
+                                                        fill={payload.x === 0 ? "purple" : "brown"}
+                                                        stroke="white"
+                                                        strokeWidth={2}
+                                                      />
+                                                    );
+                                                  }
+                                                  return <circle cx={cx} cy={cy} r={4} fill="#2563eb" />;
+                                                }}
+                                                activeDot={{ r: 8, fill: "#1d4ed8" }}
                                               />
                                             </LineChart>
                                           </ResponsiveContainer>
