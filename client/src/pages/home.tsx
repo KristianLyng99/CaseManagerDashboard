@@ -1451,6 +1451,7 @@ export default function Home() {
       actualSalaryOneYearBefore100: actualSalaryOneYearBefore100 ? Math.round(actualSalaryOneYearBefore100) : null,
       oneYearIncreasePercentage: oneYearIncreasePercentage ? Math.round(oneYearIncreasePercentage * 100) / 100 : null,
       oneYearIncreaseDate,
+      oneYearBeforeDate: actualSalaryOneYearBefore ? formatDate(actualSalaryOneYearBefore.date) : null,
       seAlleList, // New "Se alle" list with all salaries in 2-year period
       // Show actual 2 years before salary for display
       salaryTwoYearsBefore: actualSalaryTwoYearsBefore?.salary || null,
@@ -2140,6 +2141,11 @@ export default function Home() {
                                       }
                                     </span>
                                   </div>
+                                  {salaryIncreaseCheck.twoYearsBeforeDate && (
+                                    <div className="text-xs text-slate-500">
+                                      Dato: {salaryIncreaseCheck.twoYearsBeforeDate}
+                                    </div>
+                                  )}
                                   <div className="flex justify-between">
                                     <span className="text-slate-600">Lønn sykdato:</span>
                                     <span className="font-medium">
@@ -2189,6 +2195,11 @@ export default function Home() {
                                       }
                                     </span>
                                   </div>
+                                  {salaryIncreaseCheck.oneYearBeforeDate && (
+                                    <div className="text-xs text-slate-500">
+                                      Dato: {salaryIncreaseCheck.oneYearBeforeDate}
+                                    </div>
+                                  )}
                                   <div className="flex justify-between">
                                     <span className="text-slate-600">Lønn sykdato:</span>
                                     <span className="font-medium">
@@ -2516,7 +2527,7 @@ export default function Home() {
                                               <XAxis 
                                                 dataKey="x"
                                                 type="number"
-                                                domain={['dataMin', 'dataMax']}
+                                                domain={[0, 30]}
                                                 label={{ value: 'Måneder før sykdato', position: 'insideBottom', offset: -10 }}
                                                 reversed={true}
                                               />
