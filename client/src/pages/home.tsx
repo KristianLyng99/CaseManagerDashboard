@@ -438,10 +438,18 @@ export default function Home() {
       }
     });
 
-    // For old format parsing, use second date as AAP FRA if available
+    // Extract the dates we need for foreldelse calculation BEFORE applying them to state
+    let calculatedSøknadRegistrert = søknadRegistrert;
+    let calculatedAapFra = '';
+    
+    // For old format parsing, determine dates but don't apply to state yet
     if (aapDatesFromOldFormat.length >= 2 && tilDates.length > 0) {
+      calculatedSøknadRegistrert = tilDates[tilDates.length - 1];
+      calculatedAapFra = aapDatesFromOldFormat[1];
       applyVedtakDates(aapDatesFromOldFormat[1], tilDates[tilDates.length - 1]);
     } else if (aapDatesFromOldFormat.length === 1 && tilDates.length > 0) {
+      calculatedSøknadRegistrert = tilDates[tilDates.length - 1];
+      calculatedAapFra = aapDatesFromOldFormat[0];
       applyVedtakDates(aapDatesFromOldFormat[0], tilDates[tilDates.length - 1]);
     }
     
@@ -450,24 +458,31 @@ export default function Home() {
     if (meldekortData.length > 0) {
       console.log('CALLING analyzeUforegradChanges with', meldekortData.length, 'meldekort');
       
-      // DIRECTLY check foreldelse using the dates we just parsed
-      // Don't rely on state that might not be updated yet
+      // IMMEDIATELY check foreldelse using the freshly calculated dates
       let filteredMeldekort = meldekortData;
-      let shouldFilter = false;
       
-      // Check if we have the parsed dates needed for foreldelse calculation
-      if (søknadRegistrert && aapFra) {
-        const regDate = parseDate(søknadRegistrert);
-        const fraDate = parseDate(aapFra);
+      console.error('FORELDELSE CHECK WITH FRESH DATES:', {
+        calculatedSøknadRegistrert,
+        calculatedAapFra
+      });
+      
+      if (calculatedSøknadRegistrert && calculatedAapFra) {
+        const regDate = parseDate(calculatedSøknadRegistrert);
+        const fraDate = parseDate(calculatedAapFra);
         
         if (regDate && fraDate) {
           const diffMs = regDate.getTime() - fraDate.getTime();
           const threeYearsMs = 3 * 365.25 * 24 * 60 * 60 * 1000;
           
+          console.error('FORELDELSE CALCULATION:', {
+            diffMs,
+            threeYearsMs,
+            hasForeldelse: diffMs > threeYearsMs
+          });
+          
           if (diffMs > threeYearsMs) {
-            shouldFilter = true;
             const etterbetalingFra = new Date(regDate.getTime() - threeYearsMs);
-            console.error('DIRECT FORELDELSE CHECK - filtering needed, etterbetalingFra:', etterbetalingFra.toISOString().split('T')[0]);
+            console.error('FORELDELSE FILTERING WILL BE APPLIED - etterbetalingFra:', etterbetalingFra.toISOString().split('T')[0]);
             
             // Find which meldekort contains the foreldelse date
             let targetIndex = -1;
@@ -484,7 +499,7 @@ export default function Home() {
             if (targetIndex !== -1) {
               const startIndex = Math.max(0, targetIndex - 2);
               filteredMeldekort = meldekortData.slice(startIndex);
-              console.error('DIRECTLY FILTERED TO', filteredMeldekort.length, 'meldekort starting from index', startIndex);
+              console.error('FILTERED TO', filteredMeldekort.length, 'meldekort starting from index', startIndex);
               
               toast({
                 title: "Foreldelse detektert",
@@ -496,20 +511,16 @@ export default function Home() {
         }
       }
       
-      // Use setTimeout only for the calculation, not for foreldelse logic
-      setTimeout(() => {
-        analyzeUforegradChangesSimplified(filteredMeldekort);
-        console.log('analyzeUforegradChangesSimplified call completed');
+      // Call analysis function immediately with filtered data
+      analyzeUforegradChangesSimplified(filteredMeldekort);
+      console.log('analyzeUforegradChangesSimplified call completed');
         
-        // Show completion toast after analysis is done
-        setTimeout(() => {
-          toast({
-            title: "Autofyll fullført!",
-            description: "Data er hentet fra rådata og fylt inn i feltene",
-            duration: 3000,
-          });
-        }, 50);
-      }, 100);
+      // Show completion toast after analysis is done
+      toast({
+        title: "Autofyll fullført!",
+        description: "Data er hentet fra rådata og fylt inn i feltene",
+        duration: 3000,
+      });
     } else {
       console.log('NO MELDEKORT DATA TO ANALYZE');
       
