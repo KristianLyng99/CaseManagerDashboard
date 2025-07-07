@@ -452,7 +452,38 @@ export default function Home() {
       
       // Use setTimeout to ensure state updates from applyVedtakDates have taken effect
       setTimeout(() => {
-        analyzeUforegradChangesFixed(meldekortData);
+        // FIRST: Check foreldelse and filter meldekort BEFORE any calculations
+        const foreldelseStatus = getForeldelseStatus();
+        let filteredMeldekort = meldekortData;
+        
+        if (foreldelseStatus.etterbetalingFra) {
+          const foreldelseDato = parseDate(foreldelseStatus.etterbetalingFra);
+          if (foreldelseDato) {
+            console.error('APPLYING FORELDELSE FILTERING BEFORE CALCULATION');
+            
+            // Find which meldekort contains the foreldelse date
+            let targetIndex = -1;
+            for (let i = 0; i < meldekortData.length; i++) {
+              const startDate = parseDate(meldekortData[i].fraDato);
+              const endDate = parseDate(meldekortData[i].tilDato);
+              if (startDate && endDate && foreldelseDato >= startDate && foreldelseDato <= endDate) {
+                targetIndex = i;
+                console.error('Found foreldelse in meldekort', i + 1, 'period:', meldekortData[i].fraDato, '-', meldekortData[i].tilDato);
+                break;
+              }
+            }
+            
+            if (targetIndex !== -1) {
+              // Only keep meldekort from 2 periods before the foreldelse period to the end
+              const startIndex = Math.max(0, targetIndex - 2);
+              filteredMeldekort = meldekortData.slice(startIndex);
+              console.error('FILTERED TO', filteredMeldekort.length, 'meldekort starting from index', startIndex);
+            }
+          }
+        }
+        
+        // NOW call the analysis function with pre-filtered data
+        analyzeUforegradChangesFixed(filteredMeldekort);
         console.log('analyzeUforegradChangesFixed call completed');
         
         // Show completion toast after analysis is done
