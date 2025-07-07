@@ -450,10 +450,11 @@ export default function Home() {
     if (meldekortData.length > 0) {
       console.log('CALLING analyzeUforegradChanges with', meldekortData.length, 'meldekort');
       
-      // DIRECT CALL TO ENSURE EXECUTION
-      analyzeUforegradChanges(meldekortData);
-      
-      console.log('analyzeUforegradChanges call completed');
+      // Use setTimeout to ensure state updates from applyVedtakDates have taken effect
+      setTimeout(() => {
+        analyzeUforegradChanges(meldekortData);
+        console.log('analyzeUforegradChanges call completed');
+      }, 100);
     } else {
       console.log('NO MELDEKORT DATA TO ANALYZE');
     }
