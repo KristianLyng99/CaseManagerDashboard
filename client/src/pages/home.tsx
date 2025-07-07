@@ -439,16 +439,15 @@ export default function Home() {
     });
 
     // Extract the dates we need for foreldelse calculation BEFORE applying them to state
+    // ALWAYS use the actual registration date from the form, not the parsed til date
     let calculatedSøknadRegistrert = søknadRegistrert;
     let calculatedAapFra = '';
     
-    // For old format parsing, determine dates but don't apply to state yet
+    // For old format parsing, determine AAP start date but keep original registration date
     if (aapDatesFromOldFormat.length >= 2 && tilDates.length > 0) {
-      calculatedSøknadRegistrert = tilDates[tilDates.length - 1];
       calculatedAapFra = aapDatesFromOldFormat[1];
       applyVedtakDates(aapDatesFromOldFormat[1], tilDates[tilDates.length - 1]);
     } else if (aapDatesFromOldFormat.length === 1 && tilDates.length > 0) {
-      calculatedSøknadRegistrert = tilDates[tilDates.length - 1];
       calculatedAapFra = aapDatesFromOldFormat[0];
       applyVedtakDates(aapDatesFromOldFormat[0], tilDates[tilDates.length - 1]);
     }
