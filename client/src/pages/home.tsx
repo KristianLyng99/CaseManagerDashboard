@@ -483,8 +483,9 @@ export default function Home() {
         }
         
         // NOW call the analysis function with pre-filtered data
-        analyzeUforegradChangesFixed(filteredMeldekort);
-        console.log('analyzeUforegradChangesFixed call completed');
+        // Skip all internal filtering since we've already done it
+        analyzeUforegradChangesSimplified(filteredMeldekort);
+        console.log('analyzeUforegradChangesSimplified call completed');
         
         // Show completion toast after analysis is done
         setTimeout(() => {
@@ -505,6 +506,74 @@ export default function Home() {
         duration: 3000,
       });
     }
+  };
+
+  // Simplified analysis function that only calculates without any filtering
+  const analyzeUforegradChangesSimplified = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+    console.error('*** SIMPLIFIED FUNCTION STARTED - USING PRE-FILTERED DATA ***');
+    console.error('Received meldekort count:', meldekortData.length);
+    
+    if (meldekortData.length < 3) {
+      // Not enough data to detect changes, just calculate average
+      const totalHours = meldekortData.reduce((sum, mk) => sum + mk.hours, 0);
+      const avgHours = meldekortData.length > 0 ? totalHours / meldekortData.length : 0;
+      const workPct = (avgHours / 75) * 100;
+      const uforegradExact = 100 - workPct;
+      const uforegrad = Math.round(uforegradExact / 5) * 5;
+      
+      console.error('SIMPLE AVERAGE CALCULATION:', { avgHours, uforegrad });
+      setAvgUforegrad(uforegrad);
+      setAvgUforegradExact(uforegradExact);
+      setUforegradDateRange(meldekortData.length > 0 ? {
+        fraDato: meldekortData[0].fraDato,
+        tilDato: meldekortData[meldekortData.length - 1].tilDato
+      } : null);
+      setUforegradPerioder(null);
+      return;
+    }
+
+    // Skip first meldekort (start from kort #2)
+    const analyseData = meldekortData.slice(1);
+    
+    if (analyseData.length < 2) {
+      // Not enough data after skipping first
+      const totalHours = analyseData.reduce((sum, mk) => sum + mk.hours, 0);
+      const avgHours = analyseData.length > 0 ? totalHours / analyseData.length : 0;
+      const workPct = (avgHours / 75) * 100;
+      const uforegradExact = 100 - workPct;
+      const uforegrad = Math.round(uforegradExact / 5) * 5;
+      
+      console.error('SIMPLE CALCULATION AFTER SLICE:', { avgHours, uforegrad });
+      setAvgUforegrad(uforegrad);
+      setAvgUforegradExact(uforegradExact);
+      setUforegradDateRange(analyseData.length > 0 ? {
+        fraDato: analyseData[0].fraDato,
+        tilDato: analyseData[analyseData.length - 1].tilDato
+      } : null);
+      setUforegradPerioder(null);
+      return;
+    }
+
+    // Continue with full analysis...
+    // Calculate overall average from all analyzed data
+    const totalHours = analyseData.reduce((sum, mk) => sum + mk.hours, 0);
+    const avgHours = totalHours / analyseData.length;
+    const overallUforegradExact = 100 - (avgHours / 75) * 100;
+    const overallUforegrad = Math.round(overallUforegradExact / 5) * 5;
+    
+    console.error('FINAL SIMPLIFIED CALCULATION:', {
+      analyseDataCount: analyseData.length,
+      avgHours: avgHours,
+      overallUforegrad: overallUforegrad
+    });
+    
+    setAvgUforegrad(overallUforegrad);
+    setAvgUforegradExact(overallUforegradExact);
+    setUforegradDateRange({
+      fraDato: analyseData[0].fraDato,
+      tilDato: analyseData[analyseData.length - 1].tilDato
+    });
+    setUforegradPerioder(null);
   };
 
   // Analyze disability grade changes across meldekort periods using sophisticated algorithm
