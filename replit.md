@@ -89,6 +89,12 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- July 07, 2025. Added salary visualization chart feature:
+  - Implemented interactive salary chart using Recharts library
+  - Chart displays salary progression over 2-year period with months before sick date on X-axis
+  - Added reference lines: red vertical line at 1-year mark, green horizontal line at 85% of sick date salary, orange horizontal line at 92.5%
+  - Chart includes tooltips showing salary amounts and time periods
+  - "Visualiser" button provides visual comparison of salary thresholds for karens assessment
 - July 07, 2025. Fixed critical foreldelse filtering timing issue:
   - Resolved race condition where foreldelse filtering only worked on second button press
   - Fixed state synchronization issue by adding setTimeout delay to ensure state updates complete

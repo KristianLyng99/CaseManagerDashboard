@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye, AlertTriangle } from "lucide-react";
+import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye, AlertTriangle, BarChart3 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -2289,17 +2290,135 @@ export default function Home() {
                                     Se alle lønnsposter i 2-års perioden med prosentvis økning til sykdato.
                                   </p>
                                 </div>
+                                <div className="flex space-x-2">
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs px-3 py-1 bg-orange-50 hover:bg-orange-100 border-orange-300"
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        Se alle ({salaryIncreaseCheck.violationsCount})
+                                      </Button>
+                                    </DialogTrigger>
+                                  </Dialog>
+                                  
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs px-3 py-1 bg-blue-50 hover:bg-blue-100 border-blue-300"
+                                      >
+                                        <BarChart3 className="h-3 w-3 mr-1" />
+                                        Visualiser
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-lg font-semibold text-slate-800">
+                                          Lønnsvisualisering - Siste 2 år
+                                        </DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-4">
+                                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                          <h4 className="font-medium text-blue-800 mb-2">Forklaring</h4>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                            <div>
+                                              <p className="text-blue-700 mb-1"><strong>Rød vertikal linje:</strong> 1 år før sykdato</p>
+                                              <p className="text-blue-700 mb-1"><strong>Grønn linje:</strong> 85% av sykdato lønn</p>
+                                              <p className="text-blue-700"><strong>Orange linje:</strong> 92.5% av sykdato lønn</p>
+                                            </div>
+                                            <div>
+                                              <p className="text-blue-700 mb-1"><strong>Blå linje:</strong> Lønn over tid (100% stilling)</p>
+                                              <p className="text-blue-700"><strong>Sykdato lønn:</strong> {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        <div style={{ width: '100%', height: '400px' }}>
+                                          <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart
+                                              data={salaryIncreaseCheck.seAlleList
+                                                .sort((a, b) => b.monthsBeforeSick - a.monthsBeforeSick)
+                                                .map((entry) => ({
+                                                  x: entry.monthsBeforeSick,
+                                                  salary: entry.salary100,
+                                                  date: entry.date
+                                                }))}
+                                              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                            >
+                                              <CartesianGrid strokeDasharray="3 3" />
+                                              <XAxis 
+                                                dataKey="x"
+                                                type="number"
+                                                domain={['dataMin', 'dataMax']}
+                                                label={{ value: 'Måneder før sykdato', position: 'insideBottom', offset: -10 }}
+                                                reversed={true}
+                                              />
+                                              <YAxis 
+                                                label={{ value: 'Lønn (100% stilling)', angle: -90, position: 'insideLeft' }}
+                                                tickFormatter={(value) => `${Math.round(value / 1000)}k`}
+                                              />
+                                              <Tooltip 
+                                                formatter={(value) => [`${value.toLocaleString('no-NO')} kr`, 'Lønn']}
+                                                labelFormatter={(label) => `${label} måneder før sykdato`}
+                                              />
+                                              
+                                              <ReferenceLine x={12} stroke="red" strokeWidth={2} strokeDasharray="5 5" />
+                                              <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.85} stroke="green" strokeWidth={2} strokeDasharray="3 3" />
+                                              <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.925} stroke="orange" strokeWidth={2} strokeDasharray="3 3" />
+                                              
+                                              <Line 
+                                                type="monotone" 
+                                                dataKey="salary" 
+                                                stroke="#2563eb" 
+                                                strokeWidth={3}
+                                                dot={{ r: 4 }}
+                                                activeDot={{ r: 6 }}
+                                              />
+                                            </LineChart>
+                                          </ResponsiveContainer>
+                                        </div>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                </div>
+                              </div>
+                            </div>
+                        )}
+                        
+                        {/* Show separate dialog for "Se alle" data */}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <div style={{ display: 'none' }}></div>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-lg font-semibold text-slate-800">
+                                          Alle lønnsperioder (mellom sykdato og 2 år tilbake)
+                                        </DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-4">
+                                        {/* All violations */}
+                                        <div>
+                                
+                                {/* Separate dialog for "Se alle" list */}
                                 <Dialog>
                                   <DialogTrigger asChild>
-                                    <Button 
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-xs px-3 py-1 bg-orange-50 hover:bg-orange-100 border-orange-300"
-                                    >
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      Se alle ({salaryIncreaseCheck.violationsCount})
-                                    </Button>
+                                    <div style={{ display: 'none' }}></div>
                                   </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-lg font-semibold text-slate-800">
+                                          Alle lønnsperioder (mellom sykdato og 2 år tilbake)
+                                        </DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-4">
+                                        
+                                        {/* All violations */}
+                                        <div>
                                   <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                                     <DialogHeader>
                                       <DialogTitle className="text-lg font-semibold text-slate-800">
@@ -2439,6 +2558,7 @@ export default function Home() {
                                     </div>
                                   </DialogContent>
                                 </Dialog>
+                                </div>
                               </div>
                             </div>
                           )}
