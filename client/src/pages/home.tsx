@@ -1353,16 +1353,16 @@ export default function Home() {
         percentage: s.percentage
       })));
       
-      const threshold15 = sickSalary * 0.15;
-      console.log('15% threshold:', threshold15);
+      const threshold85 = sickSalary * 0.85;
+      console.log('85% threshold:', threshold85);
       let consecutiveViolations15 = 0;
       let maxConsecutiveViolations15 = 0;
       let violationPeriods15 = [];
       let currentViolationStart15 = null;
       
       twoYearToOneYearSalaries.forEach((entry, index) => {
-        console.log(`Entry ${index}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold15, 'below:', entry.salary < threshold15);
-        if (entry.salary < threshold15) {
+        console.log(`Entry ${index}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold85, 'below:', entry.salary < threshold85);
+        if (entry.salary < threshold85) {
           if (currentViolationStart15 === null) {
             currentViolationStart15 = formatDate(entry.date);
             console.log('Starting violation period at:', currentViolationStart15);
@@ -1399,14 +1399,14 @@ export default function Home() {
         entry.date >= oneYearBefore && entry.date <= sickDate
       );
       
-      const threshold7_5 = sickSalary * 0.075;
+      const threshold92_5 = sickSalary * 0.925;
       let consecutiveViolations7_5 = 0;
       let maxConsecutiveViolations7_5 = 0;
       let violationPeriods7_5 = [];
       let currentViolationStart7_5 = null;
       
       oneYearToSickSalaries.forEach(entry => {
-        if (entry.salary < threshold7_5) {
+        if (entry.salary < threshold92_5) {
           if (currentViolationStart7_5 === null) {
             currentViolationStart7_5 = formatDate(entry.date);
           }
@@ -1439,13 +1439,13 @@ export default function Home() {
           hasViolation: maxConsecutiveViolations15 >= 3,
           maxConsecutiveMonths: maxConsecutiveViolations15,
           violationPeriods: violationPeriods15,
-          threshold: threshold15
+          threshold: threshold85
         },
         oneYearToSick: {
           hasViolation: maxConsecutiveViolations7_5 >= 3,
           maxConsecutiveMonths: maxConsecutiveViolations7_5,
           violationPeriods: violationPeriods7_5,
-          threshold: threshold7_5
+          threshold: threshold92_5
         }
       };
     };
@@ -2289,8 +2289,8 @@ export default function Home() {
                                 </div>
                                 {salaryIncreaseCheck.thresholdViolations?.twoYearToOneYear.hasViolation && (
                                   <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
-                                    <strong>⚠️ Terskel brudd (15%):</strong><br/>
-                                    Lønn var under 15% terskel i {salaryIncreaseCheck.thresholdViolations.twoYearToOneYear.maxConsecutiveMonths} måneder
+                                    <strong>⚠️ Terskel brudd (85%):</strong><br/>
+                                    Lønn var under 85% terskel i {salaryIncreaseCheck.thresholdViolations.twoYearToOneYear.maxConsecutiveMonths} måneder
                                     {salaryIncreaseCheck.thresholdViolations.twoYearToOneYear.violationPeriods.map((period, index) => (
                                       <div key={index} className="text-xs mt-1">
                                         Fra {period.start} til {period.endDate} ({period.months} mnd)
@@ -2345,8 +2345,8 @@ export default function Home() {
                                 </div>
                                 {salaryIncreaseCheck.thresholdViolations?.oneYearToSick.hasViolation && (
                                   <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
-                                    <strong>⚠️ Terskel brudd (7,5%):</strong><br/>
-                                    Lønn var under 7,5% terskel i {salaryIncreaseCheck.thresholdViolations.oneYearToSick.maxConsecutiveMonths} måneder
+                                    <strong>⚠️ Terskel brudd (92,5%):</strong><br/>
+                                    Lønn var under 92,5% terskel i {salaryIncreaseCheck.thresholdViolations.oneYearToSick.maxConsecutiveMonths} måneder
                                     {salaryIncreaseCheck.thresholdViolations.oneYearToSick.violationPeriods.map((period, index) => (
                                       <div key={index} className="text-xs mt-1">
                                         Fra {period.start} til {period.endDate} ({period.months} mnd)
