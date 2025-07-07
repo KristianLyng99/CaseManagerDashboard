@@ -1360,20 +1360,31 @@ export default function Home() {
       let violationPeriods15 = [];
       let currentViolationStart15 = null;
       
-      twoYearToOneYearSalaries.forEach((entry, index) => {
-        console.log(`Entry ${index}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold85, 'below:', entry.salary < threshold85);
+      for (let i = 0; i < twoYearToOneYearSalaries.length; i++) {
+        const entry = twoYearToOneYearSalaries[i];
+        const nextEntry = twoYearToOneYearSalaries[i + 1];
+        
+        // Calculate months this salary applies to
+        const entryDate = new Date(entry.date);
+        const nextDate = nextEntry ? new Date(nextEntry.date) : new Date(oneYearBefore);
+        const monthsInPeriod = Math.abs((nextDate.getFullYear() - entryDate.getFullYear()) * 12 + 
+                                       (nextDate.getMonth() - entryDate.getMonth()));
+        
+        console.log(`Entry ${i}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold85, 
+                    'below:', entry.salary < threshold85, 'months in period:', monthsInPeriod);
+        
         if (entry.salary < threshold85) {
           if (currentViolationStart15 === null) {
             currentViolationStart15 = formatDate(entry.date);
             console.log('Starting violation period at:', currentViolationStart15);
           }
-          consecutiveViolations15++;
+          consecutiveViolations15 += monthsInPeriod;
           maxConsecutiveViolations15 = Math.max(maxConsecutiveViolations15, consecutiveViolations15);
-          console.log('Consecutive violations now:', consecutiveViolations15);
+          console.log('Consecutive violations now:', consecutiveViolations15, 'months');
         } else {
           console.log('Salary above threshold, checking if we had 3+ violations...');
           if (consecutiveViolations15 >= 3 && currentViolationStart15) {
-            console.log('Adding violation period:', currentViolationStart15, 'to', formatDate(entry.date), 'months:', consecutiveViolations15);
+            console.log('Adding violation period:', currentViolationStart15, 'months:', consecutiveViolations15);
             violationPeriods15.push({
               start: currentViolationStart15,
               months: consecutiveViolations15,
@@ -1383,7 +1394,7 @@ export default function Home() {
           consecutiveViolations15 = 0;
           currentViolationStart15 = null;
         }
-      });
+      }
       
       // Check final period if it ends with violations
       if (consecutiveViolations15 >= 3 && currentViolationStart15) {
@@ -1405,12 +1416,24 @@ export default function Home() {
       let violationPeriods7_5 = [];
       let currentViolationStart7_5 = null;
       
-      oneYearToSickSalaries.forEach(entry => {
+      for (let i = 0; i < oneYearToSickSalaries.length; i++) {
+        const entry = oneYearToSickSalaries[i];
+        const nextEntry = oneYearToSickSalaries[i + 1];
+        
+        // Calculate months this salary applies to
+        const entryDate = new Date(entry.date);
+        const nextDate = nextEntry ? new Date(nextEntry.date) : new Date(sickDate);
+        const monthsInPeriod = Math.abs((nextDate.getFullYear() - entryDate.getFullYear()) * 12 + 
+                                       (nextDate.getMonth() - entryDate.getMonth()));
+        
+        console.log(`1-year Entry ${i}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold92_5, 
+                    'below:', entry.salary < threshold92_5, 'months in period:', monthsInPeriod);
+        
         if (entry.salary < threshold92_5) {
           if (currentViolationStart7_5 === null) {
             currentViolationStart7_5 = formatDate(entry.date);
           }
-          consecutiveViolations7_5++;
+          consecutiveViolations7_5 += monthsInPeriod;
           maxConsecutiveViolations7_5 = Math.max(maxConsecutiveViolations7_5, consecutiveViolations7_5);
         } else {
           if (consecutiveViolations7_5 >= 3 && currentViolationStart7_5) {
@@ -1423,7 +1446,7 @@ export default function Home() {
           consecutiveViolations7_5 = 0;
           currentViolationStart7_5 = null;
         }
-      });
+      }
       
       // Check final period if it ends with violations
       if (consecutiveViolations7_5 >= 3 && currentViolationStart7_5) {
