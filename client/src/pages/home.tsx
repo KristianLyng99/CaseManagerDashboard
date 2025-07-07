@@ -445,10 +445,15 @@ export default function Home() {
       applyVedtakDates(aapDatesFromOldFormat[0], tilDates[tilDates.length - 1]);
     }
     
-    // Analyze meldekort data for disability grade changes
+    // Analyze meldekort data for disability grade changes  
+    console.log('About to process meldekort data:', meldekortData.length, 'meldekort found');
     if (meldekortData.length > 0) {
       console.log('CALLING analyzeUforegradChanges with', meldekortData.length, 'meldekort');
+      
+      // DIRECT CALL TO ENSURE EXECUTION
       analyzeUforegradChanges(meldekortData);
+      
+      console.log('analyzeUforegradChanges call completed');
     } else {
       console.log('NO MELDEKORT DATA TO ANALYZE');
     }
@@ -462,6 +467,7 @@ export default function Home() {
 
   // Analyze disability grade changes across meldekort periods using sophisticated algorithm
   const analyzeUforegradChanges = (meldekortData: Array<{hours: number; fraDato: string; tilDato: string}>) => {
+    console.log('*** ANALYZE UFOREGRAD CHANGES FUNCTION STARTED ***');
     console.log('analyzeUforegradChanges called with:', {
       meldekortCount: meldekortData.length,
       firstMeldekort: meldekortData[0],
