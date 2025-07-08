@@ -89,6 +89,13 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- July 08, 2025. Enhanced salary import with Excel support:
+  - Renamed "Lønn og karens" section to "Import Lønndata" 
+  - Added intelligent Excel data parser for tab-separated values
+  - System automatically detects Excel format vs legacy DSOP format
+  - Improved user guidance with instructions for copying Excel data
+  - Enhanced threshold violation detection to account for actual duration between salary periods
+  - Fixed tooltip in chart visualization to show actual dates alongside months before sick date
 - July 07, 2025. Added salary visualization chart feature:
   - Implemented interactive salary chart using Recharts library
   - Chart displays salary progression over 2-year period with months before sick date on X-axis

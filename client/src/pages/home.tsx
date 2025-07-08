@@ -1061,13 +1061,122 @@ export default function Home() {
   const foreldelseStatus = getForeldelseStatus();
 
   // Parse salary history and check for 15% increase
+  // Parse salary history from Excel data (tab-separated format) or legacy DSOP format
   const parseSalaryHistory = () => {
     if (!rawSalaryData.trim() || !sykdato) return null;
 
     const lines = rawSalaryData.trim().split('\n');
-    const salaryData = [];
     
-    // Use column-based parsing (OCR friendly)
+    // First, try to parse as Excel data (tab-separated)
+    if (lines.length > 1 && lines.some(line => line.includes('\t'))) {
+      return parseExcelSalaryData(lines);
+    }
+    
+    // Fallback to old DSOP format for backwards compatibility
+    return parseDSOPSalaryData(lines);
+  };
+
+  // Parse Excel format (tab-separated columns)
+  const parseExcelSalaryData = (lines) => {
+    const salaryData = [];
+    let headerIndex = -1;
+    let dateColumnIndex = -1;
+    let salaryColumnIndex = -1;
+    let percentageColumnIndex = -1;
+
+    console.log('Parsing Excel data - total lines:', lines.length);
+
+    // Find header row and column indices
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const columns = line.split('\t');
+      console.log(`Line ${i} columns:`, columns);
+      
+      // Look for header patterns
+      for (let j = 0; j < columns.length; j++) {
+        const col = columns[j].toLowerCase().trim();
+        if ((col.includes('gjelderfradato') || col.includes('gjelder') || 
+            col.includes('fra dato') || col.includes('dato')) && dateColumnIndex === -1) {
+          headerIndex = i;
+          dateColumnIndex = j;
+          console.log('Found date column at index:', j);
+        }
+        if ((col.includes('lønn') || col.includes('lonn')) && !col.includes('grunnlag') && salaryColumnIndex === -1) {
+          salaryColumnIndex = j;
+          console.log('Found salary column at index:', j);
+        }
+        if ((col.includes('stillingsprosent') || col.includes('prosent') || col.includes('pst')) && percentageColumnIndex === -1) {
+          percentageColumnIndex = j;
+          console.log('Found percentage column at index:', j);
+        }
+      }
+      
+      if (headerIndex >= 0 && dateColumnIndex >= 0 && salaryColumnIndex >= 0) {
+        break;
+      }
+    }
+
+    console.log('Excel parsing - found columns:', {
+      headerIndex,
+      dateColumnIndex,
+      salaryColumnIndex,
+      percentageColumnIndex
+    });
+
+    // Parse data rows
+    for (let i = headerIndex + 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const columns = line.split('\t');
+      console.log(`Processing data row ${i}:`, columns);
+      
+      // Extract date
+      const dateText = columns[dateColumnIndex]?.trim();
+      if (!dateText) continue;
+      
+      const date = parseDate(dateText);
+      if (!date) {
+        console.log('Could not parse date:', dateText);
+        continue;
+      }
+      
+      // Extract salary
+      const salaryText = columns[salaryColumnIndex]?.trim().replace(/[^\d]/g, '');
+      const salary = parseInt(salaryText);
+      if (isNaN(salary)) {
+        console.log('Could not parse salary:', columns[salaryColumnIndex]);
+        continue;
+      }
+      
+      // Extract percentage (default to 100 if not found)
+      let percentage = 100;
+      if (percentageColumnIndex >= 0 && columns[percentageColumnIndex]) {
+        const percentText = columns[percentageColumnIndex].trim().replace(/[^\d]/g, '');
+        const percentValue = parseInt(percentText);
+        if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 100) {
+          percentage = percentValue;
+        }
+      }
+      
+      console.log('Parsed entry:', { date: date.toISOString(), salary, percentage });
+      
+      salaryData.push({
+        date,
+        salary,
+        percentage
+      });
+    }
+
+    console.log('Excel parsed salary data:', salaryData);
+    return salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
+  };
+
+  // Original DSOP format parser (for backwards compatibility)
+  const parseDSOPSalaryData = (lines) => {
+    const salaryData = [];
     let dateSection = false;
     let salarySection = false;
     let percentSection = false;
@@ -1139,10 +1248,7 @@ export default function Home() {
       }
     }
 
-    console.log('Parsed dates:', dates);
-    console.log('Parsed salaries:', salaries);
-    console.log('Parsed percentages:', percentages);
-    console.log('Final salary data:', salaryData);
+    console.log('DSOP parsed salary data:', salaryData);
     return salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
   };
 
@@ -2028,19 +2134,27 @@ export default function Home() {
           <CardContent className="p-6">
             <div className="flex items-center space-x-2 mb-4">
               <Banknote className="text-primary h-5 w-5" />
-              <h2 className="text-lg font-medium text-slate-800">Lønn og Karens</h2>
+              <h2 className="text-lg font-medium text-slate-800">Import Lønndata</h2>
             </div>
             <div className="space-y-4">
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-medium text-blue-800 mb-2">Hvordan importere Excel-data</h4>
+                <div className="text-xs text-blue-700 space-y-1">
+                  <p>• Velg og kopier alle relevante rader fra Excel-arket (inkludert overskrifter)</p>
+                  <p>• Lim inn dataene i feltet nedenfor</p>
+                  <p>• Systemet vil automatisk gjenkjenne kolonner for dato, lønn og stillingsprosent</p>
+                </div>
+              </div>
               <div>
                 <Label htmlFor="rawSalaryData" className="text-sm font-medium text-slate-700">
-                  Rådata lønn
-                  <span className="text-slate-500 text-xs ml-1">(lim inn data fra DSOP)</span>
+                  Excel-data (lim inn her)
+                  <span className="text-slate-500 text-xs ml-1">(kopier direkte fra Excel)</span>
                 </Label>
                 <Textarea
                   id="rawSalaryData"
                   value={rawSalaryData}
                   onChange={(e) => setRawSalaryData(e.target.value)}
-                  placeholder="Lim inn lønnsdata"
+                  placeholder="Lim inn lønnsdata direkte fra Excel-ark her..."
                   className="min-h-[120px] font-mono text-sm"
                 />
               </div>
