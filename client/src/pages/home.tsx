@@ -1172,13 +1172,13 @@ export default function Home() {
 
     console.log('Checking for new benefits from', formatDate(twoYearsBefore), 'to', formatDate(sickDate));
 
-    // Filter entries in the 2-year period and sort by date
-    const entriesInPeriod = salaryHistory
-      .filter(entry => entry.date >= twoYearsBefore && entry.date <= sickDate && entry.benefits)
+    // Get ALL entries with benefit data and sort by date
+    const allEntries = salaryHistory
+      .filter(entry => entry.benefits)
       .sort((a, b) => a.date - b.date);
 
-    if (entriesInPeriod.length === 0) {
-      console.log('No entries with benefit data found in 2-year period');
+    if (allEntries.length === 0) {
+      console.log('No entries with benefit data found');
       return { hasNewBenefits: false, noData: true };
     }
 
@@ -1187,12 +1187,32 @@ export default function Home() {
     const benefitStatus = {};
     const newBenefitEvents = [];
 
-    // Initialize benefit status (assume all benefits start at 0)
+    // Initialize benefit status from the earliest available entry BEFORE 2-year period
+    // or assume 0 if no data exists before 2-year period
     for (const benefitType of benefitTypes) {
       benefitStatus[benefitType] = 0;
     }
 
-    // Process each entry to detect when benefits go from 0 to >0
+    // Find the baseline from entries before the 2-year period
+    const entriesBeforePeriod = allEntries.filter(entry => entry.date < twoYearsBefore);
+    if (entriesBeforePeriod.length > 0) {
+      const baselineEntry = entriesBeforePeriod[entriesBeforePeriod.length - 1]; // Most recent before period
+      console.log('Using baseline from entry before 2-year period:', formatDate(baselineEntry.date));
+      for (const benefitType of benefitTypes) {
+        benefitStatus[benefitType] = baselineEntry.benefits[benefitType] || 0;
+      }
+    } else {
+      console.log('No entries before 2-year period found, assuming benefits start at 0');
+    }
+
+    // Process entries within the 2-year period to detect when benefits go from 0 to >0
+    const entriesInPeriod = allEntries.filter(entry => 
+      entry.date >= twoYearsBefore && entry.date <= sickDate
+    );
+
+    console.log('Processing', entriesInPeriod.length, 'entries in 2-year period');
+    console.log('Initial benefit status:', benefitStatus);
+
     for (const entry of entriesInPeriod) {
       if (!entry.benefits) continue; // Skip entries without benefits data
       
