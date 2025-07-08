@@ -89,6 +89,13 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- July 08, 2025. Added experimental enhanced data method:
+  - Created backup of existing application (client_backup/, server_backup/, shared_backup/)
+  - Added new "Forbedret Data" page for exploring improved data input methods
+  - Added navigation between original rådata calculator and enhanced data page
+  - Enhanced data page includes structured tabs for input, analysis, and comparison
+  - Preserved all existing rådata functionality on main page
+  - System now supports dual approach: continue using rådata while testing new methods
 - July 07, 2025. Added salary visualization chart feature:
   - Implemented interactive salary chart using Recharts library
   - Chart displays salary progression over 2-year period with months before sick date on X-axis
