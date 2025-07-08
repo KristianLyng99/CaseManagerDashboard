@@ -1,324 +1,253 @@
-import { useState } from "react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Copy, FileSpreadsheet, Calculator, Info, TrendingUp } from "lucide-react";
-import { ResponsiveContainer, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Line } from "recharts";
+import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye, AlertTriangle, BarChart3, FileSpreadsheet } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { useToast } from "@/hooks/use-toast";
 
 export default function EnhancedData() {
-  const { toast } = useToast();
-  
-  // Core data states
-  const [excelLonnData, setExcelLonnData] = useState('');
   const [sykdato, setSykdato] = useState('');
-  const [dsopRadata, setDsopRadata] = useState('');
-  const [soknadRegistrert, setSoknadRegistrert] = useState('');
+  const [maksdato, setMaksdato] = useState('');
   const [aapFra, setAapFra] = useState('');
-  
-  // Calculation results states
-  const [beregnetUforegrad, setBeregnetUforegrad] = useState<number | null>(null);
-  const [antallMeldekort, setAntallMeldekort] = useState<number>(0);
-  const [salaryIncreaseCheck, setSalaryIncreaseCheck] = useState<any>(null);
-  const [gRegulatedCalculation, setGRegulatedCalculation] = useState<any>(null);
-  
-  // Toggle states
-  const [visNominalLonn, setVisNominalLonn] = useState(false);
-  const [foreldelseFiltreringAktiv, setForeldelseFiltreringAktiv] = useState(false);
+  const [aapTil, setAapTil] = useState('');
+  const [uforetrygd, setUforetrygd] = useState('');
+  const [lonnSykdato, setLonnSykdato] = useState('');
+  const [excelSalaryData, setExcelSalaryData] = useState(''); // This replaces rawSalaryData
+  const [søknadRegistrert, setSoknadRegistrert] = useState(() => {
+    const today = new Date();
+    const firstOfPreviousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const d = String(firstOfPreviousMonth.getDate()).padStart(2, '0');
+    const m = String(firstOfPreviousMonth.getMonth() + 1).padStart(2, '0');
+    const y = firstOfPreviousMonth.getFullYear();
+    return `${d}.${m}.${y}`;
+  });
+  const [durationText, setDurationText] = useState('');
+  const [diffDays, setDiffDays] = useState<number | null>(null);
+  const [teoretiskSykdato, setTeoretiskSykdato] = useState('');
+  const [avgUforegrad, setAvgUforegrad] = useState<number | null>(null);
+  const [avgUforegradExact, setAvgUforegradExact] = useState<number | null>(null);
+  const [uforegradDateRange, setUforegradDateRange] = useState<{fraDato: string; tilDato: string} | null>(null);
+  const [uforegradPerioder, setUforegradPerioder] = useState<Array<{
+    uforegrad: number;
+    fraIndex: number;
+    tilIndex: number;
+    fraDato: string;
+    tilDato: string;
+  }> | null>(null);
+  const [meldekortWarnings, setMeldekortWarnings] = useState<Array<{
+    type: 'gap' | 'low_uforegrad';
+    message: string;
+    detail: string;
+  }>>([]);
+  const [rawInput, setRawInput] = useState('');
+  const [useNominalSalary, setUseNominalSalary] = useState(false);
+  const [nominalSalaryData, setNominalSalaryData] = useState<{salary: number, salary100: number} | null>(null);
+  const [debugTable, setDebugTable] = useState<{month: string, days: number, percentage: number, weighted: number}[] | null>(null);
+  const { toast } = useToast();
 
-  // Utility functions
-  const parseDate = (dateString: string): Date | null => {
-    if (!dateString) return null;
+  // Copy to clipboard utility
+  const copyToClipboard = async (text: string) => {
+    if (!text) return;
     
-    // Try DD.MM.YYYY format first
-    let parts = dateString.split('.');
-    if (parts.length === 3) {
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
-      const year = parseInt(parts[2], 10);
-      
-      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        return new Date(year, month, day);
-      }
-    }
-    
-    // Try DDMMYYYY format
-    if (dateString.length === 8 && /^\d+$/.test(dateString)) {
-      const day = parseInt(dateString.slice(0, 2), 10);
-      const month = parseInt(dateString.slice(2, 4), 10) - 1;
-      const year = parseInt(dateString.slice(4, 8), 10);
-      
-      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        return new Date(year, month, day);
-      }
-    }
-    
-    return null;
-  };
-
-  const formatDate = (date: Date): string => {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}.${month}.${year}`;
-  };
-
-  const parseExcelLonnData = (data: string) => {
-    const lines = data.trim().split('\n');
-    const salaryEntries = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      
-      // Split by tabs (Excel paste format)
-      const columns = line.split('\t');
-      
-      if (columns.length >= 5) {
-        try {
-          const gjelderfradato = columns[0];
-          const lonnN = parseFloat(columns[1]) || 0;
-          const stillingsprosent = parseFloat(columns[2]) || 0;
-          const ajournalDato = columns[3];
-          const lonn = parseFloat(columns[4]) || 0;
-          
-          const date = parseDate(gjelderfradato);
-          if (date) {
-            salaryEntries.push({
-              gjelderfradato,
-              date: date.toISOString(),
-              lonnN,
-              stillingsprosent,
-              ajournalDato,
-              lonn,
-              salary100: stillingsprosent > 0 ? (lonn * 100) / stillingsprosent : 0
-            });
-          }
-        } catch (e) {
-          console.warn('Failed to parse line:', line, e);
-        }
-      }
-    }
-    
-    return salaryEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  };
-
-  const handleCalculate = () => {
-    if (!excelLonnData || !sykdato) {
-      toast({
-        title: "Manglende data",
-        description: "Vennligst fyll inn både Excel lønndata og sykdato.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
-      const salaryData = parseExcelLonnData(excelLonnData);
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Kopiert!",
+        description: "Tekst er kopiert til utklippstavlen",
+        duration: 2000,
+      });
+    } catch (err) {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
       
-      if (salaryData.length === 0) {
-        toast({
-          title: "Ingen lønndata funnet",
-          description: "Kunne ikke parse Excel lønndata. Sjekk formatet.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // For now, just set basic results
-      setSalaryIncreaseCheck({
-        hasData: true,
-        totalEntries: salaryData.length,
-        sickDate: sykdato,
-        salaryEntries: salaryData
-      });
-
       toast({
-        title: "Data prosessert",
-        description: `${salaryData.length} lønnsposter er klar for analyse`,
-      });
-
-    } catch (error) {
-      console.error('Error processing data:', error);
-      toast({
-        title: "Feil ved prosessering",
-        description: "En feil oppstod under prosessering av data.",
-        variant: "destructive"
+        title: "Kopiert!",
+        description: "Tekst er kopiert til utklippstavlen",
+        duration: 2000,
       });
     }
+  };
+
+  // PLACEHOLDER: Replace with parseAutofill from home.tsx that handles Excel format
+  const parseAutofill = () => {
+    toast({
+      title: "Excel Parser",
+      description: "Excel format parsing will be implemented here",
+    });
+  };
+
+  const formatInput = (value: string) => {
+    if (!value) return '';
+    
+    const cleaned = value.replace(/\D/g, '');
+    
+    if (cleaned.length === 8) {
+      return `${cleaned.slice(0,2)}.${cleaned.slice(2,4)}.${cleaned.slice(4,8)}`;
+    }
+    
+    return value;
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800">Forbedret Data Kalkulator</h1>
-          <p className="text-slate-600 mt-2">
-            Samme funksjonalitet som rådata kalkulator, men med Excel lønndata input
-          </p>
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <FileSpreadsheet className="text-white text-lg h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-slate-800">Forbedret Data Kalkulator</h1>
+              <p className="text-sm text-slate-600">Samme funksjonalitet som rådata kalkulator, men med Excel lønndata</p>
+            </div>
+          </div>
         </div>
-        <Badge variant="secondary" className="bg-green-100 text-green-800">
-          Excel Format
-        </Badge>
-      </div>
+      </header>
 
-      {/* Date Input Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            Grunnleggende Informasjon
-          </CardTitle>
-          <CardDescription>
-            Fyll inn datoer og grunnleggende informasjon
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sykdato">Første sykedag</Label>
-              <Input
-                id="sykdato"
-                type="text"
-                placeholder="DD.MM.YYYY eller DDMMYYYY"
-                value={sykdato}
-                onChange={(e) => setSykdato(e.target.value)}
-                className="w-full"
-              />
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Raw Data Input - DSOP at the top like original */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <ClipboardType className="text-primary h-5 w-5" />
+              <h2 className="text-lg font-medium text-slate-800">DSOP Rådata Import</h2>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="soknad-registrert">Søknad registrert</Label>
-              <Input
-                id="soknad-registrert"
-                type="text"
-                placeholder="DD.MM.YYYY eller DDMMYYYY"
-                value={soknadRegistrert}
-                onChange={(e) => setSoknadRegistrert(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="aap-fra">AAP fra</Label>
-              <Input
-                id="aap-fra"
-                type="text"
-                placeholder="DD.MM.YYYY eller DDMMYYYY"
-                value={aapFra}
-                onChange={(e) => setAapFra(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            
-            <div className="flex items-end">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rawInput" className="text-sm font-medium text-slate-700 mb-2 block">
+                  Lim inn data fra DSOP her. OBS ikke lim inn sensitiv data
+                </Label>
+                <Textarea 
+                  id="rawInput"
+                  rows={6}
+                  value={rawInput}
+                  onChange={(e) => setRawInput(e.target.value)}
+                  className="font-mono text-sm resize-none"
+                  placeholder="Lim inn data fra DSOP her. OBS ikke lim inn sensitiv data"
+                />
+              </div>
               <Button 
-                onClick={handleCalculate}
-                disabled={!excelLonnData || !sykdato}
-                className="w-full"
+                onClick={parseAutofill}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                Beregn
+                <WandSparkles className="mr-2 h-4 w-4" />
+                Autofyl
               </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Excel Salary Data Input */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5" />
-            Excel Lønndata
-          </CardTitle>
-          <CardDescription>
-            Kopier og lim inn lønndata direkte fra Excel-tabell
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Format:</strong> Velg og kopier hele rader fra Excel inkludert kolonner som: 
-              Gjelderfradato, LønnN, Stillingsprosent, AjournalDato, Lønn, etc.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="space-y-2">
-            <Label htmlFor="excel-lonn">Lim inn Excel data her:</Label>
-            <Textarea
-              id="excel-lonn"
-              placeholder="01.12.2019 00:00     492366  1       06.01.2020      464702  1       ######  Normert Normert 29049   19634   38951   0       0       0       ..."
-              value={excelLonnData}
-              onChange={(e) => setExcelLonnData(e.target.value)}
-              className="min-h-[200px] font-mono text-sm"
-            />
-          </div>
-          
-          {salaryIncreaseCheck && (
-            <div className="bg-green-50 p-3 rounded border border-green-200">
-              <p className="text-sm text-green-700">
-                ✓ {salaryIncreaseCheck.totalEntries} lønnsposter er prosessert og klar for analyse
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* DSOP Data Input */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            DSOP Rådata
-          </CardTitle>
-          <CardDescription>
-            Lim inn meldekort data fra DSOP på samme måte som i hovedkalkulatoren
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="dsop-data">DSOP Meldekort Data:</Label>
-            <Textarea
-              id="dsop-data"
-              placeholder="Periode      Utbetaling      Uføregrad       Sats..."
-              value={dsopRadata}
-              onChange={(e) => setDsopRadata(e.target.value)}
-              className="min-h-[100px] font-mono text-sm"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Results Section - placeholder for now */}
-      {salaryIncreaseCheck && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Beregningsresultater</CardTitle>
-            <CardDescription>
-              Resultater fra Excel lønndata analyse
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-green-800 mb-2">Data Prosessert</h3>
-              <p className="text-green-700">
-                {salaryIncreaseCheck.totalEntries} lønnsposter er klar for videre analyse.
-              </p>
-              <p className="text-sm text-green-600 mt-2">
-                Neste: Implementer samme beregningslogikk som rådata kalkulatoren.
-              </p>
             </div>
           </CardContent>
         </Card>
-      )}
+
+        {/* Excel Salary Data Input - This replaces the raw salary input */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <FileSpreadsheet className="text-primary h-5 w-5" />
+              <h2 className="text-lg font-medium text-slate-800">Excel Lønndata</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="excelSalaryData" className="text-sm font-medium text-slate-700 mb-2 block">
+                  Kopier og lim inn lønndata direkte fra Excel (tab-separerte verdier)
+                </Label>
+                <Textarea 
+                  id="excelSalaryData"
+                  rows={6}
+                  value={excelSalaryData}
+                  onChange={(e) => setExcelSalaryData(e.target.value)}
+                  className="font-mono text-sm resize-none"
+                  placeholder="Gjelderfradato	LønnN	Stillingsprosent	AjournalDato	Lønn	..."
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Date Fields - Same as original */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Calendar className="text-primary h-5 w-5" />
+              <h2 className="text-lg font-medium text-slate-800">Datoer</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sykdato" className="text-sm font-medium text-slate-700">
+                  Første sykedag
+                </Label>
+                <Input
+                  id="sykdato"
+                  type="text"
+                  value={sykdato}
+                  onChange={(e) => setSykdato(formatInput(e.target.value))}
+                  placeholder="DD.MM.YYYY"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="soknadRegistrert" className="text-sm font-medium text-slate-700">
+                  Søknad registrert
+                </Label>
+                <Input
+                  id="soknadRegistrert"
+                  type="text"
+                  value={søknadRegistrert}
+                  onChange={(e) => setSoknadRegistrert(formatInput(e.target.value))}
+                  placeholder="DD.MM.YYYY"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="aapFra" className="text-sm font-medium text-slate-700">
+                  AAP fra dato
+                </Label>
+                <Input
+                  id="aapFra"
+                  type="text"
+                  value={aapFra}
+                  onChange={(e) => setAapFra(formatInput(e.target.value))}
+                  placeholder="DD.MM.YYYY"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Results will appear here when calculations are implemented */}
+        {avgUforegrad !== null && (
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Calculator className="text-primary h-5 w-5" />
+                <h2 className="text-lg font-medium text-slate-800">Beregningsresultater</h2>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    Beregnet uføregrad: {avgUforegrad}%
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </main>
     </div>
   );
 }
