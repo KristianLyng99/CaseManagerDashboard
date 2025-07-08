@@ -89,7 +89,7 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
-- July 08, 2025. Enhanced salary import with Excel support:
+- July 08, 2025. Enhanced salary import with Excel support and benefits detection:
   - Renamed "Lønn og karens" section to "Import Lønndata" 
   - Added intelligent Excel data parser for tab-separated values
   - System automatically detects Excel format vs legacy DSOP format
@@ -99,6 +99,12 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
   - Improved user guidance with instructions for copying Excel data
   - Enhanced threshold violation detection to account for actual duration between salary periods
   - Fixed tooltip in chart visualization to show actual dates alongside months before sick date
+  - **Added new benefits (ytelser) detection functionality**:
+    - Detects benefit columns in Excel data (Ytelse_IF, Ytelse_BTUP, Ytelse_UP, Ytelse_UPBT, Ytelse_BT)
+    - Tracks when benefits go from 0 to >0 (new benefit assignment) during 2-year period before sick date
+    - Shows green checkmark for "ingen nye ytelser tilknyttet innen 2 år før syk" when no new benefits detected
+    - Displays orange warning with details when new benefits are found
+    - Ignores benefit amount changes between non-zero values (only detects new benefit assignments)
 - July 07, 2025. Added salary visualization chart feature:
   - Implemented interactive salary chart using Recharts library
   - Chart displays salary progression over 2-year period with months before sick date on X-axis

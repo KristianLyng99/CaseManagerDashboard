@@ -1172,46 +1172,59 @@ export default function Home() {
 
     console.log('Checking for new benefits from', formatDate(twoYearsBefore), 'to', formatDate(sickDate));
 
-    // Filter entries in the 2-year period
-    const entriesInPeriod = salaryHistory.filter(entry => 
-      entry.date >= twoYearsBefore && entry.date <= sickDate && entry.benefits
-    );
+    // Filter entries in the 2-year period and sort by date
+    const entriesInPeriod = salaryHistory
+      .filter(entry => entry.date >= twoYearsBefore && entry.date <= sickDate && entry.benefits)
+      .sort((a, b) => a.date - b.date);
 
     if (entriesInPeriod.length === 0) {
       console.log('No entries with benefit data found in 2-year period');
       return { hasNewBenefits: false, noData: true };
     }
 
-    // Check if any entry has benefits > 0
-    let hasAnyBenefits = false;
-    const benefitDetails = [];
+    // Track benefit status for each benefit type
+    const benefitTypes = ['Ytelse_IF', 'Ytelse_BTUP', 'Ytelse_UP', 'Ytelse_UPBT', 'Ytelse_BT'];
+    const benefitStatus = {};
+    const newBenefitEvents = [];
 
+    // Initialize benefit status (assume all benefits start at 0)
+    for (const benefitType of benefitTypes) {
+      benefitStatus[benefitType] = 0;
+    }
+
+    // Process each entry to detect when benefits go from 0 to >0
     for (const entry of entriesInPeriod) {
-      if (entry.hasAnyBenefit) {
-        hasAnyBenefits = true;
-        const activeBenefits = Object.entries(entry.benefits)
-          .filter(([name, amount]) => amount > 0)
-          .map(([name, amount]) => ({ name, amount }));
-        
-        if (activeBenefits.length > 0) {
-          benefitDetails.push({
+      if (!entry.benefits) continue; // Skip entries without benefits data
+      
+      for (const benefitType of benefitTypes) {
+        const currentAmount = entry.benefits[benefitType] || 0;
+        const previousAmount = benefitStatus[benefitType] || 0;
+
+        // Check if benefit goes from 0 to > 0 (new benefit)
+        if (previousAmount === 0 && currentAmount > 0) {
+          newBenefitEvents.push({
             date: formatDate(entry.date),
-            benefits: activeBenefits
+            benefitType: benefitType,
+            amount: currentAmount
           });
+          console.log(`New benefit detected: ${benefitType} went from 0 to ${currentAmount} on ${formatDate(entry.date)}`);
         }
+
+        // Update status for next iteration
+        benefitStatus[benefitType] = currentAmount;
       }
     }
 
     console.log('Benefit check results:', {
       totalEntries: entriesInPeriod.length,
-      hasAnyBenefits,
-      benefitDetails
+      newBenefitEvents: newBenefitEvents.length,
+      events: newBenefitEvents
     });
 
     return {
-      hasNewBenefits: hasAnyBenefits,
+      hasNewBenefits: newBenefitEvents.length > 0,
       noData: false,
-      benefitDetails,
+      benefitDetails: newBenefitEvents,
       periodStart: formatDate(twoYearsBefore),
       periodEnd: formatDate(sickDate)
     };
@@ -2766,22 +2779,18 @@ export default function Home() {
                                       
                                       {newBenefitsCheck.benefitDetails && newBenefitsCheck.benefitDetails.length > 0 && (
                                         <div className="mt-3 space-y-2">
-                                          <p className="text-xs font-medium text-orange-800">Ytelser funnet:</p>
-                                          {newBenefitsCheck.benefitDetails.slice(0, 3).map((detail, index) => (
+                                          <p className="text-xs font-medium text-orange-800">Nye ytelser funnet:</p>
+                                          {newBenefitsCheck.benefitDetails.slice(0, 5).map((detail, index) => (
                                             <div key={index} className="bg-orange-100 p-2 rounded text-xs">
                                               <p className="font-medium text-orange-800">{detail.date}</p>
-                                              <div className="space-y-1 mt-1">
-                                                {detail.benefits.map((benefit, bIndex) => (
-                                                  <p key={bIndex} className="text-orange-700">
-                                                    • {benefit.name}: {benefit.amount.toLocaleString('no-NO')} kr
-                                                  </p>
-                                                ))}
-                                              </div>
+                                              <p className="text-orange-700 mt-1">
+                                                • {detail.benefitType}: {detail.amount.toLocaleString('no-NO')} kr (ny ytelse)
+                                              </p>
                                             </div>
                                           ))}
-                                          {newBenefitsCheck.benefitDetails.length > 3 && (
+                                          {newBenefitsCheck.benefitDetails.length > 5 && (
                                             <p className="text-xs text-orange-700 italic">
-                                              ...og {newBenefitsCheck.benefitDetails.length - 3} flere perioder
+                                              ...og {newBenefitsCheck.benefitDetails.length - 5} flere nye ytelser
                                             </p>
                                           )}
                                         </div>
