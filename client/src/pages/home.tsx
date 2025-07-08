@@ -1081,7 +1081,8 @@ export default function Home() {
     const salaryData = [];
     let headerIndex = -1;
     let dateColumnIndex = -1;
-    let salaryColumnIndex = -1;
+    let actualSalaryColumnIndex = -1; // Lønn (actual salary for karens)
+    let nominalSalaryColumnIndex = -1; // LønnN (nominal salary)
     let percentageColumnIndex = -1;
 
     console.log('Parsing Excel data - total lines:', lines.length);
@@ -1103,9 +1104,15 @@ export default function Home() {
           dateColumnIndex = j;
           console.log('Found date column at index:', j);
         }
-        if ((col.includes('lønn') || col.includes('lonn')) && !col.includes('grunnlag') && salaryColumnIndex === -1) {
-          salaryColumnIndex = j;
-          console.log('Found salary column at index:', j);
+        // Look for actual salary column (Lønn without N)
+        if (col === 'lønn' && actualSalaryColumnIndex === -1) {
+          actualSalaryColumnIndex = j;
+          console.log('Found actual salary column (Lønn) at index:', j);
+        }
+        // Look for nominal salary column (LønnN)
+        if (col === 'lønnn' && nominalSalaryColumnIndex === -1) {
+          nominalSalaryColumnIndex = j;
+          console.log('Found nominal salary column (LønnN) at index:', j);
         }
         if ((col.includes('stillingsprosent') || col.includes('prosent') || col.includes('pst')) && percentageColumnIndex === -1) {
           percentageColumnIndex = j;
@@ -1113,7 +1120,7 @@ export default function Home() {
         }
       }
       
-      if (headerIndex >= 0 && dateColumnIndex >= 0 && salaryColumnIndex >= 0) {
+      if (headerIndex >= 0 && dateColumnIndex >= 0 && (actualSalaryColumnIndex >= 0 || nominalSalaryColumnIndex >= 0)) {
         break;
       }
     }
@@ -1121,7 +1128,8 @@ export default function Home() {
     console.log('Excel parsing - found columns:', {
       headerIndex,
       dateColumnIndex,
-      salaryColumnIndex,
+      actualSalaryColumnIndex,
+      nominalSalaryColumnIndex,
       percentageColumnIndex
     });
 
@@ -1145,11 +1153,27 @@ export default function Home() {
         continue;
       }
       
-      // Extract salary
-      const salaryText = columns[salaryColumnIndex]?.trim().replace(/[^\d]/g, '');
-      const salary = parseInt(salaryText);
-      if (isNaN(salary)) {
-        console.log('Could not parse salary:', columns[salaryColumnIndex]);
+      // Extract actual salary (Lønn) - preferred for karens calculations
+      let actualSalary = null;
+      if (actualSalaryColumnIndex >= 0 && columns[actualSalaryColumnIndex]) {
+        const actualSalaryText = columns[actualSalaryColumnIndex]?.trim().replace(/[^\d]/g, '');
+        actualSalary = parseInt(actualSalaryText);
+      }
+      
+      // Extract nominal salary (LønnN) - fallback if actual salary not available
+      let nominalSalary = null;
+      if (nominalSalaryColumnIndex >= 0 && columns[nominalSalaryColumnIndex]) {
+        const nominalSalaryText = columns[nominalSalaryColumnIndex]?.trim().replace(/[^\d]/g, '');
+        nominalSalary = parseInt(nominalSalaryText);
+      }
+      
+      // Use actual salary if available, otherwise use nominal salary
+      const salary = actualSalary || nominalSalary;
+      if (isNaN(salary) || !salary) {
+        console.log('Could not parse salary from columns:', {
+          actual: columns[actualSalaryColumnIndex],
+          nominal: columns[nominalSalaryColumnIndex]
+        });
         continue;
       }
       
@@ -1165,11 +1189,17 @@ export default function Home() {
         }
       }
       
-      console.log('Parsed entry:', { date: date.toISOString(), salary, percentage });
+      console.log('Parsed entry:', { 
+        date: date.toISOString(), 
+        actualSalary, 
+        nominalSalary, 
+        selectedSalary: salary, 
+        percentage 
+      });
       
       salaryData.push({
         date,
-        salary, // This is already nominal salary (LønnN) from Excel
+        salary, // Using actual salary (Lønn) for karens calculations, or nominal (LønnN) as fallback
         percentage
       });
     }
@@ -2146,7 +2176,8 @@ export default function Home() {
                 <div className="text-xs text-blue-700 space-y-1">
                   <p>• Velg og kopier alle relevante rader fra Excel-arket (inkludert overskrifter)</p>
                   <p>• Lim inn dataene i feltet nedenfor</p>
-                  <p>• Systemet vil automatisk gjenkjenne kolonner for dato, lønn og stillingsprosent</p>
+                  <p>• Systemet bruker faktisk lønn (Lønn) for karens-vurdering, ikke nominell lønn (LønnN)</p>
+                  <p>• Stillingsprosent konverteres automatisk fra 0-1 til 0-100% format</p>
                 </div>
               </div>
               <div>

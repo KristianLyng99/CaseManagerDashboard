@@ -93,6 +93,9 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
   - Renamed "Lønn og karens" section to "Import Lønndata" 
   - Added intelligent Excel data parser for tab-separated values
   - System automatically detects Excel format vs legacy DSOP format
+  - **Updated to use actual salary (Lønn) for karens calculations instead of nominal salary (LønnN)**
+  - Excel parser now identifies both salary columns: actual salary (Lønn) and nominal salary (LønnN)
+  - Prioritizes actual salary for karens assessment, with nominal salary as fallback
   - Improved user guidance with instructions for copying Excel data
   - Enhanced threshold violation detection to account for actual duration between salary periods
   - Fixed tooltip in chart visualization to show actual dates alongside months before sick date
