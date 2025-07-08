@@ -896,6 +896,7 @@ export default function Home() {
     let actualSalaryColumnIndex = -1; // Lønn (actual salary for karens)
     let nominalSalaryColumnIndex = -1; // LønnN (nominal salary)
     let percentageColumnIndex = -1;
+    let benefitColumnIndices = []; // Ytelse columns
 
     console.log('Parsing Excel data - total lines:', lines.length);
 
@@ -930,6 +931,11 @@ export default function Home() {
           percentageColumnIndex = j;
           console.log('Found percentage column at index:', j);
         }
+        // Look for benefit columns (Ytelse_*)
+        if (col.startsWith('ytelse_') || col.includes('ytelse')) {
+          benefitColumnIndices.push({index: j, name: columns[j]});
+          console.log('Found benefit column at index:', j, 'name:', columns[j]);
+        }
       }
       
       if (headerIndex >= 0 && dateColumnIndex >= 0 && (actualSalaryColumnIndex >= 0 || nominalSalaryColumnIndex >= 0)) {
@@ -942,7 +948,8 @@ export default function Home() {
       dateColumnIndex,
       actualSalaryColumnIndex,
       nominalSalaryColumnIndex,
-      percentageColumnIndex
+      percentageColumnIndex,
+      benefitColumns: benefitColumnIndices
     });
 
     // Parse data rows
@@ -1001,18 +1008,41 @@ export default function Home() {
         }
       }
       
+      // Extract benefit amounts from all benefit columns
+      const benefits = {};
+      let hasAnyBenefit = false;
+      
+      for (const benefitCol of benefitColumnIndices) {
+        const benefitText = columns[benefitCol.index]?.trim();
+        if (benefitText) {
+          const benefitAmount = parseFloat(benefitText.replace(/[^\d.]/g, ''));
+          if (!isNaN(benefitAmount) && benefitAmount > 0) {
+            benefits[benefitCol.name] = benefitAmount;
+            hasAnyBenefit = true;
+          } else {
+            benefits[benefitCol.name] = 0;
+          }
+        } else {
+          benefits[benefitCol.name] = 0;
+        }
+      }
+      
       console.log('Parsed entry:', { 
         date: date.toISOString(), 
         actualSalary, 
         nominalSalary, 
         selectedSalary: salary, 
-        percentage 
+        percentage,
+        benefits,
+        hasAnyBenefit
       });
       
       salaryData.push({
         date,
         salary, // Using actual salary (Lønn) for karens calculations, or nominal (LønnN) as fallback
-        percentage
+        percentage,
+        benefits,
+        hasAnyBenefit
       });
     }
 
@@ -1125,6 +1155,69 @@ export default function Home() {
   };
 
   const karensCalculations = getKarensCalculations();
+
+  // Check for new benefits in the 2-year period before sick date
+  const checkNewBenefits = () => {
+    const salaryHistory = parseSalaryHistory();
+    if (!salaryHistory || salaryHistory.length === 0 || !sykdato) {
+      return null;
+    }
+
+    const sickDate = parseDate(sykdato);
+    if (!sickDate) return null;
+
+    // Calculate 2 years before sick date
+    const twoYearsBefore = new Date(sickDate);
+    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+
+    console.log('Checking for new benefits from', formatDate(twoYearsBefore), 'to', formatDate(sickDate));
+
+    // Filter entries in the 2-year period
+    const entriesInPeriod = salaryHistory.filter(entry => 
+      entry.date >= twoYearsBefore && entry.date <= sickDate && entry.benefits
+    );
+
+    if (entriesInPeriod.length === 0) {
+      console.log('No entries with benefit data found in 2-year period');
+      return { hasNewBenefits: false, noData: true };
+    }
+
+    // Check if any entry has benefits > 0
+    let hasAnyBenefits = false;
+    const benefitDetails = [];
+
+    for (const entry of entriesInPeriod) {
+      if (entry.hasAnyBenefit) {
+        hasAnyBenefits = true;
+        const activeBenefits = Object.entries(entry.benefits)
+          .filter(([name, amount]) => amount > 0)
+          .map(([name, amount]) => ({ name, amount }));
+        
+        if (activeBenefits.length > 0) {
+          benefitDetails.push({
+            date: formatDate(entry.date),
+            benefits: activeBenefits
+          });
+        }
+      }
+    }
+
+    console.log('Benefit check results:', {
+      totalEntries: entriesInPeriod.length,
+      hasAnyBenefits,
+      benefitDetails
+    });
+
+    return {
+      hasNewBenefits: hasAnyBenefits,
+      noData: false,
+      benefitDetails,
+      periodStart: formatDate(twoYearsBefore),
+      periodEnd: formatDate(sickDate)
+    };
+  };
+
+  const newBenefitsCheck = checkNewBenefits();
 
   // Enhanced salary increase check - checks all salaries up to 3 months before sick date
   const checkSalaryIncrease = () => {
@@ -2639,8 +2732,71 @@ export default function Home() {
                               </div>
                             </div>
                         )}
-                        
 
+                        {/* New Benefits Check */}
+                        {newBenefitsCheck && (
+                          <div className="mt-4">
+                            <div className={`p-4 rounded-lg border-l-4 ${
+                              newBenefitsCheck.hasNewBenefits 
+                                ? 'border-orange-500 bg-orange-50' 
+                                : 'border-green-500 bg-green-50'
+                            }`}>
+                              <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0">
+                                  {newBenefitsCheck.hasNewBenefits ? (
+                                    <AlertTriangle className="text-orange-600 mt-0.5 h-5 w-5" />
+                                  ) : (
+                                    <CheckCircle className="text-green-600 mt-0.5 h-5 w-5" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className={`text-sm font-medium mb-2 ${
+                                    newBenefitsCheck.hasNewBenefits 
+                                      ? 'text-orange-800' 
+                                      : 'text-green-800'
+                                  }`}>
+                                    Ytelseskontroll - 2 år før sykdato
+                                  </h3>
+                                  
+                                  {newBenefitsCheck.hasNewBenefits ? (
+                                    <div className="space-y-2">
+                                      <p className="text-sm text-orange-700 font-medium">
+                                        ⚠️ Nye ytelser funnet i perioden {newBenefitsCheck.periodStart} - {newBenefitsCheck.periodEnd}
+                                      </p>
+                                      
+                                      {newBenefitsCheck.benefitDetails && newBenefitsCheck.benefitDetails.length > 0 && (
+                                        <div className="mt-3 space-y-2">
+                                          <p className="text-xs font-medium text-orange-800">Ytelser funnet:</p>
+                                          {newBenefitsCheck.benefitDetails.slice(0, 3).map((detail, index) => (
+                                            <div key={index} className="bg-orange-100 p-2 rounded text-xs">
+                                              <p className="font-medium text-orange-800">{detail.date}</p>
+                                              <div className="space-y-1 mt-1">
+                                                {detail.benefits.map((benefit, bIndex) => (
+                                                  <p key={bIndex} className="text-orange-700">
+                                                    • {benefit.name}: {benefit.amount.toLocaleString('no-NO')} kr
+                                                  </p>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          ))}
+                                          {newBenefitsCheck.benefitDetails.length > 3 && (
+                                            <p className="text-xs text-orange-700 italic">
+                                              ...og {newBenefitsCheck.benefitDetails.length - 3} flere perioder
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-green-700">
+                                      ✅ Ingen nye ytelser tilknyttet innen 2 år før syk ({newBenefitsCheck.periodStart} - {newBenefitsCheck.periodEnd})
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         
                         {/* G-regulated salary calculation when karens needs assessment */}
                         {salaryIncreaseCheck.isHighIncrease && gRegulatedCalculation && (
