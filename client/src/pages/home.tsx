@@ -2683,6 +2683,13 @@ export default function Home() {
                                                 domain={[0, 30]}
                                                 label={{ value: 'Måneder før sykdato', position: 'insideBottom', offset: -10 }}
                                                 reversed={true}
+                                                tickFormatter={(value) => {
+                                                  // Show specific labels for key points
+                                                  if (value === 0) return 'Sykdato';
+                                                  if (value === 12) return '1 år';
+                                                  if (value === 24) return '2 år';
+                                                  return `${value}`;
+                                                }}
                                               />
                                               <YAxis 
                                                 label={{ value: 'Lønn (100% stilling)', angle: -90, position: 'insideLeft' }}
@@ -2690,7 +2697,13 @@ export default function Home() {
                                               />
                                               <Tooltip 
                                                 formatter={(value) => [`${value.toLocaleString('no-NO')} kr`, 'Lønn']}
-                                                labelFormatter={(label) => `${label} måneder før sykdato`}
+                                                labelFormatter={(label, payload) => {
+                                                  if (payload && payload.length > 0) {
+                                                    const date = payload[0].payload.date;
+                                                    return `${date} (${label} mnd før sykdato)`;
+                                                  }
+                                                  return `${label} måneder før sykdato`;
+                                                }}
                                               />
                                               
                                               <ReferenceLine x={12} stroke="red" strokeWidth={2} strokeDasharray="5 5" />
