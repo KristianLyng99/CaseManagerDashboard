@@ -44,9 +44,7 @@ export default function Home() {
     detail: string;
   }>>([]);
   const [rawInput, setRawInput] = useState('');
-  const [useNominalSalary, setUseNominalSalary] = useState(false);
-  const [nominalSalaryData, setNominalSalaryData] = useState<{salary: number, salary100: number} | null>(null);
-  const [debugTable, setDebugTable] = useState<{month: string, days: number, percentage: number, weighted: number}[] | null>(null);
+
   const { toast } = useToast();
 
   // Copy to clipboard utility
@@ -80,193 +78,7 @@ export default function Home() {
     }
   };
 
-  // Calculate nominal salary (average of last 12 months)
-  const handleUseNominalSalary = () => {
-    console.log('=== NOMINAL SALARY BUTTON CLICKED ===');
-    const salaryHistory = parseSalaryHistory();
-    const sickDate = parseDate(sykdato);
-    console.log('Parsed salary history length:', salaryHistory ? salaryHistory.length : 'null');
-    console.log('Sick date:', sickDate);
-    
-    if (!salaryHistory || !sickDate) {
-      toast({
-        title: "Feil",
-        description: "Mangler lønnsdata eller sykdato",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    // Create 12 months of salary data starting from sick month going backwards
-    // Fill missing months with the most recent salary data (forward-fill logic)
-    const sickMonth = sickDate.getMonth(); // 0-based month
-    const sickYear = sickDate.getFullYear();
-    
-    // Sort salary history by date (oldest first) for forward-fill logic
-    const sortedSalaries = salaryHistory
-      .filter((entry: any) => entry.salary > 0)
-      .sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
-    
-    const nominalSalaries = [];
-    
-    // Generate 12 months starting from sick month going backwards
-    for (let i = 0; i < 12; i++) {
-      let targetMonth = sickMonth - i;
-      let targetYear = sickYear;
-      
-      // Handle month overflow
-      if (targetMonth < 0) {
-        targetMonth += 12;
-        targetYear -= 1;
-      }
-      
-      const targetDate = new Date(targetYear, targetMonth, 1);
-      console.log(`Looking for salary for ${targetDate.toISOString().substring(0, 7)}`);
-      
-      // Find the most recent salary entry on or before this target date
-      let applicableSalary = null;
-      for (let j = sortedSalaries.length - 1; j >= 0; j--) {
-        if (sortedSalaries[j].date <= targetDate) {
-          applicableSalary = {
-            date: targetDate,
-            salary: sortedSalaries[j].salary,
-            percentage: sortedSalaries[j].percentage,
-            originalDate: sortedSalaries[j].date
-          };
-          break;
-        }
-      }
-      
-      if (applicableSalary) {
-        console.log(`  Using salary from ${applicableSalary.originalDate.toISOString().substring(0, 10)}: ${applicableSalary.salary} kr`);
-        nominalSalaries.push(applicableSalary);
-      }
-    }
-    
-    console.log(`Sick date: ${sickDate.toISOString().substring(0, 10)}`);
-    console.log('Generated 12 months of salary data:', nominalSalaries.map(s => ({
-      month: s.date.toISOString().substring(0, 7),
-      salary: s.salary,
-      percentage: s.percentage,
-      originalFrom: s.originalDate.toISOString().substring(0, 10)
-    })));
-
-    if (nominalSalaries.length === 0) {
-      toast({
-        title: "Feil",
-        description: "Ingen lønnsdata funnet før sykdato",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const last12MonthsSalaries = nominalSalaries;
-
-    // Calculate day-weighted average salary
-    let totalWeightedSalary = 0;
-    let totalWeightedPercentage = 0;
-    let totalDays = 0;
-    
-    for (const entry of last12MonthsSalaries) {
-      // Get number of days in the month for this entry
-      const year = entry.date.getFullYear();
-      const month = entry.date.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      
-      totalWeightedSalary += entry.salary * daysInMonth;
-      totalWeightedPercentage += entry.percentage * daysInMonth;
-      totalDays += daysInMonth;
-      
-      console.log(`  Month ${month + 1}/${year}: ${daysInMonth} days, salary ${entry.salary} kr`);
-    }
-    
-    const avgSalary = totalWeightedSalary / totalDays;
-    const avgPercentage = totalWeightedPercentage / totalDays;
-    
-    console.log(`Day-weighted average: ${Math.round(avgSalary)} kr over ${totalDays} total days`);
-    
-    // Calculate nominal position percentage using same forward-fill and day-weighted logic
-    let totalWeightedNominalPercentage = 0;
-    let totalNominalDays = 0;
-    
-    console.log('=== NOMINAL POSITION PERCENTAGE CALCULATION ===');
-    
-    const debugData: {month: string, days: number, percentage: number, weighted: number}[] = [];
-    
-    // Generate nominal position percentages for the same 12 months as salary calculation
-    // Use the same months that were used for salary calculation
-    for (const salaryEntry of last12MonthsSalaries) {
-      const year = salaryEntry.date.getFullYear();
-      const month = salaryEntry.date.getMonth();
-      const targetDate = new Date(year, month + 1, 0); // Last day of the month
-      
-      // Find the most recent position percentage entry on or before this target date
-      let applicablePercentage = null;
-      let foundEntry = null;
-      for (let j = sortedSalaries.length - 1; j >= 0; j--) {
-        if (sortedSalaries[j].date <= targetDate) {
-          applicablePercentage = sortedSalaries[j].percentage;
-          foundEntry = sortedSalaries[j];
-          break;
-        }
-      }
-      
-      if (applicablePercentage !== null) {
-        // Get number of days in the month
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const weighted = applicablePercentage * daysInMonth;
-        totalWeightedNominalPercentage += weighted;
-        totalNominalDays += daysInMonth;
-        
-        const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
-        debugData.push({
-          month: monthStr,
-          days: daysInMonth,
-          percentage: applicablePercentage,
-          weighted: weighted
-        });
-        
-        console.log(`${monthStr}: ${daysInMonth} days, ${applicablePercentage}%, weighted: ${weighted.toFixed(2)}`);
-      }
-    }
-    
-    // Set debug table for UI display
-    setDebugTable(debugData);
-    
-    console.log(`Total weighted: ${totalWeightedNominalPercentage.toFixed(2)}`);
-    console.log(`Total days: ${totalNominalDays}`);
-    console.log(`Average: ${(totalWeightedNominalPercentage / totalNominalDays).toFixed(2)}%`);
-    
-    const avgNominalPercentage = totalWeightedNominalPercentage / totalNominalDays;
-    console.log(`=== FINAL NOMINAL POSITION AVERAGE: ${avgNominalPercentage.toFixed(2)}% ===`);
-    
-    // Calculate full-time equivalent using nominal percentage
-    const avgSalary100 = avgSalary / (avgNominalPercentage / 100);
-
-    if (!useNominalSalary) {
-      // Switch to nominal salary
-      setNominalSalaryData({
-        salary: Math.round(avgSalary),
-        salary100: Math.round(avgSalary100)
-      });
-      
-      setUseNominalSalary(true);
-      
-      toast({
-        title: "Nomert lønn aktivert",
-        description: `Dagsveid gjennomsnitt 12 måneder: ${Math.round(avgSalary).toLocaleString('no-NO')} kr (${avgNominalPercentage.toFixed(1)}%) → 100%: ${Math.round(avgSalary100).toLocaleString('no-NO')} kr`,
-      });
-    } else {
-      // Switch back to actual salary
-      setUseNominalSalary(false);
-      setNominalSalaryData(null);
-      
-      toast({
-        title: "Faktisk lønn aktivert",
-        description: "Bruker nå opprinnelig lønn fra sykdato",
-      });
-    }
-  };
 
   // Format user input DDMMYYYY -> DD.MM.YYYY
   const formatInput = (val: string) => {
@@ -2020,60 +1832,7 @@ export default function Home() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Debug Table for Nominal Position Percentage Calculation */}
-        {debugTable && (
-          <Card className="mb-6 border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-orange-800">DEBUG: Nomert stillingsprosent beregning</h3>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setDebugTable(null)}
-                  className="text-xs"
-                >
-                  Lukk
-                </Button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-orange-200">
-                      <th className="text-left p-2 text-orange-800">Måned</th>
-                      <th className="text-right p-2 text-orange-800">Dager</th>
-                      <th className="text-right p-2 text-orange-800">Stilling %</th>
-                      <th className="text-right p-2 text-orange-800">Vektet</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {debugTable.map((row, index) => (
-                      <tr key={index} className="border-b border-orange-100">
-                        <td className="p-2 font-mono text-orange-800">{row.month}</td>
-                        <td className="p-2 text-right text-orange-800">{row.days}</td>
-                        <td className="p-2 text-right text-orange-800">{row.percentage}%</td>
-                        <td className="p-2 text-right text-orange-800">{row.weighted.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-orange-300 font-semibold">
-                      <td className="p-2 text-orange-900">Total</td>
-                      <td className="p-2 text-right text-orange-900">{debugTable.reduce((sum, row) => sum + row.days, 0)}</td>
-                      <td className="p-2 text-right text-orange-900">-</td>
-                      <td className="p-2 text-right text-orange-900">{debugTable.reduce((sum, row) => sum + row.weighted, 0).toFixed(2)}</td>
-                    </tr>
-                    <tr className="bg-orange-100">
-                      <td className="p-2 font-semibold text-orange-900" colSpan={3}>Gjennomsnitt:</td>
-                      <td className="p-2 text-right font-semibold text-orange-900">
-                        {(debugTable.reduce((sum, row) => sum + row.weighted, 0) / debugTable.reduce((sum, row) => sum + row.days, 0)).toFixed(2)}%
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
         {/* Raw Data Input */}
         <Card className="mb-6">
           <CardContent className="p-6">
@@ -2572,21 +2331,7 @@ export default function Home() {
                                   </p>
                                 </div>
                               </div>
-                              {salaryIncreaseCheck.frequentChanges.hasFrequentChanges && (
-                                <Button 
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUseNominalSalary()}
-                                  className={`text-xs px-3 py-1 ${
-                                    useNominalSalary 
-                                      ? 'bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-800'
-                                      : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-800'
-                                  }`}
-                                >
-                                  <Calculator className="h-3 w-3 mr-1" />
-                                  {useNominalSalary ? 'Bruk faktisk lønn' : 'Bruk nomert lønn'}
-                                </Button>
-                              )}
+
                             </div>
                           </div>
                         )}
