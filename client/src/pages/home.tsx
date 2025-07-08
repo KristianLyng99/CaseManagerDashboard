@@ -1137,9 +1137,11 @@ export default function Home() {
       const dateText = columns[dateColumnIndex]?.trim();
       if (!dateText) continue;
       
-      const date = parseDate(dateText);
+      // Handle Excel date format with time (remove time part)
+      const cleanDateText = dateText.split(' ')[0];
+      const date = parseDate(cleanDateText);
       if (!date) {
-        console.log('Could not parse date:', dateText);
+        console.log('Could not parse date:', dateText, 'cleaned:', cleanDateText);
         continue;
       }
       
@@ -1151,13 +1153,15 @@ export default function Home() {
         continue;
       }
       
-      // Extract percentage (default to 100 if not found)
+      // Extract percentage (Excel format is 0-1 scale, convert to 0-100)
       let percentage = 100;
       if (percentageColumnIndex >= 0 && columns[percentageColumnIndex]) {
-        const percentText = columns[percentageColumnIndex].trim().replace(/[^\d]/g, '');
-        const percentValue = parseInt(percentText);
-        if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 100) {
-          percentage = percentValue;
+        const percentText = columns[percentageColumnIndex].trim();
+        const percentValue = parseFloat(percentText);
+        if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 1) {
+          percentage = Math.round(percentValue * 100); // Convert 0-1 to 0-100
+        } else if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 100) {
+          percentage = Math.round(percentValue); // Already in 0-100 format
         }
       }
       
@@ -1165,7 +1169,7 @@ export default function Home() {
       
       salaryData.push({
         date,
-        salary,
+        salary, // This is already nominal salary (LønnN) from Excel
         percentage
       });
     }
