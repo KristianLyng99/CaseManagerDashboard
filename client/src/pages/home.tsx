@@ -1756,7 +1756,8 @@ export default function Home() {
     ).map(entry => {
       // If percentage is 0, set salary to 0 regardless of what's in salary field
       const adjustedSalary = entry.percentage === 0 ? 0 : entry.salary;
-      const entry100 = entry.percentage === 0 ? 0 : (adjustedSalary * 100) / entry.percentage;
+      // Use the pre-calculated salary100 from parsing (already correctly calculated as Lønn / Stillingsprosent)
+      const entry100 = entry.percentage === 0 ? 0 : entry.salary100;
       const increasePercentage = entry.percentage === 0 ? null : ((salaryAtSick100 - entry100) / entry100) * 100;
       const monthsBeforeSick = Math.round(((sickDate.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10;
       
