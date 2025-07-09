@@ -89,6 +89,12 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- July 09, 2025. Fixed salary calculation accuracy in Excel data parsing:
+  - Improved column detection to prioritize actual salary (Lønn) over nominal salary (LønnN)
+  - Fixed percentage column selection to use actual percentage (Stillingsprosent) instead of nominal (StillingsprosentN)
+  - Resolved calculation error where 213,744 kr / 0.4923 was incorrectly calculated as 358,631 kr instead of correct 434,174 kr
+  - Enhanced debugging output with clear 🔍 markers for Excel parsing troubleshooting
+  - System now correctly identifies and uses proper columns from structured Excel data
 - July 08, 2025. Enhanced salary import with Excel support and benefits detection:
   - Renamed "Lønn og karens" section to "Import Lønndata" 
   - Added intelligent Excel data parser for tab-separated values

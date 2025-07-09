@@ -898,7 +898,7 @@ export default function Home() {
     let percentageColumnIndex = -1;
     let benefitColumnIndices = []; // Ytelse columns
 
-    console.log('Parsing Excel data - total lines:', lines.length);
+    console.log('🔍 EXCEL PARSING - total lines:', lines.length);
 
     // Find header row and column indices
     for (let i = 0; i < lines.length; i++) {
@@ -906,41 +906,54 @@ export default function Home() {
       if (!line) continue;
       
       const columns = line.split('\t');
-      console.log(`Line ${i} columns:`, columns);
+      console.log(`🔍 Line ${i} columns:`, columns);
       
       // Look for header patterns
       for (let j = 0; j < columns.length; j++) {
         const col = columns[j].toLowerCase().trim();
+        const originalCol = columns[j].trim();
+        
+        // Date column
         if ((col.includes('gjelderfradato') || col.includes('gjelder') || 
             col.includes('fra dato') || col.includes('dato')) && dateColumnIndex === -1) {
           headerIndex = i;
           dateColumnIndex = j;
-          console.log('Found date column at index:', j);
+          console.log('🔍 Found date column at index:', j, 'header:', originalCol);
         }
-        // Look for actual salary column (Lønn without N)
+        
+        // Salary columns - prioritize exact matches
         if (col === 'lønn' && actualSalaryColumnIndex === -1) {
           actualSalaryColumnIndex = j;
-          console.log('Found actual salary column (Lønn) at index:', j);
+          console.log('🔍 Found actual salary column (Lønn) at index:', j, 'header:', originalCol);
         }
-        // Look for nominal salary column (LønnN)
-        if ((col === 'lønnn' || col === 'lønnn') && nominalSalaryColumnIndex === -1) {
+        if (col === 'lønnn' && nominalSalaryColumnIndex === -1) {
           nominalSalaryColumnIndex = j;
-          console.log('Found nominal salary column (LønnN) at index:', j);
+          console.log('🔍 Found nominal salary column (LønnN) at index:', j, 'header:', originalCol);
         }
-        // Look for actual percentage column (Stillingsprosent without N)
+        
+        // Percentage columns - prioritize exact match for actual percentage
         if (col === 'stillingsprosent' && percentageColumnIndex === -1) {
           percentageColumnIndex = j;
-          console.log('Found actual percentage column (Stillingsprosent) at index:', j);
+          console.log('🔍 Found ACTUAL percentage column (Stillingsprosent) at index:', j, 'header:', originalCol);
         }
-        // Fallback to nominal percentage column (StillingsprosentN) only if actual not found
-        if ((col === 'stillingsprosentn' || col.includes('stillingsprosent')) && percentageColumnIndex === -1) {
-          percentageColumnIndex = j;
-          console.log('Found percentage column at index:', j);
-        }
-        // Look for benefit columns (Ytelse_*)
+        
+        // Benefit columns
         if (col.startsWith('ytelse_') || col.includes('ytelse')) {
-          benefitColumnIndices.push({index: j, name: columns[j]});
-          console.log('Found benefit column at index:', j, 'name:', columns[j]);
+          benefitColumnIndices.push({index: j, name: originalCol});
+          console.log('🔍 Found benefit column at index:', j, 'name:', originalCol);
+        }
+      }
+      
+      // Second pass: look for nominal percentage column only if actual not found
+      if (percentageColumnIndex === -1) {
+        for (let j = 0; j < columns.length; j++) {
+          const col = columns[j].toLowerCase().trim();
+          const originalCol = columns[j].trim();
+          if (col === 'stillingsprosentn' || (col.includes('stillingsprosent') && col.includes('n'))) {
+            percentageColumnIndex = j;
+            console.log('🔍 Found NOMINAL percentage column (StillingsprosentN) at index:', j, 'header:', originalCol);
+            break;
+          }
         }
       }
       
@@ -949,7 +962,7 @@ export default function Home() {
       }
     }
 
-    console.log('Excel parsing - found columns:', {
+    console.log('🔍 EXCEL PARSING - found columns:', {
       headerIndex,
       dateColumnIndex,
       actualSalaryColumnIndex,
