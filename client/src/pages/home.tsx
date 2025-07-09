@@ -1057,6 +1057,65 @@ export default function Home() {
       benefitColumns: benefitColumnIndices
     });
 
+    // STEP 1: Determine calculation method from sick date entry
+    let globalShouldUseNominal = false;
+    let sickDateGrunnlagstypeInfo = null;
+    
+    if (sykdato) {
+      const sickDate = parseDate(sykdato);
+      if (sickDate) {
+        console.log('🔍 Looking for sick date entry to determine global calculation method:', formatDate(sickDate));
+        
+        // Find the sick date entry (most recent entry before or at sick date)
+        let sickDateEntry = null;
+        for (let i = headerIndex + 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          const columns = line.split('\t');
+          const dateText = columns[dateColumnIndex]?.trim();
+          if (!dateText) continue;
+          
+          const cleanDateText = dateText.split(' ')[0];
+          const entryDate = parseDate(cleanDateText);
+          if (!entryDate) continue;
+          
+          // Check if this is the sick date entry or closest before sick date
+          if (entryDate <= sickDate) {
+            if (!sickDateEntry || entryDate > sickDateEntry.date) {
+              let grunnlagstypeIF = '';
+              let grunnlagstypeUP = '';
+              if (grunnlagstypeIFColumnIndex >= 0 && columns[grunnlagstypeIFColumnIndex]) {
+                grunnlagstypeIF = columns[grunnlagstypeIFColumnIndex].trim().toLowerCase();
+              }
+              if (grunnlagstypeUPColumnIndex >= 0 && columns[grunnlagstypeUPColumnIndex]) {
+                grunnlagstypeUP = columns[grunnlagstypeUPColumnIndex].trim().toLowerCase();
+              }
+              
+              sickDateEntry = {
+                date: entryDate,
+                grunnlagstypeIF,
+                grunnlagstypeUP
+              };
+            }
+          }
+        }
+        
+        if (sickDateEntry) {
+          globalShouldUseNominal = sickDateEntry.grunnlagstypeIF === 'normert' || sickDateEntry.grunnlagstypeUP === 'normert';
+          sickDateGrunnlagstypeInfo = {
+            date: formatDate(sickDateEntry.date),
+            grunnlagstypeIF: sickDateEntry.grunnlagstypeIF,
+            grunnlagstypeUP: sickDateEntry.grunnlagstypeUP,
+            shouldUseNominal: globalShouldUseNominal,
+            calculationMethod: globalShouldUseNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent'
+          };
+          
+          console.log('🔍 GLOBAL CALCULATION METHOD determined from sick date entry:', sickDateGrunnlagstypeInfo);
+        }
+      }
+    }
+
     // Parse data rows
     for (let i = headerIndex + 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -1091,7 +1150,7 @@ export default function Home() {
         nominalSalary = parseInt(nominalSalaryText);
       }
       
-      // Extract grunnlagstype values to determine which salary/percentage to use
+      // Extract grunnlagstype values for this entry (for storage/debugging)
       let grunnlagstypeIF = '';
       let grunnlagstypeUP = '';
       if (grunnlagstypeIFColumnIndex >= 0 && columns[grunnlagstypeIFColumnIndex]) {
@@ -1101,15 +1160,15 @@ export default function Home() {
         grunnlagstypeUP = columns[grunnlagstypeUPColumnIndex].trim().toLowerCase();
       }
       
-      // Check if we should use nominal values (when at least one grunnlagstype is "nomert")
-      const shouldUseNominal = grunnlagstypeIF === 'normert' || grunnlagstypeUP === 'normert';
+      // Use GLOBAL calculation method determined by sick date entry
+      const shouldUseNominal = globalShouldUseNominal;
       
-      // Use salary based on grunnlagstype rule
+      // Use salary based on GLOBAL grunnlagstype rule
       let salary;
       if (shouldUseNominal) {
-        salary = nominalSalary || actualSalary; // Use nominal first if nomert is found
+        salary = nominalSalary || actualSalary; // Use nominal first if sick date has normert
       } else {
-        salary = actualSalary || nominalSalary; // Use actual first by default
+        salary = actualSalary || nominalSalary; // Use actual first if sick date has faktisk
       }
       if (isNaN(salary) || !salary) {
         console.log('Could not parse salary from columns:', {
@@ -1211,9 +1270,10 @@ export default function Home() {
         percentage,
         grunnlagstypeIF,
         grunnlagstypeUP,
-        shouldUseNominal,
+        shouldUseNominal: globalShouldUseNominal, // Use global calculation method
         benefits,
-        hasAnyBenefit
+        hasAnyBenefit,
+        globalCalculationMethod: globalShouldUseNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent'
       });
     }
 
@@ -1449,15 +1509,17 @@ export default function Home() {
       return null;
     }
 
-    // Check if sick date entry has "nomert" values - this determines calculation method for 2-year karens
+    // Check if sick date entry has "normert" values - this determines calculation method for ALL 2-year karens calculations
     const sickDateUsesNominal = salaryAtSick.shouldUseNominal;
+    const globalCalculationMethod = salaryAtSick.globalCalculationMethod || (sickDateUsesNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent');
     
-    console.log('🔍 GRUNNLAGSTYPE CHECK - Sick date entry:', {
+    console.log('🔍 GRUNNLAGSTYPE CHECK - Sick date entry determines calculation method for ALL entries:', {
       date: formatDate(salaryAtSick.date),
       grunnlagstypeIF: salaryAtSick.grunnlagstypeIF,
       grunnlagstypeUP: salaryAtSick.grunnlagstypeUP,
       shouldUseNominal: sickDateUsesNominal,
-      calculationMethod: sickDateUsesNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent'
+      calculationMethod: globalCalculationMethod,
+      appliedToAllEntries: true
     });
 
     // Calculate cutoff date (3 months before sick date)
@@ -1840,7 +1902,7 @@ export default function Home() {
       salaryAtSick100: Math.round(salaryAtSick100),
       sickDate: formatDate(sickDate),
       sickDateUsesNominal,
-      calculationMethod: sickDateUsesNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent',
+      calculationMethod: globalCalculationMethod,
       eligibleSalariesCount: eligibleSalaries.length,
       violationsCount: violations.length,
       violations,
