@@ -1581,10 +1581,10 @@ export default function Home() {
         const monthsInPeriod = Math.abs((nextDate.getFullYear() - entryDate.getFullYear()) * 12 + 
                                        (nextDate.getMonth() - entryDate.getMonth()));
         
-        console.log(`Entry ${i}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold85, 
-                    'below:', entry.salary < threshold85, 'months in period:', monthsInPeriod);
+        console.log(`Entry ${i}:`, formatDate(entry.date), 'salary100:', entry.salary100, 'vs threshold:', threshold85, 
+                    'below:', entry.salary100 < threshold85, 'months in period:', monthsInPeriod);
         
-        if (entry.salary < threshold85) {
+        if (entry.salary100 < threshold85) {
           if (currentViolationStart15 === null) {
             currentViolationStart15 = formatDate(entry.date);
             console.log('Starting violation period at:', currentViolationStart15);
@@ -1637,10 +1637,10 @@ export default function Home() {
         const monthsInPeriod = Math.abs((nextDate.getFullYear() - entryDate.getFullYear()) * 12 + 
                                        (nextDate.getMonth() - entryDate.getMonth()));
         
-        console.log(`1-year Entry ${i}:`, formatDate(entry.date), 'salary:', entry.salary, 'vs threshold:', threshold92_5, 
-                    'below:', entry.salary < threshold92_5, 'months in period:', monthsInPeriod);
+        console.log(`1-year Entry ${i}:`, formatDate(entry.date), 'salary100:', entry.salary100, 'vs threshold:', threshold92_5, 
+                    'below:', entry.salary100 < threshold92_5, 'months in period:', monthsInPeriod);
         
-        if (entry.salary < threshold92_5) {
+        if (entry.salary100 < threshold92_5) {
           if (currentViolationStart7_5 === null) {
             currentViolationStart7_5 = formatDate(entry.date);
           }
