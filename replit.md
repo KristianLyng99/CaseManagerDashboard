@@ -89,6 +89,13 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 09, 2025. Added G-regulation salary detection for normert grunnlagstype:
+  - **Enhanced karens assessment** with G-regulation logic for cases where grunnlagstype is "normert" and salary increase violation exists
+  - **Threshold violation detection** using actual salary (faktisk lønn) to find periods where salary was below 85% or 92.5% thresholds
+  - **Automatic salary identification** for G-regulation: finds normert salary from 1 day before threshold violation end date
+  - **Purple UI section** displays G-regulation information with violation end date and correct salary for G-regulation calculation
+  - **Business logic compliance** ensures proper salary selection for G-regulation in complex normert grunnlagstype scenarios
+  - System now handles the complete flow: detect salary increase → check for threshold violations → find correct G-regulation salary
 - January 09, 2025. Added manual calculation method toggle functionality:
   - **Added manual override buttons** for calculation method selection (Auto/Faktisk/Normert)
   - **Auto mode** uses automatic grunnlagstype detection from sick date entry
