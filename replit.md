@@ -96,6 +96,7 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
   - **Business rule implementation**: If entry A has later date but earlier ajourholddato than entry B, entry A's salary is corrected to match entry B's salary
   - **Enhanced debugging** with detailed logging showing correction process and affected entries
   - **Data integrity preservation** stores original salary values before correction for audit purposes
+  - **Faktisk lønn only**: Ajourholddato correction logic applies only to faktisk lønn (Lønn) but not to normert lønn (LønnN)
   - System now handles cases where companies report salary changes after the fact, ensuring karens assessment uses correct salary data
 - January 09, 2025. Added G-regulation salary detection for normert grunnlagstype:
   - **Enhanced karens assessment** with G-regulation logic for cases where grunnlagstype is "normert" and salary increase violation exists

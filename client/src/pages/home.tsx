@@ -1313,58 +1313,64 @@ export default function Home() {
       });
     }
 
-    // STEP 2: Apply Ajourholddato correction logic
+    // STEP 2: Apply Ajourholddato correction logic (only for faktisk lønn, not normert lønn)
     if (ajourholddatoColumnIndex >= 0) {
       console.log('🔍 AJOURHOLDDATO CORRECTION: Starting correction process');
+      console.log('🔍 AJOURHOLDDATO CORRECTION: Global calculation method:', globalShouldUseNominal ? 'LønnN (normert)' : 'Lønn (faktisk)');
       
-      // Sort by date (newest first) for processing
-      salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
-      
-      // Process entries to find and correct salary data based on ajourholddato
-      for (let i = 0; i < salaryData.length; i++) {
-        const currentEntry = salaryData[i];
+      // Only apply correction to faktisk lønn (Lønn), not normert lønn (LønnN)
+      if (!globalShouldUseNominal) {
+        console.log('🔍 AJOURHOLDDATO CORRECTION: Applying correction to faktisk lønn data');
         
-        if (!currentEntry.ajourholddato) continue;
+        // Sort by date (newest first) for processing
+        salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
         
-        // Look for newer entries with earlier ajourholddato
-        for (let j = 0; j < i; j++) {
-          const newerEntry = salaryData[j];
+        // Process entries to find and correct salary data based on ajourholddato
+        for (let i = 0; i < salaryData.length; i++) {
+          const currentEntry = salaryData[i];
           
-          if (!newerEntry.ajourholddato) continue;
+          if (!currentEntry.ajourholddato) continue;
           
-          // If newer entry has earlier ajourholddato, it should be overwritten
-          if (newerEntry.ajourholddato < currentEntry.ajourholddato) {
-            console.log('🔍 AJOURHOLDDATO CORRECTION: Found correction needed:', {
-              newerEntryDate: formatDate(newerEntry.date),
-              newerAjourholddato: formatDate(newerEntry.ajourholddato),
-              currentEntryDate: formatDate(currentEntry.date),
-              currentAjourholddato: formatDate(currentEntry.ajourholddato),
-              oldSalary: newerEntry.salary,
-              newSalary: currentEntry.salary
-            });
+          // Look for newer entries with earlier ajourholddato
+          for (let j = 0; j < i; j++) {
+            const newerEntry = salaryData[j];
             
-            // Overwrite the newer entry's salary with the current entry's salary
-            const correctedSalary = currentEntry.salary;
-            const correctedSalary100 = currentEntry.shouldUseNominal 
-              ? Math.round(correctedSalary / (newerEntry.percentage / 100))
-              : Math.round(correctedSalary / (newerEntry.percentage / 100));
+            if (!newerEntry.ajourholddato) continue;
             
-            newerEntry.salary = correctedSalary;
-            newerEntry.salary100 = correctedSalary100;
-            newerEntry.correctedFromAjourholddato = true;
-            newerEntry.correctionSource = formatDate(currentEntry.date);
-            
-            console.log('🔍 AJOURHOLDDATO CORRECTION: Applied correction:', {
-              correctedDate: formatDate(newerEntry.date),
-              correctedSalary: correctedSalary,
-              correctedSalary100: correctedSalary100,
-              sourceDate: formatDate(currentEntry.date)
-            });
+            // If newer entry has earlier ajourholddato, it should be overwritten
+            if (newerEntry.ajourholddato < currentEntry.ajourholddato) {
+              console.log('🔍 AJOURHOLDDATO CORRECTION: Found correction needed:', {
+                newerEntryDate: formatDate(newerEntry.date),
+                newerAjourholddato: formatDate(newerEntry.ajourholddato),
+                currentEntryDate: formatDate(currentEntry.date),
+                currentAjourholddato: formatDate(currentEntry.ajourholddato),
+                oldSalary: newerEntry.salary,
+                newSalary: currentEntry.salary
+              });
+              
+              // Overwrite the newer entry's salary with the current entry's salary
+              const correctedSalary = currentEntry.salary;
+              const correctedSalary100 = Math.round(correctedSalary / (newerEntry.percentage / 100));
+              
+              newerEntry.salary = correctedSalary;
+              newerEntry.salary100 = correctedSalary100;
+              newerEntry.correctedFromAjourholddato = true;
+              newerEntry.correctionSource = formatDate(currentEntry.date);
+              
+              console.log('🔍 AJOURHOLDDATO CORRECTION: Applied correction:', {
+                correctedDate: formatDate(newerEntry.date),
+                correctedSalary: correctedSalary,
+                correctedSalary100: correctedSalary100,
+                sourceDate: formatDate(currentEntry.date)
+              });
+            }
           }
         }
+        
+        console.log('🔍 AJOURHOLDDATO CORRECTION: Completed correction process for faktisk lønn');
+      } else {
+        console.log('🔍 AJOURHOLDDATO CORRECTION: Skipping correction for normert lønn - using data as-is');
       }
-      
-      console.log('🔍 AJOURHOLDDATO CORRECTION: Completed correction process');
     }
 
     console.log('Excel parsed salary data:', salaryData);
