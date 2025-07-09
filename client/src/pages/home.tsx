@@ -2245,7 +2245,18 @@ export default function Home() {
     if (!salaryAtSick) return null;
 
     const x = salaryAtSick.percentage; // Stillingsprosent from rådata (for display)
-    const G = gRegulatedCalculation.gAtSickDate; // G-beløp at sick date
+    
+    // Use the correct G-value: if using G-regulation, use G at salary date, otherwise use G at sick date
+    const G = gRegulatedCalculation.usingGRegulation ? 
+      gRegulatedCalculation.gAtSalaryDate : 
+      gRegulatedCalculation.gAtSickDate;
+
+    console.log('🔍 IF-YTELSE CALC: G-value selection:', {
+      usingGRegulation: gRegulatedCalculation.usingGRegulation,
+      gAtSickDate: gRegulatedCalculation.gAtSickDate,
+      gAtSalaryDate: gRegulatedCalculation.gAtSalaryDate,
+      selectedG: G
+    });
 
     // Use the pre-calculated G-regulated salary at 100% (already corrected with work percentage from 2 years before)
     const gRegulatedSalary100 = gRegulatedCalculation.gRegulatedSalary100;
@@ -3564,7 +3575,12 @@ export default function Home() {
                                       <p className="font-semibold text-slate-800">{nyIFYtelseCalc.x}%</p>
                                     </div>
                                     <div>
-                                      <p className="text-slate-600">G-beløp (sykdato)</p>
+                                      <p className="text-slate-600">
+                                        {gRegulatedCalculation?.usingGRegulation ? 
+                                          `G-beløp (${gRegulatedCalculation.salaryDate})` : 
+                                          'G-beløp (sykdato)'
+                                        }
+                                      </p>
                                       <p className="font-semibold text-slate-800">{nyIFYtelseCalc.G.toLocaleString('no-NO')} kr</p>
                                     </div>
                                     <div>
