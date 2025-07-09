@@ -923,7 +923,7 @@ export default function Home() {
           console.log('Found actual salary column (Lønn) at index:', j);
         }
         // Look for nominal salary column (LønnN)
-        if (col === 'lønnn' && nominalSalaryColumnIndex === -1) {
+        if ((col === 'lønnn' || col === 'lønnn') && nominalSalaryColumnIndex === -1) {
           nominalSalaryColumnIndex = j;
           console.log('Found nominal salary column (LønnN) at index:', j);
         }
