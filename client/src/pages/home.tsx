@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye, AlertTriangle, BarChart3, CheckCircle } from "lucide-react";
+import { Calculator, Calendar, ChartLine, Clock, Copy, InfoIcon, WandSparkles, ClipboardType, Percent, ShieldCheck, Trash2, Banknote, Eye, EyeOff, AlertTriangle, BarChart3, CheckCircle, Upload } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,6 +44,8 @@ export default function Home() {
     detail: string;
   }>>([]);
   const [rawInput, setRawInput] = useState('');
+  const [showDataGrid, setShowDataGrid] = useState(false);
+  const [gridData, setGridData] = useState<string[][]>([]);
 
   const { toast } = useToast();
 
@@ -76,6 +78,53 @@ export default function Home() {
         duration: 2000,
       });
     }
+  };
+
+  // Handle data grid functions
+  const handlePasteToGrid = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const rows = text.split('\n').map(row => row.split('\t'));
+      setGridData(rows);
+      toast({
+        title: "Data limt inn!",
+        description: `${rows.length} rader importert til rutenett`,
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Feil ved innliming",
+        description: "Kunne ikke lese fra utklippstavlen. Prøv å kopiere data fra Excel først.",
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleGridToTextarea = () => {
+    const text = gridData.map(row => row.join('\t')).join('\n');
+    setRawSalaryData(text);
+    toast({
+      title: "Data overført!",
+      description: "Rutenett-data er overført til tekstboksen",
+      duration: 2000,
+    });
+  };
+
+  const handleGridCellChange = (rowIndex: number, colIndex: number, value: string) => {
+    const newGridData = [...gridData];
+    
+    // Extend rows if needed
+    while (newGridData.length <= rowIndex) {
+      newGridData.push([]);
+    }
+    
+    // Extend columns if needed
+    while (newGridData[rowIndex].length <= colIndex) {
+      newGridData[rowIndex].push('');
+    }
+    
+    newGridData[rowIndex][colIndex] = value;
+    setGridData(newGridData);
   };
 
 
@@ -2043,15 +2092,12 @@ export default function Home() {
                   Autofyll fra rådata
                 </Button>
                 <Button 
-                  onClick={() => {
-                    console.log('🔍 DEBUG: Force parsing Excel data');
-                    const history = parseSalaryHistory();
-                    console.log('🔍 DEBUG: Parsed history:', history);
-                  }}
+                  onClick={() => setShowDataGrid(!showDataGrid)}
                   variant="outline"
                   className="text-slate-600 border-slate-300 hover:bg-slate-50"
                 >
-                  Debug Parse
+                  {showDataGrid ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
+                  {showDataGrid ? 'Skjul rutenett' : 'Vis rutenett'}
                 </Button>
               </div>
             </div>
@@ -2172,6 +2218,85 @@ export default function Home() {
                   </div>
                 )}
               </div>
+              
+              {/* Data Grid for Excel-like editing */}
+              {showDataGrid && (
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-slate-700">Excel-rutenett</h3>
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={handlePasteToGrid}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Lim inn fra Excel
+                      </Button>
+                      <Button 
+                        onClick={handleGridToTextarea}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Overfør til tekstboks
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="border border-slate-300 rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto max-h-96">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {gridData.length === 0 ? (
+                            // Empty grid placeholder
+                            Array.from({ length: 10 }, (_, rowIndex) => (
+                              <tr key={rowIndex} className="border-b border-slate-200">
+                                {Array.from({ length: 15 }, (_, colIndex) => (
+                                  <td key={colIndex} className="border-r border-slate-200 p-1">
+                                    <input
+                                      type="text"
+                                      className="w-full min-w-[80px] p-1 text-xs border-0 focus:outline-none focus:bg-blue-50"
+                                      value=""
+                                      onChange={(e) => handleGridCellChange(rowIndex, colIndex, e.target.value)}
+                                      placeholder={rowIndex === 0 ? `Col ${colIndex + 1}` : ''}
+                                    />
+                                  </td>
+                                ))}
+                              </tr>
+                            ))
+                          ) : (
+                            // Grid with data
+                            gridData.map((row, rowIndex) => (
+                              <tr key={rowIndex} className="border-b border-slate-200">
+                                {Array.from({ length: Math.max(15, row.length) }, (_, colIndex) => (
+                                  <td key={colIndex} className="border-r border-slate-200 p-1">
+                                    <input
+                                      type="text"
+                                      className="w-full min-w-[80px] p-1 text-xs border-0 focus:outline-none focus:bg-blue-50"
+                                      value={row[colIndex] || ''}
+                                      onChange={(e) => handleGridCellChange(rowIndex, colIndex, e.target.value)}
+                                    />
+                                  </td>
+                                ))}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-slate-500">
+                    <p><strong>Tips:</strong></p>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>Kopier data fra Excel (Ctrl+C) og klikk "Lim inn fra Excel"</li>
+                      <li>Rediger celler direkte i rutenettet</li>
+                      <li>Klikk "Overfør til tekstboks" for å bruke dataene i beregninger</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
