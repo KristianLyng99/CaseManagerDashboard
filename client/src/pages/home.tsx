@@ -1091,6 +1091,19 @@ export default function Home() {
         nominalSalary = parseInt(nominalSalaryText);
       }
       
+      // Extract grunnlagstype values to determine which salary/percentage to use
+      let grunnlagstypeIF = '';
+      let grunnlagstypeUP = '';
+      if (grunnlagstypeIFColumnIndex >= 0 && columns[grunnlagstypeIFColumnIndex]) {
+        grunnlagstypeIF = columns[grunnlagstypeIFColumnIndex].trim().toLowerCase();
+      }
+      if (grunnlagstypeUPColumnIndex >= 0 && columns[grunnlagstypeUPColumnIndex]) {
+        grunnlagstypeUP = columns[grunnlagstypeUPColumnIndex].trim().toLowerCase();
+      }
+      
+      // Check if we should use nominal values (when at least one grunnlagstype is "nomert")
+      const shouldUseNominal = grunnlagstypeIF === 'nomert' || grunnlagstypeUP === 'nomert';
+      
       // Use salary based on grunnlagstype rule
       let salary;
       if (shouldUseNominal) {
@@ -1105,19 +1118,6 @@ export default function Home() {
         });
         continue;
       }
-      
-      // Extract grunnlagstype values to determine which salary/percentage to use
-      let grunnlagstypeIF = '';
-      let grunnlagstypeUP = '';
-      if (grunnlagstypeIFColumnIndex >= 0 && columns[grunnlagstypeIFColumnIndex]) {
-        grunnlagstypeIF = columns[grunnlagstypeIFColumnIndex].trim().toLowerCase();
-      }
-      if (grunnlagstypeUPColumnIndex >= 0 && columns[grunnlagstypeUPColumnIndex]) {
-        grunnlagstypeUP = columns[grunnlagstypeUPColumnIndex].trim().toLowerCase();
-      }
-      
-      // Check if we should use nominal values (when at least one grunnlagstype is "nomert")
-      const shouldUseNominal = grunnlagstypeIF === 'nomert' || grunnlagstypeUP === 'nomert';
       
       // Extract percentage (Excel format is 0-1 scale, keep as decimal for calculation)
       let percentageDecimal = 1; // Default to 100% if not found
