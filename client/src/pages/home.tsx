@@ -1032,13 +1032,15 @@ export default function Home() {
       if (percentageColumnIndex >= 0 && columns[percentageColumnIndex]) {
         const percentText = columns[percentageColumnIndex].trim().replace(',', '.'); // Handle Norwegian decimal separator
         const percentValue = parseFloat(percentText);
-        console.log('Parsing percentage:', percentText, 'cleaned:', percentText.replace(',', '.'), 'value:', percentValue);
+        console.log('🔍 Parsing percentage:', percentText, 'cleaned:', percentText.replace(',', '.'), 'value:', percentValue);
         if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 1) {
           percentageDecimal = percentValue;
           percentage = Math.round(percentValue * 100); // Convert 0-1 to 0-100 for display
+          console.log('🔍 Using decimal format:', percentageDecimal, 'display:', percentage);
         } else if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 100) {
           percentageDecimal = percentValue / 100;
           percentage = Math.round(percentValue); // Already in 0-100 format
+          console.log('🔍 Using percentage format:', percentageDecimal, 'display:', percentage);
         }
       }
       
@@ -2032,13 +2034,26 @@ export default function Home() {
                   placeholder="Lim inn data fra DSOP her. OBS ikke lim inn sensitiv data"
                 />
               </div>
-              <Button 
-                onClick={parseAutofill}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <WandSparkles className="mr-2 h-4 w-4" />
-                Autofyll fra rådata
-              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={parseAutofill}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <WandSparkles className="mr-2 h-4 w-4" />
+                  Autofyll fra rådata
+                </Button>
+                <Button 
+                  onClick={() => {
+                    console.log('🔍 DEBUG: Force parsing Excel data');
+                    const history = parseSalaryHistory();
+                    console.log('🔍 DEBUG: Parsed history:', history);
+                  }}
+                  variant="outline"
+                  className="text-slate-600 border-slate-300 hover:bg-slate-50"
+                >
+                  Debug Parse
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
