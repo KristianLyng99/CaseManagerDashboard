@@ -2133,26 +2133,58 @@ export default function Home() {
     const sickDate = parseDate(sykdato);
     if (!sickDate) return null;
 
-    const twoYearsBefore = new Date(sickDate);
-    twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
+    // First check if we have G-regulation info from salary increase check
+    const salaryIncreaseResult = checkSalaryIncrease();
+    const gRegulationInfo = salaryIncreaseResult?.gRegulationInfo;
+    
+    console.log('🔍 G-REGULATION CALC: Salary increase result:', salaryIncreaseResult?.isHighIncrease);
+    console.log('🔍 G-REGULATION CALC: G-regulation info:', gRegulationInfo);
+    
+    let salaryTwoYearsBefore;
+    
+    if (gRegulationInfo) {
+      // Use G-regulation salary when available
+      console.log('🔍 G-REGULATION CALC: Using G-regulation salary:', gRegulationInfo.gRegulationSalary100);
+      
+      // Create a synthetic salary entry for G-regulation
+      const gRegulationDate = parseDate(gRegulationInfo.gRegulationDate);
+      if (!gRegulationDate) return null;
+      
+      // Find the actual percentage from the salary history at the G-regulation date
+      const originalSalaryEntry = salaryHistory.find(entry => 
+        entry.date.getTime() === gRegulationDate.getTime()
+      );
+      
+      const actualPercentage = originalSalaryEntry?.percentage || 100;
+      
+      salaryTwoYearsBefore = {
+        salary: gRegulationInfo.gRegulationSalary,
+        salary100: gRegulationInfo.gRegulationSalary100,
+        percentage: actualPercentage,
+        date: gRegulationDate
+      };
+    } else {
+      // Default behavior: use salary from 2 years before
+      const twoYearsBefore = new Date(sickDate);
+      twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
 
-    // Find salary from 2 years before (most recent before or at 2 years before sick date)
-    const salaryTwoYearsBefore = salaryHistory.find(entry => 
-      entry.date <= twoYearsBefore
-    );
+      salaryTwoYearsBefore = salaryHistory.find(entry => 
+        entry.date <= twoYearsBefore
+      );
 
-    if (!salaryTwoYearsBefore) return null;
+      if (!salaryTwoYearsBefore) return null;
+    }
 
     // Get G-regulation for first sick day
     const gAtSickDate = getGRegulationForDate(sickDate);
     
-    // Get G-regulation for when the salary 2 years before was in effect
+    // Get G-regulation for when the salary was in effect
     const gAtSalaryDate = getGRegulationForDate(salaryTwoYearsBefore.date);
 
-    // Calculate G-regulated salary: Lønn 2 år før syk × (G per første syke dag ÷ G som gjelder for lønnen 2 år før syk)
+    // Calculate G-regulated salary: Lønn × (G per første syke dag ÷ G som gjelder for lønnen)
     const gRegulatedSalary = salaryTwoYearsBefore.salary * (gAtSickDate / gAtSalaryDate);
     
-    // Convert G-regulated salary to 100% position using the work percentage from 2 years before
+    // Convert G-regulated salary to 100% position using the work percentage
     const gRegulatedSalary100 = (gRegulatedSalary * 100) / salaryTwoYearsBefore.percentage;
 
     return {
@@ -2163,7 +2195,8 @@ export default function Home() {
       gAtSickDate,
       gAtSalaryDate,
       salaryDate: formatDate(salaryTwoYearsBefore.date),
-      sickDate: formatDate(sickDate)
+      sickDate: formatDate(sickDate),
+      usingGRegulation: !!gRegulationInfo
     };
   };
 
