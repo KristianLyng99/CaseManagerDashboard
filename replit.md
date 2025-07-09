@@ -89,6 +89,14 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 09, 2025. Implemented ajourholddato salary correction system:
+  - **Added Ajourholddato column detection** in Excel data parsing to identify salary update dates
+  - **Implemented correction logic** that compares ajourholddato dates to identify incorrect salary entries
+  - **Automatic salary overwriting** when newer entries have earlier ajourholddato dates than older entries
+  - **Business rule implementation**: If entry A has later date but earlier ajourholddato than entry B, entry A's salary is corrected to match entry B's salary
+  - **Enhanced debugging** with detailed logging showing correction process and affected entries
+  - **Data integrity preservation** stores original salary values before correction for audit purposes
+  - System now handles cases where companies report salary changes after the fact, ensuring karens assessment uses correct salary data
 - January 09, 2025. Added G-regulation salary detection for normert grunnlagstype:
   - **Enhanced karens assessment** with G-regulation logic for cases where grunnlagstype is "normert" and salary increase violation exists
   - **Threshold violation detection** using actual salary (faktisk lønn) to find periods where salary was below 85% or 92.5% thresholds

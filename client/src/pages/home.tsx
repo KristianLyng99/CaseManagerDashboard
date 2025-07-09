@@ -971,6 +971,7 @@ export default function Home() {
     let benefitColumnIndices = []; // Ytelse columns
     let grunnlagstypeIFColumnIndex = -1; // GrunnlagstypeIF column
     let grunnlagstypeUPColumnIndex = -1; // GrunnlagstypeUP column
+    let ajourholddatoColumnIndex = -1; // Ajourholddato column (not AjourholddatoN)
 
     console.log('🔍 EXCEL PARSING - total lines:', lines.length);
 
@@ -1021,6 +1022,12 @@ export default function Home() {
           console.log('🔍 Found GrunnlagstypeUP column at index:', j, 'header:', originalCol);
         }
         
+        // Ajourholddato column (not AjourholddatoN)
+        if (col === 'ajourholddato' && !col.includes('ajourholddaton') && ajourholddatoColumnIndex === -1) {
+          ajourholddatoColumnIndex = j;
+          console.log('🔍 Found Ajourholddato column at index:', j, 'header:', originalCol);
+        }
+        
         // Benefit columns
         if (col.startsWith('ytelse_') || col.includes('ytelse')) {
           benefitColumnIndices.push({index: j, name: originalCol});
@@ -1055,6 +1062,7 @@ export default function Home() {
       nominalPercentageColumnIndex,
       grunnlagstypeIFColumnIndex,
       grunnlagstypeUPColumnIndex,
+      ajourholddatoColumnIndex,
       benefitColumns: benefitColumnIndices
     });
 
@@ -1175,6 +1183,15 @@ export default function Home() {
         grunnlagstypeUP = columns[grunnlagstypeUPColumnIndex].trim().toLowerCase();
       }
       
+      // Extract ajourholddato for salary correction logic
+      let ajourholddato = null;
+      if (ajourholddatoColumnIndex >= 0 && columns[ajourholddatoColumnIndex]) {
+        const ajourholddatoText = columns[ajourholddatoColumnIndex].trim();
+        if (ajourholddatoText) {
+          ajourholddato = parseDate(ajourholddatoText);
+        }
+      }
+      
       // Use GLOBAL calculation method determined by sick date entry
       const shouldUseNominal = globalShouldUseNominal;
       
@@ -1288,8 +1305,66 @@ export default function Home() {
         shouldUseNominal: globalShouldUseNominal, // Use global calculation method
         benefits,
         hasAnyBenefit,
-        globalCalculationMethod: globalShouldUseNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent'
+        globalCalculationMethod: globalShouldUseNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent',
+        ajourholddato, // For salary correction logic
+        originalSalary: salary, // Store original salary before correction
+        actualSalary,
+        nominalSalary
       });
+    }
+
+    // STEP 2: Apply Ajourholddato correction logic
+    if (ajourholddatoColumnIndex >= 0) {
+      console.log('🔍 AJOURHOLDDATO CORRECTION: Starting correction process');
+      
+      // Sort by date (newest first) for processing
+      salaryData.sort((a, b) => b.date.getTime() - a.date.getTime());
+      
+      // Process entries to find and correct salary data based on ajourholddato
+      for (let i = 0; i < salaryData.length; i++) {
+        const currentEntry = salaryData[i];
+        
+        if (!currentEntry.ajourholddato) continue;
+        
+        // Look for newer entries with earlier ajourholddato
+        for (let j = 0; j < i; j++) {
+          const newerEntry = salaryData[j];
+          
+          if (!newerEntry.ajourholddato) continue;
+          
+          // If newer entry has earlier ajourholddato, it should be overwritten
+          if (newerEntry.ajourholddato < currentEntry.ajourholddato) {
+            console.log('🔍 AJOURHOLDDATO CORRECTION: Found correction needed:', {
+              newerEntryDate: formatDate(newerEntry.date),
+              newerAjourholddato: formatDate(newerEntry.ajourholddato),
+              currentEntryDate: formatDate(currentEntry.date),
+              currentAjourholddato: formatDate(currentEntry.ajourholddato),
+              oldSalary: newerEntry.salary,
+              newSalary: currentEntry.salary
+            });
+            
+            // Overwrite the newer entry's salary with the current entry's salary
+            const correctedSalary = currentEntry.salary;
+            const correctedSalary100 = currentEntry.shouldUseNominal 
+              ? Math.round(correctedSalary / (newerEntry.percentage / 100))
+              : Math.round(correctedSalary / (newerEntry.percentage / 100));
+            
+            newerEntry.salary = correctedSalary;
+            newerEntry.salary100 = correctedSalary100;
+            newerEntry.correctedFromAjourholddato = true;
+            newerEntry.correctionSource = formatDate(currentEntry.date);
+            
+            console.log('🔍 AJOURHOLDDATO CORRECTION: Applied correction:', {
+              correctedDate: formatDate(newerEntry.date),
+              correctedSalary: correctedSalary,
+              correctedSalary100: correctedSalary100,
+              sourceDate: formatDate(currentEntry.date)
+            });
+          }
+        }
+      }
+      
+      console.log('🔍 AJOURHOLDDATO CORRECTION: Completed correction process');
     }
 
     console.log('Excel parsed salary data:', salaryData);
