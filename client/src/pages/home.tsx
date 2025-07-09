@@ -1034,12 +1034,12 @@ export default function Home() {
       // Calculate 100% salary (Lønn / Stillingsprosent)
       const salary100 = percentageDecimal > 0 ? Math.round(salary / percentageDecimal) : salary;
       
-      console.log('Salary calculation debug:', {
+      console.log('🔍 SALARY DEBUG:', {
         rawPercentageText: columns[percentageColumnIndex],
         percentageDecimal,
         salary,
         calculation: `${salary} / ${percentageDecimal}`,
-        result: salary / percentageDecimal,
+        unroundedResult: salary / percentageDecimal,
         salary100
       });
       
