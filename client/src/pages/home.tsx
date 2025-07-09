@@ -46,6 +46,7 @@ export default function Home() {
   const [rawInput, setRawInput] = useState('');
 
   const [gridData, setGridData] = useState<string[][]>([]);
+  const [manualCalculationOverride, setManualCalculationOverride] = useState(null); // null = auto, true = nominal, false = faktisk
 
   const { toast } = useToast();
 
@@ -1102,16 +1103,27 @@ export default function Home() {
         }
         
         if (sickDateEntry) {
-          globalShouldUseNominal = sickDateEntry.grunnlagstypeIF === 'normert' || sickDateEntry.grunnlagstypeUP === 'normert';
+          const autoShouldUseNominal = sickDateEntry.grunnlagstypeIF === 'normert' || sickDateEntry.grunnlagstypeUP === 'normert';
+          
+          // Apply manual override if set, otherwise use automatic detection
+          if (manualCalculationOverride !== null) {
+            globalShouldUseNominal = manualCalculationOverride;
+            console.log('🔍 MANUAL OVERRIDE ACTIVE:', manualCalculationOverride ? 'Forcing LønnN/StillingsprosentN' : 'Forcing Lønn/Stillingsprosent');
+          } else {
+            globalShouldUseNominal = autoShouldUseNominal;
+          }
+          
           sickDateGrunnlagstypeInfo = {
             date: formatDate(sickDateEntry.date),
             grunnlagstypeIF: sickDateEntry.grunnlagstypeIF,
             grunnlagstypeUP: sickDateEntry.grunnlagstypeUP,
             shouldUseNominal: globalShouldUseNominal,
-            calculationMethod: globalShouldUseNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent'
+            calculationMethod: globalShouldUseNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent',
+            isManualOverride: manualCalculationOverride !== null,
+            autoDetectedMethod: autoShouldUseNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent'
           };
           
-          console.log('🔍 GLOBAL CALCULATION METHOD determined from sick date entry:', sickDateGrunnlagstypeInfo);
+          console.log('🔍 GLOBAL CALCULATION METHOD determined:', sickDateGrunnlagstypeInfo);
         }
       }
     }
@@ -2615,16 +2627,57 @@ export default function Home() {
                         
                         {/* Grunnlagstype information */}
                         <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-xs font-medium text-blue-800">
-                              Beregningsmetode: {salaryIncreaseCheck.calculationMethod}
-                            </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="text-xs font-medium text-blue-800">
+                                Beregningsmetode: {salaryIncreaseCheck.calculationMethod}
+                              </span>
+                              {manualCalculationOverride !== null && (
+                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                                  Manuell overstyring
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setManualCalculationOverride(null)}
+                                className={`text-xs px-2 py-1 ${
+                                  manualCalculationOverride === null ? 'bg-blue-100 border-blue-300' : 'bg-white'
+                                }`}
+                              >
+                                Auto
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setManualCalculationOverride(false)}
+                                className={`text-xs px-2 py-1 ${
+                                  manualCalculationOverride === false ? 'bg-green-100 border-green-300' : 'bg-white'
+                                }`}
+                              >
+                                Faktisk
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setManualCalculationOverride(true)}
+                                className={`text-xs px-2 py-1 ${
+                                  manualCalculationOverride === true ? 'bg-yellow-100 border-yellow-300' : 'bg-white'
+                                }`}
+                              >
+                                Nominell
+                              </Button>
+                            </div>
                           </div>
                           <div className="text-xs text-blue-700 mt-1">
-                            {salaryIncreaseCheck.sickDateUsesNominal 
-                              ? 'Nominell lønn brukes fordi GrunnlagstypeIF eller GrunnlagstypeUP inneholder "Normert"'
-                              : 'Faktisk lønn brukes (standard beregning)'
+                            {manualCalculationOverride !== null
+                              ? `Manuell overstyring aktiv: ${manualCalculationOverride ? 'Nominell' : 'Faktisk'} lønn`
+                              : salaryIncreaseCheck.sickDateUsesNominal 
+                                ? 'Nominell lønn brukes fordi GrunnlagstypeIF eller GrunnlagstypeUP inneholder "Normert"'
+                                : 'Faktisk lønn brukes (standard beregning)'
                             }
                           </div>
                         </div>
