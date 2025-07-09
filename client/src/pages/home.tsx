@@ -1092,14 +1092,20 @@ export default function Home() {
         const percentText = columns[percentageColumnIndex].trim().replace(',', '.'); // Handle Norwegian decimal separator
         const percentValue = parseFloat(percentText);
         console.log('🔍 Parsing percentage:', percentText, 'cleaned:', percentText.replace(',', '.'), 'value:', percentValue);
-        if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 1) {
-          percentageDecimal = percentValue;
-          percentage = Math.round(percentValue * 100); // Convert 0-1 to 0-100 for display
-          console.log('🔍 Using decimal format:', percentageDecimal, 'display:', percentage);
-        } else if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 100) {
-          percentageDecimal = percentValue / 100;
-          percentage = Math.round(percentValue); // Already in 0-100 format
-          console.log('🔍 Using percentage format:', percentageDecimal, 'display:', percentage);
+        
+        // Always treat as decimal format (0-1 scale) since Excel exports percentages this way
+        if (!isNaN(percentValue) && percentValue >= 0) {
+          if (percentValue <= 1) {
+            // Already in decimal format (0-1)
+            percentageDecimal = percentValue;
+            percentage = Math.round(percentValue * 100); // Convert 0-1 to 0-100 for display
+            console.log('🔍 Using decimal format:', percentageDecimal, 'display:', percentage);
+          } else {
+            // Percentage format (0-100), convert to decimal
+            percentageDecimal = percentValue / 100;
+            percentage = Math.round(percentValue);
+            console.log('🔍 Converting from percentage format:', percentValue, 'to decimal:', percentageDecimal);
+          }
         }
       }
       
@@ -1123,7 +1129,9 @@ export default function Home() {
       }
       
       // Calculate 100% salary (Lønn / Stillingsprosent)
-      const salary100 = percentageDecimal > 0 ? Math.round(salary / percentageDecimal) : salary;
+      // Keep full precision for internal calculations, only round for display
+      const salary100Exact = percentageDecimal > 0 ? salary / percentageDecimal : salary;
+      const salary100 = Math.round(salary100Exact);
       
       console.log('🔍 SALARY DEBUG:', {
         date: dateText,
@@ -1131,9 +1139,10 @@ export default function Home() {
         percentageDecimal,
         salary,
         calculation: `${salary} / ${percentageDecimal}`,
-        unroundedResult: salary / percentageDecimal,
-        salary100,
-        fullPrecisionCalc: salary / parseFloat(columns[percentageColumnIndex]?.trim().replace(',', '.'))
+        salary100Exact,
+        salary100Rounded: salary100,
+        expectedFor76_31: 345972 / 0.7631,
+        actualCalculation: salary === 345972 ? `${salary} / ${percentageDecimal} = ${salary100Exact}` : null
       });
       
       console.log('Parsed entry:', { 
@@ -1464,9 +1473,7 @@ export default function Home() {
       entry.date <= twoYearsBeforeCalc
     );
     
-    const actualSalaryTwoYearsBefore100 = actualSalaryTwoYearsBefore 
-      ? actualSalaryTwoYearsBefore.salary100
-      : null;
+    const actualSalaryTwoYearsBefore100 = actualSalaryTwoYearsBefore?.salary100 || null;
     
     const actualIncreasePercentage = actualSalaryTwoYearsBefore100
       ? ((salaryAtSick100 - actualSalaryTwoYearsBefore100) / actualSalaryTwoYearsBefore100) * 100
@@ -1678,9 +1685,7 @@ export default function Home() {
       entry.date <= oneYearBeforeCalc
     );
     
-    const actualSalaryOneYearBefore100 = actualSalaryOneYearBefore 
-      ? (actualSalaryOneYearBefore.salary * 100) / actualSalaryOneYearBefore.percentage
-      : null;
+    const actualSalaryOneYearBefore100 = actualSalaryOneYearBefore?.salary100 || null;
     
     const oneYearIncreasePercentage = actualSalaryOneYearBefore100
       ? ((salaryAtSick100 - actualSalaryOneYearBefore100) / actualSalaryOneYearBefore100) * 100
@@ -1707,8 +1712,8 @@ export default function Home() {
         // Skip if either entry has 0% position (no meaningful salary comparison)
         if (current.percentage === 0 || previous.percentage === 0) continue;
         
-        const currentSalary100 = (current.salary * 100) / current.percentage;
-        const previousSalary100 = (previous.salary * 100) / previous.percentage;
+        const currentSalary100 = current.salary100 || current.salary;
+        const previousSalary100 = previous.salary100 || previous.salary;
         
         const increasePercentage = ((currentSalary100 - previousSalary100) / previousSalary100) * 100;
         

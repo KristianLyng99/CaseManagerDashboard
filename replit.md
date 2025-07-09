@@ -89,6 +89,14 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 09, 2025. Streamlined interface and fixed critical calculation accuracy:
+  - **Completely removed textbox interface** - Excel grid is now the sole data input method
+  - **Fixed 100% salary calculation precision issue** where 345,972 / 0.7631 was incorrectly calculated as 455,226 instead of correct 453,377
+  - **Resolved inconsistency** between decimal format (0-1) and percentage format (0-100) in calculations
+  - **Standardized all calculations** to use consistent `salary100` value from parsed data
+  - **Improved precision handling** by keeping full precision for internal calculations, only rounding for display
+  - **Cleaned up redundant code** and ensured all salary calculations use the same methodology
+  - Workflow is now: paste data into grid → calculations automatically use grid data → no toggles or transfers needed
 - July 09, 2025. Implemented Excel-like grid interface for seamless data input:
   - Added interactive spreadsheet-style grid with direct Excel paste functionality
   - Grid automatically reads clipboard data and populates cells with "📋 Lim inn fra Excel" button
