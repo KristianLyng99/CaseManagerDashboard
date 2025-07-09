@@ -1102,7 +1102,7 @@ export default function Home() {
       }
       
       // Check if we should use nominal values (when at least one grunnlagstype is "nomert")
-      const shouldUseNominal = grunnlagstypeIF === 'nomert' || grunnlagstypeUP === 'nomert';
+      const shouldUseNominal = grunnlagstypeIF === 'normert' || grunnlagstypeUP === 'normert';
       
       // Use salary based on grunnlagstype rule
       let salary;
@@ -2561,7 +2561,7 @@ export default function Home() {
                           </div>
                           <div className="text-xs text-blue-700 mt-1">
                             {salaryIncreaseCheck.sickDateUsesNominal 
-                              ? 'Nominell lønn brukes fordi GrunnlagstypeIF eller GrunnlagstypeUP inneholder "nomert"'
+                              ? 'Nominell lønn brukes fordi GrunnlagstypeIF eller GrunnlagstypeUP inneholder "Normert"'
                               : 'Faktisk lønn brukes (standard beregning)'
                             }
                           </div>
