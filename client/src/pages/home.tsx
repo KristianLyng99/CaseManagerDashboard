@@ -2181,11 +2181,28 @@ export default function Home() {
     // Get G-regulation for when the salary was in effect
     const gAtSalaryDate = getGRegulationForDate(salaryTwoYearsBefore.date);
 
+    console.log('🔍 G-REGULATION CALC: G-values used:', {
+      sickDate: formatDate(sickDate),
+      gAtSickDate: gAtSickDate,
+      salaryDate: formatDate(salaryTwoYearsBefore.date),
+      gAtSalaryDate: gAtSalaryDate,
+      salaryAmount: salaryTwoYearsBefore.salary,
+      salaryPercentage: salaryTwoYearsBefore.percentage,
+      usingGRegulation: !!gRegulationInfo
+    });
+
     // Calculate G-regulated salary: Lønn × (G per første syke dag ÷ G som gjelder for lønnen)
     const gRegulatedSalary = salaryTwoYearsBefore.salary * (gAtSickDate / gAtSalaryDate);
     
     // Convert G-regulated salary to 100% position using the work percentage
     const gRegulatedSalary100 = (gRegulatedSalary * 100) / salaryTwoYearsBefore.percentage;
+
+    console.log('🔍 G-REGULATION CALC: Final calculation:', {
+      originalSalary: salaryTwoYearsBefore.salary,
+      gRatio: gAtSickDate / gAtSalaryDate,
+      gRegulatedSalary: Math.round(gRegulatedSalary),
+      gRegulatedSalary100: Math.round(gRegulatedSalary100)
+    });
 
     return {
       originalSalary: salaryTwoYearsBefore.salary,
