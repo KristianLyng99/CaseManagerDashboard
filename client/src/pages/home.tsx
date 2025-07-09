@@ -1054,12 +1054,14 @@ export default function Home() {
       const salary100 = percentageDecimal > 0 ? Math.round(salary / percentageDecimal) : salary;
       
       console.log('🔍 SALARY DEBUG:', {
+        date: dateText,
         rawPercentageText: columns[percentageColumnIndex],
         percentageDecimal,
         salary,
         calculation: `${salary} / ${percentageDecimal}`,
         unroundedResult: salary / percentageDecimal,
-        salary100
+        salary100,
+        fullPrecisionCalc: salary / parseFloat(columns[percentageColumnIndex]?.trim().replace(',', '.'))
       });
       
       console.log('Parsed entry:', { 
