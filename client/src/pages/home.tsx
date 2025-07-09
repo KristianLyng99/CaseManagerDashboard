@@ -2668,15 +2668,15 @@ export default function Home() {
                                   manualCalculationOverride === true ? 'bg-yellow-100 border-yellow-300' : 'bg-white'
                                 }`}
                               >
-                                Nominell
+                                Normert
                               </Button>
                             </div>
                           </div>
                           <div className="text-xs text-blue-700 mt-1">
                             {manualCalculationOverride !== null
-                              ? `Manuell overstyring aktiv: ${manualCalculationOverride ? 'Nominell' : 'Faktisk'} lønn`
+                              ? `Manuell overstyring aktiv: ${manualCalculationOverride ? 'Normert' : 'Faktisk'} lønn`
                               : salaryIncreaseCheck.sickDateUsesNominal 
-                                ? 'Nominell lønn brukes fordi GrunnlagstypeIF eller GrunnlagstypeUP inneholder "Normert"'
+                                ? 'Normert lønn brukes fordi GrunnlagstypeIF eller GrunnlagstypeUP inneholder "Normert"'
                                 : 'Faktisk lønn brukes (standard beregning)'
                             }
                           </div>

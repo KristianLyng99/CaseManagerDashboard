@@ -90,10 +90,10 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 
 ## Changelog
 - January 09, 2025. Added manual calculation method toggle functionality:
-  - **Added manual override buttons** for calculation method selection (Auto/Faktisk/Nominell)
+  - **Added manual override buttons** for calculation method selection (Auto/Faktisk/Normert)
   - **Auto mode** uses automatic grunnlagstype detection from sick date entry
   - **Faktisk mode** forces use of Lønn/Stillingsprosent columns for all calculations
-  - **Nominell mode** forces use of LønnN/StillingsprosentN columns for all calculations
+  - **Normert mode** forces use of LønnN/StillingsprosentN columns for all calculations
   - **Visual indicators** show when manual override is active with orange "Manuell overstyring" badge
   - **Consistent application** across all components (visualizer, salary lists, threshold calculations)
   - User can now easily test both calculation methods without changing underlying data
