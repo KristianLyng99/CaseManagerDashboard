@@ -960,7 +960,7 @@ export default function Home() {
   };
 
   // Parse Excel format (tab-separated columns)
-  const parseExcelSalaryData = (lines) => {
+  const parseExcelSalaryData = (lines, forceOverride = null) => {
     const salaryData = [];
     let headerIndex = -1;
     let dateColumnIndex = -1;
@@ -1105,8 +1105,11 @@ export default function Home() {
         if (sickDateEntry) {
           const autoShouldUseNominal = sickDateEntry.grunnlagstypeIF === 'normert' || sickDateEntry.grunnlagstypeUP === 'normert';
           
-          // Apply manual override if set, otherwise use automatic detection
-          if (manualCalculationOverride !== null) {
+          // Apply force override if provided, otherwise use manual override, otherwise use automatic detection
+          if (forceOverride !== null) {
+            globalShouldUseNominal = forceOverride === 'normert';
+            console.log('🔍 FORCE OVERRIDE ACTIVE:', forceOverride, 'shouldUseNominal:', globalShouldUseNominal);
+          } else if (manualCalculationOverride !== null) {
             globalShouldUseNominal = manualCalculationOverride;
             console.log('🔍 MANUAL OVERRIDE ACTIVE:', manualCalculationOverride ? 'Forcing LønnN/StillingsprosentN' : 'Forcing Lønn/Stillingsprosent');
           } else {
@@ -1931,36 +1934,38 @@ export default function Home() {
         return null;
       }
       
-      // For threshold violation check, we need to use actual salary calculation
-      // We'll create a temporary salary history with actual salary values
-      // This means we need to re-parse the data but force actual salary usage
+      // For threshold violation check, we need to use ACTUAL salary calculation
+      // We'll temporarily override the calculation method to force actual salary usage
       
-      // First, let's create a version of the salary history that uses actual calculation
-      const salaryHistoryActual = salaryHistory.map(entry => {
-        // We need to get the actual salary from the raw data
-        // For now, we'll use a simplified approach and assume the threshold check
-        // will be done with the current salary data but we'll note this in the logic
-        return entry;
-      });
+      // Save the current override state
+      const originalOverride = manualCalculationOverride;
       
-      // Use the existing salary at sick date but note this is normert
-      const salaryAtSickNormert = salaryHistory.find(entry => 
+      // Temporarily force actual salary calculation for threshold check
+      const tempOverride = 'faktisk';
+      
+      // Parse salary data using actual calculation method
+      console.log('🔍 G-REGULATION: Calling parseExcelSalaryData with forceOverride:', tempOverride);
+      const salaryHistoryActual = parseExcelSalaryData(gridData.map(row => row.join('\t')), tempOverride);
+      
+      console.log('🔍 G-REGULATION: Parsed salary history with ACTUAL calculation:', salaryHistoryActual?.slice(0, 3));
+      
+      // Find sick date salary using actual calculation
+      const salaryAtSickActual = salaryHistoryActual.find(entry => 
         entry.date <= sickDate
       );
       
-      if (!salaryAtSickNormert) {
-        console.log('🔍 G-REGULATION: No salary at sick date found');
+      if (!salaryAtSickActual) {
+        console.log('🔍 G-REGULATION: No salary at sick date found with actual calculation');
         return null;
       }
       
-      const sickSalaryNormert = salaryAtSickNormert.salary100;
-      console.log('🔍 G-REGULATION: Sick date salary (normert):', sickSalaryNormert);
+      const sickSalaryActual = salaryAtSickActual.salary100;
+      console.log('🔍 G-REGULATION: Sick date salary (ACTUAL):', sickSalaryActual);
       
-      // Check threshold violations using the normert salary data
-      // TODO: This should ideally use actual salary for threshold check
-      const thresholdViolationsActual = checkThresholdViolationDuration(salaryHistory, sickDate, sickSalaryNormert);
+      // Check threshold violations using ACTUAL salary data
+      const thresholdViolationsActual = checkThresholdViolationDuration(salaryHistoryActual, sickDate, sickSalaryActual);
       
-      console.log('🔍 G-REGULATION: Threshold violations with normert salary:', thresholdViolationsActual);
+      console.log('🔍 G-REGULATION: Threshold violations with ACTUAL salary:', thresholdViolationsActual);
       
       // Look for threshold violations
       const hasThresholdViolation = thresholdViolationsActual.twoYearToOneYear.hasViolation || 
