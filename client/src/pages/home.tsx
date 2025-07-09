@@ -875,9 +875,18 @@ export default function Home() {
   // Parse salary history and check for 15% increase
   // Parse salary history from Excel data (tab-separated format) or legacy DSOP format
   const parseSalaryHistory = () => {
-    if (!rawSalaryData.trim() || !sykdato) return null;
+    if (!rawSalaryData.trim() || !sykdato) {
+      console.log('🔍 parseSalaryHistory early exit:', { 
+        hasRawData: !!rawSalaryData.trim(), 
+        hasSykdato: !!sykdato 
+      });
+      return null;
+    }
 
     const lines = rawSalaryData.trim().split('\n');
+    console.log('🔍 parseSalaryHistory called with', lines.length, 'lines');
+    console.log('🔍 First line:', lines[0]);
+    console.log('🔍 Has tab character:', lines.some(line => line.includes('\t')));
     
     // First, try to parse as Excel data (tab-separated)
     if (lines.length > 1 && lines.some(line => line.includes('\t'))) {
@@ -885,6 +894,7 @@ export default function Home() {
       return parseExcelSalaryData(lines);
     }
     
+    console.log('🔍 Using DSOP format fallback');
     // Fallback to old DSOP format for backwards compatibility
     return parseDSOPSalaryData(lines);
   };
