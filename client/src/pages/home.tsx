@@ -44,7 +44,7 @@ export default function Home() {
     detail: string;
   }>>([]);
   const [rawInput, setRawInput] = useState('');
-  const [showDataGrid, setShowDataGrid] = useState(false);
+
   const [gridData, setGridData] = useState<string[][]>([]);
 
   const { toast } = useToast();
@@ -2101,14 +2101,6 @@ export default function Home() {
                   <WandSparkles className="mr-2 h-4 w-4" />
                   Autofyll fra rådata
                 </Button>
-                <Button 
-                  onClick={() => setShowDataGrid(!showDataGrid)}
-                  variant="outline"
-                  className="text-slate-600 border-slate-300 hover:bg-slate-50"
-                >
-                  {showDataGrid ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
-                  {showDataGrid ? 'Skjul rutenett' : 'Vis rutenett'}
-                </Button>
               </div>
             </div>
           </CardContent>
@@ -2180,58 +2172,17 @@ export default function Home() {
             </div>
             <div className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <h4 className="text-sm font-medium text-blue-800 mb-2">Hvordan importere Excel-data</h4>
+                <h4 className="text-sm font-medium text-blue-800 mb-2">Excel-rutenett for lønnsdata</h4>
                 <div className="text-xs text-blue-700 space-y-1">
-                  <p>• <strong>Anbefalt:</strong> Klikk "Vis rutenett" nedenfor og lim inn direkte i rutenettet</p>
-                  <p>• Alternativt: Lim inn i tekstfeltet nedenfor</p>
+                  <p>• Kopier data fra Excel og klikk "📋 Lim inn fra Excel" nedenfor</p>
+                  <p>• Rediger celler direkte om nødvendig</p>
                   <p>• Systemet bruker faktisk lønn (Lønn) for karens-vurdering, ikke nominell lønn (LønnN)</p>
                   <p>• Stillingsprosent konverteres automatisk fra 0-1 til 0-100% format</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <Label htmlFor="rawSalaryData" className="text-sm font-medium text-slate-700">
-                  Excel-data (lim inn her)
-                  <span className="text-slate-500 text-xs ml-1">(kopier direkte fra Excel)</span>
-                </Label>
-                <Textarea
-                  id="rawSalaryData"
-                  value={rawSalaryData}
-                  onChange={(e) => setRawSalaryData(e.target.value)}
-                  placeholder="Lim inn lønnsdata direkte fra Excel-ark her..."
-                  className="min-h-[120px] font-mono text-sm"
-                />
-                
-                {/* Preview of parsed data */}
-                {rawSalaryData && (
-                  <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <h4 className="text-sm font-medium text-slate-700 mb-2">Forhåndsvisning av importerte data</h4>
-                    <div className="text-xs text-slate-600 space-y-1">
-                      {(() => {
-                        const lines = rawSalaryData.trim().split('\n');
-                        const dataLines = lines.slice(1, Math.min(4, lines.length)); // Show first 3 data rows
-                        return dataLines.map((line, index) => {
-                          const columns = line.split('\t');
-                          return (
-                            <div key={index} className="font-mono bg-white p-2 rounded border">
-                              {columns.slice(0, 6).map((col, i) => (
-                                <span key={i} className="mr-4 text-slate-800">{col}</span>
-                              ))}
-                              {columns.length > 6 && <span className="text-slate-500">...</span>}
-                            </div>
-                          );
-                        });
-                      })()}
-                      {rawSalaryData.trim().split('\n').length > 4 && (
-                        <p className="text-slate-500 italic">...og {rawSalaryData.trim().split('\n').length - 4} flere rader</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
               
               {/* Data Grid for Excel-like editing */}
-              {showDataGrid && (
-                <div className="mt-4">
+              <div className="mt-4">
                   <div className="mb-2 flex items-center justify-between">
                     <h3 className="text-sm font-medium text-slate-700">Excel-rutenett</h3>
                     <div className="flex space-x-2">
@@ -2307,7 +2258,6 @@ export default function Home() {
                     </ul>
                   </div>
                 </div>
-              )}
             </div>
           </CardContent>
         </Card>
