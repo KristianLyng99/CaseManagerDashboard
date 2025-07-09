@@ -100,15 +100,7 @@ export default function Home() {
     }
   };
 
-  const handleGridToTextarea = () => {
-    const text = gridData.map(row => row.join('\t')).join('\n');
-    setRawSalaryData(text);
-    toast({
-      title: "Data overført!",
-      description: "Rutenett-data er overført til tekstboksen",
-      duration: 2000,
-    });
-  };
+
 
   const handleGridCellChange = (rowIndex: number, colIndex: number, value: string) => {
     const newGridData = [...gridData];
@@ -924,28 +916,46 @@ export default function Home() {
   // Parse salary history and check for 15% increase
   // Parse salary history from Excel data (tab-separated format) or legacy DSOP format
   const parseSalaryHistory = () => {
-    if (!rawSalaryData.trim() || !sykdato) {
+    // Prioritize grid data if available
+    let dataLines = [];
+    let dataSource = '';
+    
+    if (gridData.length > 0) {
+      // Convert grid data to lines format
+      dataLines = gridData.map(row => row.join('\t'));
+      dataSource = 'grid';
+      console.log('🔍 Using grid data for parsing:', gridData.length, 'rows');
+    } else if (rawSalaryData.trim()) {
+      dataLines = rawSalaryData.trim().split('\n');
+      dataSource = 'textarea';
+      console.log('🔍 Using textarea data for parsing:', dataLines.length, 'lines');
+    } else {
       console.log('🔍 parseSalaryHistory early exit:', { 
+        hasGridData: gridData.length > 0,
         hasRawData: !!rawSalaryData.trim(), 
         hasSykdato: !!sykdato 
       });
       return null;
     }
 
-    const lines = rawSalaryData.trim().split('\n');
-    console.log('🔍 parseSalaryHistory called with', lines.length, 'lines');
-    console.log('🔍 First line:', lines[0]);
-    console.log('🔍 Has tab character:', lines.some(line => line.includes('\t')));
+    if (!sykdato) {
+      console.log('🔍 parseSalaryHistory early exit: missing sykdato');
+      return null;
+    }
+
+    console.log('🔍 parseSalaryHistory called with', dataLines.length, 'lines from', dataSource);
+    console.log('🔍 First line:', dataLines[0]);
+    console.log('🔍 Has tab character:', dataLines.some(line => line.includes('\t')));
     
     // First, try to parse as Excel data (tab-separated)
-    if (lines.length > 1 && lines.some(line => line.includes('\t'))) {
+    if (dataLines.length > 1 && dataLines.some(line => line.includes('\t'))) {
       console.log('🔍 DETECTED Excel format, calling parseExcelSalaryData');
-      return parseExcelSalaryData(lines);
+      return parseExcelSalaryData(dataLines);
     }
     
     console.log('🔍 Using DSOP format fallback');
     // Fallback to old DSOP format for backwards compatibility
-    return parseDSOPSalaryData(lines);
+    return parseDSOPSalaryData(dataLines);
   };
 
   // Parse Excel format (tab-separated columns)
@@ -2172,8 +2182,8 @@ export default function Home() {
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                 <h4 className="text-sm font-medium text-blue-800 mb-2">Hvordan importere Excel-data</h4>
                 <div className="text-xs text-blue-700 space-y-1">
-                  <p>• Velg og kopier alle relevante rader fra Excel-arket (inkludert overskrifter)</p>
-                  <p>• Lim inn dataene i feltet nedenfor</p>
+                  <p>• <strong>Anbefalt:</strong> Klikk "Vis rutenett" nedenfor og lim inn direkte i rutenettet</p>
+                  <p>• Alternativt: Lim inn i tekstfeltet nedenfor</p>
                   <p>• Systemet bruker faktisk lønn (Lønn) for karens-vurdering, ikke nominell lønn (LønnN)</p>
                   <p>• Stillingsprosent konverteres automatisk fra 0-1 til 0-100% format</p>
                 </div>
@@ -2229,17 +2239,17 @@ export default function Home() {
                         onClick={handlePasteToGrid}
                         variant="outline"
                         size="sm"
-                        className="text-xs"
+                        className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700"
                       >
-                        Lim inn fra Excel
+                        📋 Lim inn fra Excel
                       </Button>
                       <Button 
-                        onClick={handleGridToTextarea}
+                        onClick={() => setGridData([])}
                         variant="outline"
                         size="sm"
-                        className="text-xs"
+                        className="text-xs text-red-600 hover:bg-red-50"
                       >
-                        Overfør til tekstboks
+                        🗑️ Tøm rutenett
                       </Button>
                     </div>
                   </div>
@@ -2288,11 +2298,12 @@ export default function Home() {
                   </div>
                   
                   <div className="mt-2 text-xs text-slate-500">
-                    <p><strong>Tips:</strong></p>
+                    <p><strong>Så enkelt som Excel:</strong></p>
                     <ul className="list-disc list-inside mt-1 space-y-1">
-                      <li>Kopier data fra Excel (Ctrl+C) og klikk "Lim inn fra Excel"</li>
-                      <li>Rediger celler direkte i rutenettet</li>
-                      <li>Klikk "Overfør til tekstboks" for å bruke dataene i beregninger</li>
+                      <li>Kopier data fra Excel (Ctrl+C) og klikk "📋 Lim inn fra Excel"</li>
+                      <li>Rediger celler direkte i rutenettet om nødvendig</li>
+                      <li>Systemet leser automatisk fra rutenettet når du kjører beregninger</li>
+                      <li>Ingen mellomsteg - bare lim inn og start beregning!</li>
                     </ul>
                   </div>
                 </div>
