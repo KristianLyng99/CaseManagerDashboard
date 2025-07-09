@@ -927,7 +927,13 @@ export default function Home() {
           nominalSalaryColumnIndex = j;
           console.log('Found nominal salary column (LønnN) at index:', j);
         }
-        if ((col.includes('stillingsprosent') || col.includes('prosent') || col.includes('pst')) && percentageColumnIndex === -1) {
+        // Look for actual percentage column (Stillingsprosent without N)
+        if (col === 'stillingsprosent' && percentageColumnIndex === -1) {
+          percentageColumnIndex = j;
+          console.log('Found actual percentage column (Stillingsprosent) at index:', j);
+        }
+        // Fallback to nominal percentage column (StillingsprosentN) only if actual not found
+        if ((col === 'stillingsprosentn' || col.includes('stillingsprosent')) && percentageColumnIndex === -1) {
           percentageColumnIndex = j;
           console.log('Found percentage column at index:', j);
         }
