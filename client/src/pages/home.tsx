@@ -996,15 +996,18 @@ export default function Home() {
         continue;
       }
       
-      // Extract percentage (Excel format is 0-1 scale, convert to 0-100)
+      // Extract percentage (Excel format is 0-1 scale, keep as decimal for calculation)
+      let percentageDecimal = 1; // Default to 100% if not found
       let percentage = 100;
       if (percentageColumnIndex >= 0 && columns[percentageColumnIndex]) {
         const percentText = columns[percentageColumnIndex].trim().replace(',', '.'); // Handle Norwegian decimal separator
         const percentValue = parseFloat(percentText);
         console.log('Parsing percentage:', percentText, 'cleaned:', percentText.replace(',', '.'), 'value:', percentValue);
         if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 1) {
-          percentage = Math.round(percentValue * 100); // Convert 0-1 to 0-100
+          percentageDecimal = percentValue;
+          percentage = Math.round(percentValue * 100); // Convert 0-1 to 0-100 for display
         } else if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 100) {
+          percentageDecimal = percentValue / 100;
           percentage = Math.round(percentValue); // Already in 0-100 format
         }
       }
@@ -1028,19 +1031,25 @@ export default function Home() {
         }
       }
       
+      // Calculate 100% salary (Lønn / Stillingsprosent)
+      const salary100 = percentageDecimal > 0 ? Math.round(salary / percentageDecimal) : salary;
+      
       console.log('Parsed entry:', { 
         date: date.toISOString(), 
         actualSalary, 
         nominalSalary, 
         selectedSalary: salary, 
         percentage,
+        percentageDecimal,
+        salary100,
         benefits,
         hasAnyBenefit
       });
       
       salaryData.push({
         date,
-        salary, // Using actual salary (Lønn) for karens calculations, or nominal (LønnN) as fallback
+        salary, // Actual salary (Lønn) at the work percentage
+        salary100, // Salary calculated to 100% work position
         percentage,
         benefits,
         hasAnyBenefit
@@ -1293,8 +1302,8 @@ export default function Home() {
       return null;
     }
 
-    // Convert sick date salary to 100% position
-    const salaryAtSick100 = (salaryAtSick.salary * 100) / salaryAtSick.percentage;
+    // Use pre-calculated 100% salary
+    const salaryAtSick100 = salaryAtSick.salary100;
 
     // Function to get threshold percentage based on time difference
     const getThresholdPercentage = (monthsDifference: number) => {
@@ -1310,7 +1319,7 @@ export default function Home() {
     for (const historicalSalary of eligibleSalaries) {
       // If percentage is 0, set salary to 0
       const adjustedHistoricalSalary = historicalSalary.percentage === 0 ? 0 : historicalSalary.salary;
-      const historicalSalary100 = historicalSalary.percentage === 0 ? 0 : (adjustedHistoricalSalary * 100) / historicalSalary.percentage;
+      const historicalSalary100 = historicalSalary.percentage === 0 ? 0 : historicalSalary.salary100;
       
       // Calculate time difference in months
       const timeDiffMs = sickDate.getTime() - historicalSalary.date.getTime();
@@ -1354,7 +1363,7 @@ export default function Home() {
     );
     
     const actualSalaryTwoYearsBefore100 = actualSalaryTwoYearsBefore 
-      ? (actualSalaryTwoYearsBefore.salary * 100) / actualSalaryTwoYearsBefore.percentage
+      ? actualSalaryTwoYearsBefore.salary100
       : null;
     
     const actualIncreasePercentage = actualSalaryTwoYearsBefore100
