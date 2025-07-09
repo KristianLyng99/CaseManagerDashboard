@@ -999,8 +999,9 @@ export default function Home() {
       // Extract percentage (Excel format is 0-1 scale, convert to 0-100)
       let percentage = 100;
       if (percentageColumnIndex >= 0 && columns[percentageColumnIndex]) {
-        const percentText = columns[percentageColumnIndex].trim();
+        const percentText = columns[percentageColumnIndex].trim().replace(',', '.'); // Handle Norwegian decimal separator
         const percentValue = parseFloat(percentText);
+        console.log('Parsing percentage:', percentText, 'cleaned:', percentText.replace(',', '.'), 'value:', percentValue);
         if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 1) {
           percentage = Math.round(percentValue * 100); // Convert 0-1 to 0-100
         } else if (!isNaN(percentValue) && percentValue >= 0 && percentValue <= 100) {
@@ -1251,6 +1252,7 @@ export default function Home() {
   };
 
   const newBenefitsCheck = checkNewBenefits();
+  console.log('Benefits check result:', newBenefitsCheck);
 
   // Enhanced salary increase check - checks all salaries up to 3 months before sick date
   const checkSalaryIncrease = () => {
@@ -2065,7 +2067,7 @@ export default function Home() {
                   <p>• Stillingsprosent konverteres automatisk fra 0-1 til 0-100% format</p>
                 </div>
               </div>
-              <div>
+              <div className="space-y-3">
                 <Label htmlFor="rawSalaryData" className="text-sm font-medium text-slate-700">
                   Excel-data (lim inn her)
                   <span className="text-slate-500 text-xs ml-1">(kopier direkte fra Excel)</span>
@@ -2077,6 +2079,33 @@ export default function Home() {
                   placeholder="Lim inn lønnsdata direkte fra Excel-ark her..."
                   className="min-h-[120px] font-mono text-sm"
                 />
+                
+                {/* Preview of parsed data */}
+                {rawSalaryData && (
+                  <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <h4 className="text-sm font-medium text-slate-700 mb-2">Forhåndsvisning av importerte data</h4>
+                    <div className="text-xs text-slate-600 space-y-1">
+                      {(() => {
+                        const lines = rawSalaryData.trim().split('\n');
+                        const dataLines = lines.slice(1, Math.min(4, lines.length)); // Show first 3 data rows
+                        return dataLines.map((line, index) => {
+                          const columns = line.split('\t');
+                          return (
+                            <div key={index} className="font-mono bg-white p-2 rounded border">
+                              {columns.slice(0, 6).map((col, i) => (
+                                <span key={i} className="mr-4 text-slate-800">{col}</span>
+                              ))}
+                              {columns.length > 6 && <span className="text-slate-500">...</span>}
+                            </div>
+                          );
+                        });
+                      })()}
+                      {rawSalaryData.trim().split('\n').length > 4 && (
+                        <p className="text-slate-500 italic">...og {rawSalaryData.trim().split('\n').length - 4} flere rader</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
