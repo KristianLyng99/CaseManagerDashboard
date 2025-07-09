@@ -881,6 +881,7 @@ export default function Home() {
     
     // First, try to parse as Excel data (tab-separated)
     if (lines.length > 1 && lines.some(line => line.includes('\t'))) {
+      console.log('🔍 DETECTED Excel format, calling parseExcelSalaryData');
       return parseExcelSalaryData(lines);
     }
     
