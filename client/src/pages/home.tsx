@@ -1141,8 +1141,21 @@ export default function Home() {
         calculation: `${salary} / ${percentageDecimal}`,
         salary100Exact,
         salary100Rounded: salary100,
-        expectedFor76_31: 345972 / 0.7631,
-        actualCalculation: salary === 345972 ? `${salary} / ${percentageDecimal} = ${salary100Exact}` : null
+        // Test specific cases
+        testCase213744: salary === 213744 ? {
+          input: '213,744 / 0.4923',
+          expected: 434174,
+          calculated: salary100,
+          exact: salary100Exact,
+          percentUsed: percentageDecimal
+        } : null,
+        testCase345972: salary === 345972 ? {
+          input: '345,972 / 0.7631',
+          expected: 453377,
+          calculated: salary100,
+          exact: salary100Exact,
+          percentUsed: percentageDecimal
+        } : null
       });
       
       console.log('Parsed entry:', { 
