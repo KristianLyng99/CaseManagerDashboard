@@ -89,6 +89,14 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 09, 2025. Implemented intelligent grunnlagstype detection for Norwegian salary calculations:
+  - **Added GrunnlagstypeIF and GrunnlagstypeUP column detection** in Excel data parsing
+  - **Intelligent salary/percentage column selection** based on "nomert" values in grunnlagstype columns
+  - **Business rule implementation**: When GrunnlagstypeIF OR GrunnlagstypeUP contains "nomert" on sick date, system uses LønnN/StillingsprosentN for all 2-year karens calculations
+  - **Clear UI indication** showing which calculation method is being used (nominal vs actual)
+  - **Enhanced debugging** with grunnlagstype values visible in console logs
+  - **Consistent calculation logic** across all salary assessments including visualization and threshold checks
+  - User can now see "Beregningsmetode: LønnN / StillingsprosentN" or "Beregningsmetode: Lønn / Stillingsprosent" in salary assessment results
 - January 09, 2025. Streamlined interface and fixed critical calculation accuracy:
   - **Completely removed textbox interface** - Excel grid is now the sole data input method
   - **Fixed 100% salary calculation precision issue** where 345,972 / 0.7631 was incorrectly calculated as 455,226 instead of correct 453,377

@@ -965,8 +965,11 @@ export default function Home() {
     let dateColumnIndex = -1;
     let actualSalaryColumnIndex = -1; // Lønn (actual salary for karens)
     let nominalSalaryColumnIndex = -1; // LønnN (nominal salary)
-    let percentageColumnIndex = -1;
+    let actualPercentageColumnIndex = -1; // Stillingsprosent (actual percentage)
+    let nominalPercentageColumnIndex = -1; // StillingsprosentN (nominal percentage)
     let benefitColumnIndices = []; // Ytelse columns
+    let grunnlagstypeIFColumnIndex = -1; // GrunnlagstypeIF column
+    let grunnlagstypeUPColumnIndex = -1; // GrunnlagstypeUP column
 
     console.log('🔍 EXCEL PARSING - total lines:', lines.length);
 
@@ -1002,9 +1005,19 @@ export default function Home() {
         }
         
         // Percentage columns - prioritize exact match for actual percentage
-        if (col === 'stillingsprosent' && percentageColumnIndex === -1) {
-          percentageColumnIndex = j;
+        if (col === 'stillingsprosent' && actualPercentageColumnIndex === -1) {
+          actualPercentageColumnIndex = j;
           console.log('🔍 Found ACTUAL percentage column (Stillingsprosent) at index:', j, 'header:', originalCol);
+        }
+        
+        // Grunnlagstype columns
+        if (col === 'grunnlagstypeif' && grunnlagstypeIFColumnIndex === -1) {
+          grunnlagstypeIFColumnIndex = j;
+          console.log('🔍 Found GrunnlagstypeIF column at index:', j, 'header:', originalCol);
+        }
+        if (col === 'grunnlagstypeup' && grunnlagstypeUPColumnIndex === -1) {
+          grunnlagstypeUPColumnIndex = j;
+          console.log('🔍 Found GrunnlagstypeUP column at index:', j, 'header:', originalCol);
         }
         
         // Benefit columns
@@ -1015,12 +1028,12 @@ export default function Home() {
       }
       
       // Second pass: look for nominal percentage column only if actual not found
-      if (percentageColumnIndex === -1) {
+      if (actualPercentageColumnIndex === -1) {
         for (let j = 0; j < columns.length; j++) {
           const col = columns[j].toLowerCase().trim();
           const originalCol = columns[j].trim();
           if (col === 'stillingsprosentn' || (col.includes('stillingsprosent') && col.includes('n'))) {
-            percentageColumnIndex = j;
+            nominalPercentageColumnIndex = j;
             console.log('🔍 Found NOMINAL percentage column (StillingsprosentN) at index:', j, 'header:', originalCol);
             break;
           }
@@ -1037,7 +1050,10 @@ export default function Home() {
       dateColumnIndex,
       actualSalaryColumnIndex,
       nominalSalaryColumnIndex,
-      percentageColumnIndex,
+      actualPercentageColumnIndex,
+      nominalPercentageColumnIndex,
+      grunnlagstypeIFColumnIndex,
+      grunnlagstypeUPColumnIndex,
       benefitColumns: benefitColumnIndices
     });
 
@@ -1075,8 +1091,13 @@ export default function Home() {
         nominalSalary = parseInt(nominalSalaryText);
       }
       
-      // Use actual salary if available, otherwise use nominal salary
-      const salary = actualSalary || nominalSalary;
+      // Use salary based on grunnlagstype rule
+      let salary;
+      if (shouldUseNominal) {
+        salary = nominalSalary || actualSalary; // Use nominal first if nomert is found
+      } else {
+        salary = actualSalary || nominalSalary; // Use actual first by default
+      }
       if (isNaN(salary) || !salary) {
         console.log('Could not parse salary from columns:', {
           actual: columns[actualSalaryColumnIndex],
@@ -1085,9 +1106,29 @@ export default function Home() {
         continue;
       }
       
+      // Extract grunnlagstype values to determine which salary/percentage to use
+      let grunnlagstypeIF = '';
+      let grunnlagstypeUP = '';
+      if (grunnlagstypeIFColumnIndex >= 0 && columns[grunnlagstypeIFColumnIndex]) {
+        grunnlagstypeIF = columns[grunnlagstypeIFColumnIndex].trim().toLowerCase();
+      }
+      if (grunnlagstypeUPColumnIndex >= 0 && columns[grunnlagstypeUPColumnIndex]) {
+        grunnlagstypeUP = columns[grunnlagstypeUPColumnIndex].trim().toLowerCase();
+      }
+      
+      // Check if we should use nominal values (when at least one grunnlagstype is "nomert")
+      const shouldUseNominal = grunnlagstypeIF === 'nomert' || grunnlagstypeUP === 'nomert';
+      
       // Extract percentage (Excel format is 0-1 scale, keep as decimal for calculation)
       let percentageDecimal = 1; // Default to 100% if not found
       let percentage = 100;
+      let percentageColumnIndex = shouldUseNominal ? nominalPercentageColumnIndex : actualPercentageColumnIndex;
+      
+      // Fallback to other column if preferred column not available
+      if (percentageColumnIndex === -1) {
+        percentageColumnIndex = shouldUseNominal ? actualPercentageColumnIndex : nominalPercentageColumnIndex;
+      }
+      
       if (percentageColumnIndex >= 0 && columns[percentageColumnIndex]) {
         const percentText = columns[percentageColumnIndex].trim().replace(',', '.'); // Handle Norwegian decimal separator
         const percentValue = parseFloat(percentText);
@@ -1135,27 +1176,17 @@ export default function Home() {
       
       console.log('🔍 SALARY DEBUG:', {
         date: dateText,
+        grunnlagstypeIF,
+        grunnlagstypeUP,
+        shouldUseNominal,
         rawPercentageText: columns[percentageColumnIndex],
         percentageDecimal,
         salary,
+        salaryType: shouldUseNominal ? 'LønnN' : 'Lønn',
+        percentageType: shouldUseNominal ? 'StillingsprosentN' : 'Stillingsprosent',
         calculation: `${salary} / ${percentageDecimal}`,
         salary100Exact,
-        salary100Rounded: salary100,
-        // Test specific cases
-        testCase213744: salary === 213744 ? {
-          input: '213,744 / 0.4923',
-          expected: 434174,
-          calculated: salary100,
-          exact: salary100Exact,
-          percentUsed: percentageDecimal
-        } : null,
-        testCase345972: salary === 345972 ? {
-          input: '345,972 / 0.7631',
-          expected: 453377,
-          calculated: salary100,
-          exact: salary100Exact,
-          percentUsed: percentageDecimal
-        } : null
+        salary100Rounded: salary100
       });
       
       console.log('Parsed entry:', { 
@@ -1166,15 +1197,21 @@ export default function Home() {
         percentage,
         percentageDecimal,
         salary100,
+        grunnlagstypeIF,
+        grunnlagstypeUP,
+        shouldUseNominal,
         benefits,
         hasAnyBenefit
       });
       
       salaryData.push({
         date,
-        salary, // Actual salary (Lønn) at the work percentage
+        salary, // Selected salary based on grunnlagstype rule
         salary100, // Salary calculated to 100% work position
         percentage,
+        grunnlagstypeIF,
+        grunnlagstypeUP,
+        shouldUseNominal,
         benefits,
         hasAnyBenefit
       });
@@ -1411,6 +1448,17 @@ export default function Home() {
       console.log('Salary at sick date is 0 or missing, skipping...');
       return null;
     }
+
+    // Check if sick date entry has "nomert" values - this determines calculation method for 2-year karens
+    const sickDateUsesNominal = salaryAtSick.shouldUseNominal;
+    
+    console.log('🔍 GRUNNLAGSTYPE CHECK - Sick date entry:', {
+      date: formatDate(salaryAtSick.date),
+      grunnlagstypeIF: salaryAtSick.grunnlagstypeIF,
+      grunnlagstypeUP: salaryAtSick.grunnlagstypeUP,
+      shouldUseNominal: sickDateUsesNominal,
+      calculationMethod: sickDateUsesNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent'
+    });
 
     // Calculate cutoff date (3 months before sick date)
     const threeMonthsBefore = new Date(sickDate);
@@ -1791,6 +1839,8 @@ export default function Home() {
       salaryAtSick: salaryAtSick.salary,
       salaryAtSick100: Math.round(salaryAtSick100),
       sickDate: formatDate(sickDate),
+      sickDateUsesNominal,
+      calculationMethod: sickDateUsesNominal ? 'LønnN / StillingsprosentN' : 'Lønn / Stillingsprosent',
       eligibleSalariesCount: eligibleSalaries.length,
       violationsCount: violations.length,
       violations,
@@ -2500,6 +2550,22 @@ export default function Home() {
                               : 'Lønn OK'
                           }
                         </h3>
+                        
+                        {/* Grunnlagstype information */}
+                        <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-xs font-medium text-blue-800">
+                              Beregningsmetode: {salaryIncreaseCheck.calculationMethod}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-700 mt-1">
+                            {salaryIncreaseCheck.sickDateUsesNominal 
+                              ? 'Nominell lønn brukes fordi GrunnlagstypeIF eller GrunnlagstypeUP inneholder "nomert"'
+                              : 'Faktisk lønn brukes (standard beregning)'
+                            }
+                          </div>
+                        </div>
                         <div className="bg-white p-3 rounded border border-slate-200">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             {/* 2-year comparison */}
