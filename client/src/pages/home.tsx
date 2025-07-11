@@ -170,6 +170,7 @@ export default function Home() {
     
     const lines = rawInput.split(/\r?\n/);
     console.log('🔍 AUTOFILL: Total lines found:', lines.length);
+    console.log('🔍 AUTOFILL: Looking for meldekort section...');
     
     let vedtakFra: string | null = null;
     const tilDates: string[] = [];
@@ -400,7 +401,7 @@ export default function Home() {
       // Show completion toast after analysis is done
       toast({
         title: "Autofyll fullført!",
-        description: "Data er hentet fra rådata og fylt inn i feltene",
+        description: `Data er hentet fra rådata og fylt inn i feltene. Funnet ${filteredMeldekort.length} meldekort.`,
         duration: 3000,
       });
     } else {
