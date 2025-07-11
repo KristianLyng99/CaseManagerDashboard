@@ -3562,6 +3562,10 @@ export default function Home() {
                                                   }));
                                                 
                                                 console.log('🔍 CHART DEBUG: Final chartData for visualization:', chartData);
+                                                console.log('🔍 CHART DEBUG: chartData length:', chartData.length);
+                                                console.log('🔍 CHART DEBUG: chartData x-values range:', 
+                                                  chartData.length > 0 ? `${Math.min(...chartData.map(d => d.x))} to ${Math.max(...chartData.map(d => d.x))}` : 'No data'
+                                                );
                                                 
                                                 // Add sick date point (x=0) if not already present
                                                 const hasSickDate = chartData.some(point => point.x === 0);
