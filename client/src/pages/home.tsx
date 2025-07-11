@@ -937,6 +937,18 @@ export default function Home() {
     }
   }, [sykdato, aapFra, uforetrygd]);
 
+  // Watch for changes in salary data and automatically trigger salary increase check
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      console.log('🔍 USEEFFECT: Triggering salary increase check...');
+      const result = checkSalaryIncrease();
+      console.log('🔍 USEEFFECT: Salary increase check result:', result);
+      setSalaryIncreaseCheck(result);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [gridData, rawSalaryData, sykdato, manualCalculationOverride]);
+
   // Foreldelse: rød hvis mer enn 3 år mellom registrert og AAP Fra, ellers grønn
   const getForeldelseStatus = () => {
     const reg = parseDate(søknadRegistrert);
