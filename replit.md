@@ -89,6 +89,12 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 11, 2025. Fixed visualization range to include data from 6 months before sick date:
+  - **Updated chart filtering** to show data from 6 months before sick date onwards (monthsBeforeSick >= 6)
+  - **Dynamic X-axis domain** using 'dataMin' and 'dataMax' to show full available data range
+  - **Added 6-month reference point** in X-axis tick formatter for better navigation
+  - **Fixed missing data issue** where chart wasn't showing all available salary data before sick date
+  - Chart now properly displays complete salary progression including periods closer to sick date
 - January 11, 2025. Fixed single meldekort parsing for "Alle perioder" format:
   - **Enhanced meldekort parsing** to handle both numbered meldekort IDs and "Alle perioder" format
   - **Added pattern matching** for "Alle perioder [date] [date] [hours] i hver periode" format
