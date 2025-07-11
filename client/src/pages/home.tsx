@@ -3490,10 +3490,9 @@ export default function Home() {
                                           <ResponsiveContainer width="100%" height="100%">
                                             <LineChart
                                               data={(() => {
-                                                // Start with existing salary data, but include data from 6 months before sick date
-                                                // The seAlleList already includes data up to 30 months, so we filter to show data from 6 months onward
+                                                // Start with existing salary data, extend to 30 months if available
                                                 const chartData = salaryIncreaseCheck.seAlleList
-                                                  .filter(entry => entry.monthsBeforeSick >= 6) // Include data from 6 months before sick date and older
+                                                  .filter(entry => entry.monthsBeforeSick <= 30) // Include up to 30 months
                                                   .sort((a, b) => b.monthsBeforeSick - a.monthsBeforeSick)
                                                   .map((entry) => ({
                                                     x: entry.monthsBeforeSick,
@@ -3534,13 +3533,12 @@ export default function Home() {
                                               <XAxis 
                                                 dataKey="x"
                                                 type="number"
-                                                domain={['dataMin', 'dataMax']}
+                                                domain={[0, 30]}
                                                 label={{ value: 'Måneder før sykdato', position: 'insideBottom', offset: -10 }}
                                                 reversed={true}
                                                 tickFormatter={(value) => {
                                                   // Show specific labels for key points
                                                   if (value === 0) return 'Sykdato';
-                                                  if (value === 6) return '6 mnd';
                                                   if (value === 12) return '1 år';
                                                   if (value === 24) return '2 år';
                                                   return `${value}`;
