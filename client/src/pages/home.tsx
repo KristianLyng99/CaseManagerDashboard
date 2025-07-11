@@ -2049,12 +2049,16 @@ export default function Home() {
     console.log('🔍 SEALLE DEBUG: 30 months before:', thirtyMonthsBeforeForList);
     console.log('🔍 SEALLE DEBUG: Total salary history entries:', salaryHistory.length);
     
-    // First, get the base salary entries within the 30-month range
+    // Get ALL salary entries up to sick date (not limited by 30-month range)
+    // This ensures we have salary data to interpolate from for the oldest months
     const baseSalaryEntries = salaryHistory.filter(entry => 
-      entry.date <= sickDate && entry.date >= thirtyMonthsBeforeForList
+      entry.date <= sickDate
     ).sort((a, b) => a.date.getTime() - b.date.getTime());
     
-    console.log('🔍 SEALLE DEBUG: Base salary entries:', baseSalaryEntries.length);
+    console.log('🔍 SEALLE DEBUG: Base salary entries (all):', baseSalaryEntries.length);
+    console.log('🔍 SEALLE DEBUG: Base salary entries date range:', 
+      baseSalaryEntries.length > 0 ? `${formatDate(baseSalaryEntries[0].date)} to ${formatDate(baseSalaryEntries[baseSalaryEntries.length - 1].date)}` : 'No entries'
+    );
     
     // Now create a complete month-by-month list for the chart
     const completeMonthlyData = [];
