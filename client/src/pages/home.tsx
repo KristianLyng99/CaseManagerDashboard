@@ -3392,8 +3392,8 @@ export default function Home() {
                                               <p className="text-blue-700"><strong>Brun prikk:</strong> Lønn 2 år før syk</p>
                                             </div>
                                             <div>
-                                              <p className="text-blue-700 mb-1"><strong>Sykdato lønn:</strong> {salaryIncreaseCheck.salaryAtSick100.toLocaleString('no-NO')} kr</p>
-                                              <p className="text-blue-700"><strong>2 år før syk:</strong> {salaryIncreaseCheck.actualSalaryTwoYearsBefore100.toLocaleString('no-NO')} kr</p>
+                                              <p className="text-blue-700 mb-1"><strong>Sykdato lønn:</strong> {salaryIncreaseCheck.salaryAtSick100?.toLocaleString('no-NO') || 'N/A'} kr</p>
+                                              <p className="text-blue-700"><strong>2 år før syk:</strong> {salaryIncreaseCheck.actualSalaryTwoYearsBefore100?.toLocaleString('no-NO') || 'N/A'} kr</p>
                                             </div>
                                           </div>
                                         </div>
@@ -3422,9 +3422,9 @@ export default function Home() {
                                                   });
                                                 }
                                                 
-                                                // Add 2-year point (x=24) if not already present
+                                                // Add 2-year point (x=24) if not already present and data exists
                                                 const hasTwoYear = chartData.some(point => point.x === 24);
-                                                if (!hasTwoYear) {
+                                                if (!hasTwoYear && salaryIncreaseCheck.actualSalaryTwoYearsBefore100) {
                                                   chartData.push({
                                                     x: 24,
                                                     salary: salaryIncreaseCheck.actualSalaryTwoYearsBefore100,
