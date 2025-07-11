@@ -89,6 +89,13 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 11, 2025. Added visualization toggle for sick date salary type:
+  - **Added toggle button in visualization dialog** to switch between actual and normalized sick date salary
+  - **Dynamic chart updates** - sick date point uses normalized salary when toggle is enabled, all other salary points remain actual
+  - **Updated reference lines** - 85% and 92.5% threshold lines adjust based on selected sick date salary type
+  - **Enhanced user interface** - clear indication of current salary type (faktisk/normert) with simple toggle functionality
+  - **Preserved calculation integrity** - toggle only affects visualization, not underlying calculations or assessments
+  - Users can now visually compare salary progression using either actual or normalized sick date salary as reference
 - January 10, 2025. Fixed autofill for single meldekort reporting:
   - **Enhanced single meldekort handling** - System now properly processes single meldekort entries for disability degree reporting
   - **Improved calculation logic** - Single meldekort is used directly without skipping, two meldekort uses second entry, 3+ meldekort follows original logic

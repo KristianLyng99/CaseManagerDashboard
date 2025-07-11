@@ -47,6 +47,7 @@ export default function Home() {
 
   const [gridData, setGridData] = useState<string[][]>([]);
   const [manualCalculationOverride, setManualCalculationOverride] = useState(null); // null = auto, true = nominal, false = faktisk
+  const [useNormalizedSickSalary, setUseNormalizedSickSalary] = useState(false); // For visualization toggle
 
   const { toast } = useToast();
 
@@ -2341,6 +2342,29 @@ export default function Home() {
   const gRegulatedCalculation = calculateGRegulatedSalary();
   const salaryIncreaseCheck = checkSalaryIncrease();
 
+  // Function to get normalized sick date salary
+  const getNormalizedSickDateSalary = () => {
+    if (!salaryIncreaseCheck || !sykdato) return null;
+    
+    const sickDate = parseDate(sykdato);
+    if (!sickDate) return null;
+    
+    const salaryHistory = parseSalaryHistory();
+    if (!salaryHistory || salaryHistory.length === 0) return null;
+    
+    // Find salary at sick date
+    const salaryAtSick = salaryHistory.find(entry => entry.date <= sickDate);
+    if (!salaryAtSick) return null;
+    
+    // Calculate normalized salary at 100% using nominalSalary and percentage
+    if (salaryAtSick.nominalSalary && salaryAtSick.percentage > 0) {
+      const normalizedSalary100 = Math.round(salaryAtSick.nominalSalary / (salaryAtSick.percentage / 100));
+      return normalizedSalary100;
+    }
+    
+    return null;
+  };
+
   // State for IF-ytelse calculation inputs
   const [fraG, setFraG] = useState('0');
   const [knekkG, setKnekkG] = useState('7.1');
@@ -3392,10 +3416,41 @@ export default function Home() {
                                               <p className="text-blue-700"><strong>Brun prikk:</strong> Lønn 2 år før syk</p>
                                             </div>
                                             <div>
-                                              <p className="text-blue-700 mb-1"><strong>Sykdato lønn:</strong> {salaryIncreaseCheck.salaryAtSick100?.toLocaleString('no-NO') || 'N/A'} kr</p>
+                                              <p className="text-blue-700 mb-1">
+                                                <strong>Sykdato lønn:</strong> {(() => {
+                                                  const normalizedSickSalary = getNormalizedSickDateSalary();
+                                                  const displaySalary = useNormalizedSickSalary && normalizedSickSalary 
+                                                    ? normalizedSickSalary 
+                                                    : salaryIncreaseCheck.salaryAtSick100;
+                                                  return `${displaySalary?.toLocaleString('no-NO') || 'N/A'} kr`;
+                                                })()}{' '}
+                                                <span className="text-xs text-blue-600">
+                                                  ({useNormalizedSickSalary ? 'normert' : 'faktisk'})
+                                                </span>
+                                              </p>
                                               <p className="text-blue-700"><strong>2 år før syk:</strong> {salaryIncreaseCheck.actualSalaryTwoYearsBefore100?.toLocaleString('no-NO') || 'N/A'} kr</p>
                                             </div>
                                           </div>
+                                        </div>
+                                        
+                                        {/* Toggle for sick date salary type */}
+                                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
+                                          <div className="flex items-center space-x-3">
+                                            <span className="text-sm font-medium text-gray-700">
+                                              Sykdato lønn type:
+                                            </span>
+                                            <span className="text-sm text-gray-600">
+                                              {useNormalizedSickSalary ? 'Normert' : 'Faktisk'}
+                                            </span>
+                                          </div>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setUseNormalizedSickSalary(!useNormalizedSickSalary)}
+                                            className="text-xs px-3 py-1"
+                                          >
+                                            {useNormalizedSickSalary ? 'Bytt til faktisk' : 'Bytt til normert'}
+                                          </Button>
                                         </div>
                                         
                                         <div style={{ width: '100%', height: '400px' }}>
@@ -3415,9 +3470,14 @@ export default function Home() {
                                                 // Add sick date point (x=0) if not already present
                                                 const hasSickDate = chartData.some(point => point.x === 0);
                                                 if (!hasSickDate) {
+                                                  const normalizedSickSalary = getNormalizedSickDateSalary();
+                                                  const sickDateSalary = useNormalizedSickSalary && normalizedSickSalary 
+                                                    ? normalizedSickSalary 
+                                                    : salaryIncreaseCheck.salaryAtSick100;
+                                                  
                                                   chartData.unshift({
                                                     x: 0,
-                                                    salary: salaryIncreaseCheck.salaryAtSick100,
+                                                    salary: sickDateSalary,
                                                     date: salaryIncreaseCheck.sickDate
                                                   });
                                                 }
@@ -3468,8 +3528,20 @@ export default function Home() {
                                               
                                               <ReferenceLine x={12} stroke="red" strokeWidth={2} strokeDasharray="5 5" />
                                               <ReferenceLine x={24} stroke="brown" strokeWidth={2} strokeDasharray="4 4" />
-                                              <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.85} stroke="green" strokeWidth={2} strokeDasharray="3 3" />
-                                              <ReferenceLine y={salaryIncreaseCheck.salaryAtSick100 * 0.925} stroke="orange" strokeWidth={2} strokeDasharray="3 3" />
+                                              <ReferenceLine y={(() => {
+                                                const normalizedSickSalary = getNormalizedSickDateSalary();
+                                                const referenceSalary = useNormalizedSickSalary && normalizedSickSalary 
+                                                  ? normalizedSickSalary 
+                                                  : salaryIncreaseCheck.salaryAtSick100;
+                                                return referenceSalary * 0.85;
+                                              })()} stroke="green" strokeWidth={2} strokeDasharray="3 3" />
+                                              <ReferenceLine y={(() => {
+                                                const normalizedSickSalary = getNormalizedSickDateSalary();
+                                                const referenceSalary = useNormalizedSickSalary && normalizedSickSalary 
+                                                  ? normalizedSickSalary 
+                                                  : salaryIncreaseCheck.salaryAtSick100;
+                                                return referenceSalary * 0.925;
+                                              })()} stroke="orange" strokeWidth={2} strokeDasharray="3 3" />
                                               
                                               <Line 
                                                 type="stepAfter" 
