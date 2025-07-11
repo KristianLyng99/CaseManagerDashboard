@@ -89,6 +89,12 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 10, 2025. Fixed autofill for single meldekort reporting:
+  - **Enhanced single meldekort handling** - System now properly processes single meldekort entries for disability degree reporting
+  - **Improved calculation logic** - Single meldekort is used directly without skipping, two meldekort uses second entry, 3+ meldekort follows original logic
+  - **Better debugging output** - Clear logging for single and two meldekort scenarios
+  - **Complete disability reporting** - Ensures all meldekort data is captured and processed for uføregrad calculations
+  - System now handles edge cases where only one meldekort exists in the data
 - January 09, 2025. Implemented ajourholddato salary correction system:
   - **Added Ajourholddato column detection** in Excel data parsing to identify salary update dates
   - **Implemented correction logic** that compares ajourholddato dates to identify incorrect salary entries

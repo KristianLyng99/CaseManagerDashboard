@@ -392,26 +392,66 @@ export default function Home() {
     console.error('*** SIMPLIFIED FUNCTION STARTED - USING PRE-FILTERED DATA ***');
     console.error('Received meldekort count:', meldekortData.length);
     
-    if (meldekortData.length < 3) {
-      // Not enough data to detect changes, just calculate average
-      const totalHours = meldekortData.reduce((sum, mk) => sum + mk.hours, 0);
-      const avgHours = meldekortData.length > 0 ? totalHours / meldekortData.length : 0;
-      const workPct = (avgHours / 75) * 100;
+    if (meldekortData.length === 0) {
+      // No data
+      setAvgUforegrad(null);
+      setAvgUforegradExact(null);
+      setUforegradDateRange(null);
+      setUforegradPerioder(null);
+      return;
+    }
+    
+    if (meldekortData.length === 1) {
+      // Single meldekort - calculate directly without skipping
+      const mk = meldekortData[0];
+      const workPct = (mk.hours / 75) * 100;
       const uforegradExact = 100 - workPct;
       const uforegrad = Math.round(uforegradExact / 5) * 5;
       
-      console.error('SIMPLE AVERAGE CALCULATION:', { avgHours, uforegrad });
+      console.error('SINGLE MELDEKORT CALCULATION:', { 
+        hours: mk.hours, 
+        workPct, 
+        uforegradExact, 
+        uforegrad,
+        period: `${mk.fraDato} - ${mk.tilDato}`
+      });
+      
       setAvgUforegrad(uforegrad);
       setAvgUforegradExact(uforegradExact);
-      setUforegradDateRange(meldekortData.length > 0 ? {
-        fraDato: meldekortData[0].fraDato,
-        tilDato: meldekortData[meldekortData.length - 1].tilDato
-      } : null);
+      setUforegradDateRange({
+        fraDato: mk.fraDato,
+        tilDato: mk.tilDato
+      });
+      setUforegradPerioder(null);
+      return;
+    }
+    
+    if (meldekortData.length === 2) {
+      // Two meldekort - skip first one and use second
+      const mk = meldekortData[1];
+      const workPct = (mk.hours / 75) * 100;
+      const uforegradExact = 100 - workPct;
+      const uforegrad = Math.round(uforegradExact / 5) * 5;
+      
+      console.error('TWO MELDEKORT CALCULATION (using second):', { 
+        hours: mk.hours, 
+        workPct, 
+        uforegradExact, 
+        uforegrad,
+        period: `${mk.fraDato} - ${mk.tilDato}`
+      });
+      
+      setAvgUforegrad(uforegrad);
+      setAvgUforegradExact(uforegradExact);
+      setUforegradDateRange({
+        fraDato: mk.fraDato,
+        tilDato: mk.tilDato
+      });
       setUforegradPerioder(null);
       return;
     }
 
-    // Skip first meldekort (start from kort #2)
+    // Skip first meldekort (start from kort #2) - for 3+ meldekort
     const analyseData = meldekortData.slice(1);
     
     if (analyseData.length < 2) {
