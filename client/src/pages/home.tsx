@@ -3491,6 +3491,15 @@ export default function Home() {
                                             <LineChart
                                               data={(() => {
                                                 // Start with existing salary data, extend to 30 months if available
+                                                console.log('🔍 CHART DEBUG: seAlleList full data:', salaryIncreaseCheck.seAlleList);
+                                                console.log('🔍 CHART DEBUG: seAlleList entries by monthsBeforeSick:', 
+                                                  salaryIncreaseCheck.seAlleList.map(entry => ({
+                                                    date: entry.date,
+                                                    monthsBeforeSick: entry.monthsBeforeSick,
+                                                    salary100: entry.salary100
+                                                  }))
+                                                );
+                                                
                                                 const chartData = salaryIncreaseCheck.seAlleList
                                                   .filter(entry => entry.monthsBeforeSick <= 30) // Include up to 30 months
                                                   .sort((a, b) => b.monthsBeforeSick - a.monthsBeforeSick)
@@ -3499,6 +3508,8 @@ export default function Home() {
                                                     salary: entry.salary100,
                                                     date: entry.date
                                                   }));
+                                                
+                                                console.log('🔍 CHART DEBUG: Final chartData for visualization:', chartData);
                                                 
                                                 // Add sick date point (x=0) if not already present
                                                 const hasSickDate = chartData.some(point => point.x === 0);
