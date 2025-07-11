@@ -48,6 +48,7 @@ export default function Home() {
   const [gridData, setGridData] = useState<string[][]>([]);
   const [manualCalculationOverride, setManualCalculationOverride] = useState(null); // null = auto, true = nominal, false = faktisk
   const [useNormalizedSickSalary, setUseNormalizedSickSalary] = useState(false); // For visualization toggle
+  const [salaryIncreaseCheck, setSalaryIncreaseCheck] = useState(null); // Cached salary increase check result
 
   const { toast } = useToast();
 
@@ -2424,7 +2425,7 @@ export default function Home() {
   };
 
   const gRegulatedCalculation = calculateGRegulatedSalary();
-  const salaryIncreaseCheck = checkSalaryIncrease();
+  // salaryIncreaseCheck is now managed by state and useEffect
 
   // Function to get normalized sick date salary
   const getNormalizedSickDateSalary = () => {
