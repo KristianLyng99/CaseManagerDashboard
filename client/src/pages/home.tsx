@@ -2036,37 +2036,62 @@ export default function Home() {
     console.log('🔍 SEALLE DEBUG: 30 months before:', thirtyMonthsBeforeForList);
     console.log('🔍 SEALLE DEBUG: Total salary history entries:', salaryHistory.length);
     
-    const seAlleList = salaryHistory.filter(entry => 
+    // First, get the base salary entries within the 30-month range
+    const baseSalaryEntries = salaryHistory.filter(entry => 
       entry.date <= sickDate && entry.date >= thirtyMonthsBeforeForList
-    ).map(entry => {
-      // If percentage is 0, set salary to 0 regardless of what's in salary field
-      const adjustedSalary = entry.percentage === 0 ? 0 : entry.salary;
-      // Use the pre-calculated salary100 from parsing (already correctly calculated as Lønn / Stillingsprosent)
-      const entry100 = entry.percentage === 0 ? 0 : entry.salary100;
-      const increasePercentage = entry.percentage === 0 ? null : ((salaryAtSick100 - entry100) / entry100) * 100;
-      const monthsBeforeSick = Math.round(((sickDate.getTime() - entry.date.getTime()) / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10;
+    ).sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    console.log('🔍 SEALLE DEBUG: Base salary entries:', baseSalaryEntries.length);
+    
+    // Now create a complete month-by-month list for the chart
+    const completeMonthlyData = [];
+    
+    // Generate all months from 30 months before to sick date
+    for (let i = 0; i <= 30; i++) {
+      const currentMonth = new Date(sickDate);
+      currentMonth.setMonth(currentMonth.getMonth() - i);
+      currentMonth.setDate(1); // Set to first day of month for consistency
       
-      // Apply same threshold logic as karens evaluation
-      const getThresholdForDisplay = (monthsDiff: number) => {
-        if (monthsDiff >= 24) return 15.0; // 2+ years: 15%
-        if (monthsDiff >= 12) return 7.5;  // 1+ years: 7.5%
-        if (monthsDiff >= 6) return 5.0;   // 6+ months: 5%
-        return 2.5; // 3-6 months: 2.5%
-      };
+      // Find the most recent salary entry before or at this month
+      let applicableSalary = null;
+      for (let j = baseSalaryEntries.length - 1; j >= 0; j--) {
+        if (baseSalaryEntries[j].date <= currentMonth) {
+          applicableSalary = baseSalaryEntries[j];
+          break;
+        }
+      }
       
-      const thresholdPercentage = getThresholdForDisplay(monthsBeforeSick);
-      const isOK = increasePercentage === null ? null : (increasePercentage <= thresholdPercentage);
-      
-      return {
-        date: formatDate(entry.date),
-        originalSalary: adjustedSalary,
-        salary100: Math.round(entry100),
-        increasePercentage: increasePercentage === null ? null : (Math.round(increasePercentage * 100) / 100),
-        monthsBeforeSick: monthsBeforeSick,
-        thresholdPercentage: thresholdPercentage,
-        isOK: isOK
-      };
-    }).sort((a, b) => a.monthsBeforeSick - b.monthsBeforeSick);
+      if (applicableSalary) {
+        // If percentage is 0, set salary to 0 regardless of what's in salary field
+        const adjustedSalary = applicableSalary.percentage === 0 ? 0 : applicableSalary.salary;
+        const entry100 = applicableSalary.percentage === 0 ? 0 : applicableSalary.salary100;
+        const increasePercentage = applicableSalary.percentage === 0 ? null : ((salaryAtSick100 - entry100) / entry100) * 100;
+        const monthsBeforeSick = Math.round(((sickDate.getTime() - currentMonth.getTime()) / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10;
+        
+        // Apply same threshold logic as karens evaluation
+        const getThresholdForDisplay = (monthsDiff: number) => {
+          if (monthsDiff >= 24) return 15.0; // 2+ years: 15%
+          if (monthsDiff >= 12) return 7.5;  // 1+ years: 7.5%
+          if (monthsDiff >= 6) return 5.0;   // 6+ months: 5%
+          return 2.5; // 3-6 months: 2.5%
+        };
+        
+        const thresholdPercentage = getThresholdForDisplay(monthsBeforeSick);
+        const isOK = increasePercentage === null ? null : (increasePercentage <= thresholdPercentage);
+        
+        completeMonthlyData.push({
+          date: formatDate(currentMonth),
+          originalSalary: adjustedSalary,
+          salary100: Math.round(entry100),
+          increasePercentage: increasePercentage === null ? null : (Math.round(increasePercentage * 100) / 100),
+          monthsBeforeSick: monthsBeforeSick,
+          thresholdPercentage: thresholdPercentage,
+          isOK: isOK
+        });
+      }
+    }
+    
+    const seAlleList = completeMonthlyData.sort((a, b) => a.monthsBeforeSick - b.monthsBeforeSick);
     
     console.log('🔍 SEALLE DEBUG: Final seAlleList length:', seAlleList.length);
     console.log('🔍 SEALLE DEBUG: seAlleList entries with monthsBeforeSick:', 
