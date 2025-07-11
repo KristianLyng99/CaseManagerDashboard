@@ -293,17 +293,30 @@ export default function Home() {
       }
       
       if (inMeldekort) {
+        // Original pattern for numbered meldekort entries
         const m2 = t.match(/\d+\s+(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})\s+(\d+[\d,]*)/);
         if (m2) {
           const [, fraDato, tilDato, timerStr] = m2;
-          console.log('Found meldekort entry:', { fraDato, tilDato, timerStr });
+          console.log('Found numbered meldekort entry:', { fraDato, tilDato, timerStr });
           meldekortData.push({
             hours: parseFloat(timerStr.replace(',', '.')),
             fraDato,
             tilDato
           });
         } else {
-          console.log('Meldekort line did not match pattern:', t);
+          // New pattern for "Alle perioder" format
+          const m3 = t.match(/Alle perioder\s+(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})\s+(\d+)(?:\s+i\s+hver\s+periode)?/);
+          if (m3) {
+            const [, fraDato, tilDato, timerStr] = m3;
+            console.log('Found "Alle perioder" meldekort entry:', { fraDato, tilDato, timerStr });
+            meldekortData.push({
+              hours: parseFloat(timerStr.replace(',', '.')),
+              fraDato,
+              tilDato
+            });
+          } else {
+            console.log('Meldekort line did not match any pattern:', t);
+          }
         }
       }
     });

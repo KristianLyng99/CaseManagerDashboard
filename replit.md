@@ -89,6 +89,13 @@ This is a Norwegian case handler (saksbehandler) tool built as a full-stack web 
 - **Static Serving**: Fallback to static file serving in production
 
 ## Changelog
+- January 11, 2025. Fixed single meldekort parsing for "Alle perioder" format:
+  - **Enhanced meldekort parsing** to handle both numbered meldekort IDs and "Alle perioder" format
+  - **Added pattern matching** for "Alle perioder [date] [date] [hours] i hver periode" format
+  - **Improved debugging** with detailed logging for meldekort detection and parsing
+  - **Better error handling** clears uføregrad data when no meldekort found and provides clear feedback
+  - **Fixed issue** where single meldekort entries in "Alle perioder" format weren't being processed
+  - System now properly handles both traditional numbered meldekort and consolidated period formats from DSOP
 - January 11, 2025. Added visualization toggle for sick date salary type:
   - **Added toggle button in visualization dialog** to switch between actual and normalized sick date salary
   - **Dynamic chart updates** - sick date point uses normalized salary when toggle is enabled, all other salary points remain actual
