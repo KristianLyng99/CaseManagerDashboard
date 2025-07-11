@@ -2032,6 +2032,10 @@ export default function Home() {
     const thirtyMonthsBeforeForList = new Date(sickDate);
     thirtyMonthsBeforeForList.setMonth(thirtyMonthsBeforeForList.getMonth() - 30);
     
+    console.log('🔍 SEALLE DEBUG: Sick date:', sickDate);
+    console.log('🔍 SEALLE DEBUG: 30 months before:', thirtyMonthsBeforeForList);
+    console.log('🔍 SEALLE DEBUG: Total salary history entries:', salaryHistory.length);
+    
     const seAlleList = salaryHistory.filter(entry => 
       entry.date <= sickDate && entry.date >= thirtyMonthsBeforeForList
     ).map(entry => {
@@ -2063,6 +2067,15 @@ export default function Home() {
         isOK: isOK
       };
     }).sort((a, b) => a.monthsBeforeSick - b.monthsBeforeSick);
+    
+    console.log('🔍 SEALLE DEBUG: Final seAlleList length:', seAlleList.length);
+    console.log('🔍 SEALLE DEBUG: seAlleList entries with monthsBeforeSick:', 
+      seAlleList.map(entry => ({
+        date: entry.date,
+        monthsBeforeSick: entry.monthsBeforeSick,
+        salary100: entry.salary100
+      }))
+    );
 
     // Only consider "recent violations" (within 3 years) for the "andre overtredelser" status
     // This excludes very old salary changes that are less relevant for current karens assessment
