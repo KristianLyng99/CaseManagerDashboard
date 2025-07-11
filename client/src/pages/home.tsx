@@ -1247,18 +1247,6 @@ export default function Home() {
         nominalSalary = parseInt(nominalSalaryText);
       }
       
-      // Debug: Log what we're extracting
-      console.log('🔍 COLUMN EXTRACTION DEBUG:', {
-        date: dateText,
-        actualSalaryColumnIndex,
-        nominalSalaryColumnIndex,
-        actualSalaryRaw: columns[actualSalaryColumnIndex],
-        nominalSalaryRaw: columns[nominalSalaryColumnIndex],
-        actualSalary,
-        nominalSalary,
-        allColumns: columns
-      });
-      
       // Extract grunnlagstype values for this entry (for storage/debugging)
       let grunnlagstypeIF = '';
       let grunnlagstypeUP = '';
