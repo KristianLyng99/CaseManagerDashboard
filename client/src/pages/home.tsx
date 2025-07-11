@@ -165,7 +165,12 @@ export default function Home() {
 
   // Parse raw clipboard data for autofill
   const parseAutofill = () => {
+    console.log('🔍 AUTOFILL: Starting parseAutofill with rawInput length:', rawInput.length);
+    console.log('🔍 AUTOFILL: First 500 chars of rawInput:', rawInput.substring(0, 500));
+    
     const lines = rawInput.split(/\r?\n/);
+    console.log('🔍 AUTOFILL: Total lines found:', lines.length);
+    
     let vedtakFra: string | null = null;
     const tilDates: string[] = [];
     const meldekortData: Array<{
@@ -265,8 +270,14 @@ export default function Home() {
 
     lines.forEach(line => {
       const t = line.trim();
-      if (/^Vedtak ID/i.test(t)) { inVedtak = true; inMeldekort = false; return; }
-      if (/^Meldekort ID/i.test(t)) { inMeldekort = true; inVedtak = false; return; }
+      if (/^Vedtak ID/i.test(t)) { 
+        console.log('🔍 AUTOFILL: Found Vedtak ID section'); 
+        inVedtak = true; inMeldekort = false; return; 
+      }
+      if (/^Meldekort ID/i.test(t)) { 
+        console.log('🔍 AUTOFILL: Found Meldekort ID section'); 
+        inMeldekort = true; inVedtak = false; return; 
+      }
       if (!t) return;
       
       if (inVedtak) {
@@ -285,11 +296,14 @@ export default function Home() {
         const m2 = t.match(/\d+\s+(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})\s+(\d+[\d,]*)/);
         if (m2) {
           const [, fraDato, tilDato, timerStr] = m2;
+          console.log('Found meldekort entry:', { fraDato, tilDato, timerStr });
           meldekortData.push({
             hours: parseFloat(timerStr.replace(',', '.')),
             fraDato,
             tilDato
           });
+        } else {
+          console.log('Meldekort line did not match pattern:', t);
         }
       }
     });
@@ -379,11 +393,17 @@ export default function Home() {
     } else {
       console.log('NO MELDEKORT DATA TO ANALYZE');
       
-      // Show completion toast immediately if no meldekort data
+      // Clear any existing uføregrad data
+      setAvgUforegrad(null);
+      setAvgUforegradExact(null);
+      setUforegradDateRange(null);
+      setUforegradPerioder(null);
+      
+      // Show completion toast with meldekort warning
       toast({
         title: "Autofyll fullført!",
-        description: "Data er hentet fra rådata og fylt inn i feltene",
-        duration: 3000,
+        description: "Data hentet, men ingen meldekort data funnet. Kontroller at rådata inneholder meldekort seksjonen.",
+        duration: 5000,
       });
     }
   };
@@ -3449,7 +3469,7 @@ export default function Home() {
                                             onClick={() => setUseNormalizedSickSalary(!useNormalizedSickSalary)}
                                             className="text-xs px-3 py-1"
                                           >
-                                            {useNormalizedSickSalary ? 'Bytt til faktisk' : 'Bytt til normert'}
+                                            {useNormalizedSickSalary ? 'Bytt til faktisk sykdato lønn' : 'Bytt til normert sykdato lønn'}
                                           </Button>
                                         </div>
                                         
