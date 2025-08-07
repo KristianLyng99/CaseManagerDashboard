@@ -212,6 +212,47 @@ export default function Home() {
       const trimmed = line.trim();
       if (!trimmed || trimmed.includes('Vedtak ID') || trimmed.includes('Fra') || trimmed.includes('Til')) continue;
 
+      // Simple rule: Skip any line containing "§11-5 nedsatt arbeidsevne"
+      if (trimmed.includes('§11-5 nedsatt arbeidsevne')) {
+        console.log('🔍 AAP GAP DETECTION: Skipping § line:', trimmed.substring(0, 100));
+        continue;
+      }
+
+      // Look for AAP lines with dates
+      if (trimmed.includes('Arbeidsavklaringspenger')) {
+        const dateMatch = trimmed.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
+        if (dateMatch) {
+          const [, fraStr, tilStr] = dateMatch;
+          const fraDate = parseDate(fraStr);
+          const tilDate = parseDate(tilStr);
+        
+          if (fraDate && tilDate) {
+            // Extract additional info for context
+            const status = trimmed.includes('Avsluttet') ? 'Avsluttet' : 
+                          trimmed.includes('Iverksatt') ? 'Iverksatt' : 'Unknown';
+            const isStans = trimmed.includes('Stans');
+            const isOpphör = trimmed.includes('Opphör');
+            
+            periods.push({
+              fra: fraDate,
+              til: tilDate,
+              fraStr,
+              tilStr,
+              type: 'AAP',
+              status: isStans ? 'Stans' : isOpphör ? 'Opphör' : status
+            });
+            
+            console.log('🔍 AAP GAP DETECTION: Found AAP period:', {
+              fra: fraStr,
+              til: tilStr,
+              type: 'AAP',
+              status: isStans ? 'Stans' : isOpphör ? 'Opphör' : status
+            });
+          }
+        }
+        continue; // Skip the complex column parsing since we found AAP
+      }
+
       // Parse the line by splitting on whitespace to get columns
       const columns = trimmed.split(/\s+/);
       
@@ -354,34 +395,21 @@ export default function Home() {
           const trimmed = line.trim();
           if (!trimmed || trimmed.includes('Vedtak ID') || trimmed.includes('Fra') || trimmed.includes('Til')) continue;
           
-          // Parse the line by splitting on whitespace to get columns
-          const columns = trimmed.split(/\s+/);
+          // Simple rule: Skip any line containing "§11-5 nedsatt arbeidsevne"
+          if (trimmed.includes('§11-5 nedsatt arbeidsevne')) {
+            console.log('🔍 VEDTAK PARSING: Skipping § line:', trimmed.substring(0, 100));
+            continue;
+          }
           
-          // Check if this line has enough columns and contains dates
-          if (columns.length >= 5) {
+          // Look for AAP lines with dates
+          if (trimmed.includes('Arbeidsavklaringspenger')) {
             const vedtakMatch = trimmed.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
             if (vedtakMatch) {
               const [, fraStr, tilStr] = vedtakMatch;
-              
-              // Find the "Rettighets Type" column (should be around index 4-5)
-              // Look for "Arbeidsavklaringspenger" specifically in the rettighets type position
-              const rettighetstypeIndex = columns.findIndex(col => col === 'Arbeidsavklaringspenger');
-              
-              if (rettighetstypeIndex !== -1) {
-                aapDatesFromVedtak.push(fraStr);
-                aapTilDatesFromVedtak.push(tilStr);
-                aapFound = true;
-                console.log('🔍 VEDTAK PARSING: Found AAP line with correct Rettighets Type:', { 
-                  fraStr, 
-                  tilStr, 
-                  rettighetstypeIndex,
-                  columns: columns.slice(0, 10) // Show first 10 columns for debugging
-                });
-              } else {
-                console.log('🔍 VEDTAK PARSING: Skipping line without Arbeidsavklaringspenger in Rettighets Type:', {
-                  firstFewColumns: columns.slice(0, 10)
-                });
-              }
+              aapDatesFromVedtak.push(fraStr);
+              aapTilDatesFromVedtak.push(tilStr);
+              aapFound = true;
+              console.log('🔍 VEDTAK PARSING: Found AAP line:', { fraStr, tilStr });
             }
           }
         }
