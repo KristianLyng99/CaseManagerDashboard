@@ -1854,9 +1854,10 @@ export default function Home() {
 
   const karensCalculations = getKarensCalculations();
 
-  // Check for new benefits in the 2-year period before sick date
+  // Check for new benefits in the 2-year period before sick date - UPDATED VERSION 3.0
   const checkNewBenefits = () => {
-    console.error('🚨 BENEFITS CHECK UPDATED VERSION CALLED - NEW LOGIC ACTIVE 🚨');
+    window.alert('BENEFITS CHECK FUNCTION IS RUNNING - VERSION 3.0');
+    console.error('🚨 BENEFITS CHECK UPDATED VERSION 3.0 CALLED - NEW LOGIC ACTIVE 🚨');
     const salaryHistory = parseSalaryHistory();
     console.log('🔍 BENEFITS CHECK: Salary history length:', salaryHistory?.length || 0);
     console.log('🔍 BENEFITS CHECK: Sykdato:', sykdato);
@@ -1930,22 +1931,19 @@ export default function Home() {
       // No entries before 2-year period - insufficient historical data
       console.log('No entries before 2-year period found - insufficient historical data detected');
       
-      // If data starts close to or within the 2-year period, it's likely insufficient data
-      // rather than genuine "new benefits"
-      if (monthsGap <= 12) { // Data starts within 12 months of where we need it
-        console.log('🔍 BENEFITS CHECK: Insufficient historical data detected - returning early');
-        const result = {
-          hasNewBenefits: false,
-          noData: false,
-          insufficientData: true,
-          dataStartsFrom: earliestDataDateFormatted,
-          neededFrom: formatDate(twoYearsBefore),
-          monthsGap: monthsGap,
-          message: `Mangler data fra ${formatDate(twoYearsBefore)} til ${earliestDataDateFormatted}. Dette tyder på at kunden er innmeldt i avtalen innen 2 år før sykdato.`
-        };
-        console.log('🔍 BENEFITS CHECK: Returning insufficient data result:', result);
-        return result;
-      }
+      // Always show insufficient data warning when data doesn't go back to 2 years before sick date
+      console.log('🔍 BENEFITS CHECK: Insufficient historical data detected - returning early');
+      const result = {
+        hasNewBenefits: false,
+        noData: false,
+        insufficientData: true,
+        dataStartsFrom: earliestDataDateFormatted,
+        neededFrom: formatDate(twoYearsBefore),
+        monthsGap: monthsGap,
+        message: `Mangler data fra ${formatDate(twoYearsBefore)} til ${earliestDataDateFormatted}. Dette tyder på at kunden er innmeldt i avtalen innen 2 år før sykdato.`
+      };
+      console.log('🔍 BENEFITS CHECK: Returning insufficient data result:', result);
+      return result;
       
       // If there's a very large gap (>12 months), treat as potential new benefits but with caveat
       for (const benefitType of benefitTypes) {
@@ -1999,7 +1997,7 @@ export default function Home() {
   };
 
   const newBenefitsCheck = checkNewBenefits();
-  console.log('Benefits check result:', newBenefitsCheck);
+  console.error('🚨 FINAL BENEFITS RESULT:', newBenefitsCheck);
 
   // Enhanced salary increase check - checks all salaries up to 3 months before sick date
   const checkSalaryIncrease = () => {
