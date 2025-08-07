@@ -1856,7 +1856,7 @@ export default function Home() {
 
   // Check for new benefits in the 2-year period before sick date
   const checkNewBenefits = () => {
-    console.log('🔍 BENEFITS CHECK: Function called');
+    console.error('🚨 BENEFITS CHECK UPDATED VERSION CALLED - NEW LOGIC ACTIVE 🚨');
     const salaryHistory = parseSalaryHistory();
     console.log('🔍 BENEFITS CHECK: Salary history length:', salaryHistory?.length || 0);
     console.log('🔍 BENEFITS CHECK: Sykdato:', sykdato);
