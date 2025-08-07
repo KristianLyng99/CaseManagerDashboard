@@ -1377,8 +1377,8 @@ export default function Home() {
           console.log('🔍 Found nominal salary column (LønnN) at index:', j, 'header:', originalCol);
         }
         
-        // Percentage columns - prioritize exact match for actual percentage
-        if (col === 'stillingsprosent' && actualPercentageColumnIndex === -1) {
+        // Percentage columns - prioritize exact match for actual percentage (exclude columns with 'n')
+        if (col === 'stillingsprosent' && !col.includes('n') && actualPercentageColumnIndex === -1) {
           actualPercentageColumnIndex = j;
           console.log('🔍 Found ACTUAL percentage column (Stillingsprosent) at index:', j, 'header:', originalCol);
         }
@@ -1410,7 +1410,7 @@ export default function Home() {
       for (let j = 0; j < columns.length; j++) {
         const col = columns[j].toLowerCase().trim();
         const originalCol = columns[j].trim();
-        if (col === 'stillingsprosentn' || (col.includes('stillingsprosent') && col.includes('n'))) {
+        if ((col === 'stillingsprosentn' || col === 'stillingsprosent n') && nominalPercentageColumnIndex === -1) {
           nominalPercentageColumnIndex = j;
           console.log('🔍 Found NOMINAL percentage column (StillingsprosentN) at index:', j, 'header:', originalCol);
           break;
