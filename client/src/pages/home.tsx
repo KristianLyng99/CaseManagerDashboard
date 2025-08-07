@@ -171,6 +171,21 @@ export default function Home() {
     }
   };
 
+  // Function to parse disability benefit grant date
+  const parseUforetrygdDate = (rawInput: string) => {
+    console.log('🔍 UFØRETRYGD PARSING: Looking for disability benefit grant date');
+    
+    const uforetrygdMatch = rawInput.match(/Uføretrygd[\s\S]*?Første virkningstidspunkt:\s*(\d{2}\.\d{2}\.\d{4})/i);
+    if (uforetrygdMatch) {
+      const dateStr = uforetrygdMatch[1];
+      console.log('🔍 UFØRETRYGD PARSING: Found grant date:', dateStr);
+      return dateStr;
+    }
+    
+    console.log('🔍 UFØRETRYGD PARSING: No disability benefit grant date found');
+    return null;
+  };
+
   // Function to detect gaps in AAP periods
   const detectAapGaps = (rawInput: string) => {
     console.log('🔍 AAP GAP DETECTION: Starting gap analysis');
@@ -308,6 +323,12 @@ export default function Home() {
       // Detect AAP gaps first
       const detectedGaps = detectAapGaps(rawInput);
       setAapGaps(detectedGaps);
+      
+      // Parse disability benefit grant date for foreldelse check
+      const uforetrygdDate = parseUforetrygdDate(rawInput);
+      if (uforetrygdDate) {
+        console.log('🔍 PARSING: Found Uføretrygd grant date:', uforetrygdDate);
+      }
       
       // First try to find actual AAP vedtak with "Innvilgelse av søknad"
       let aapFound = false;
@@ -1117,6 +1138,79 @@ export default function Home() {
   };
 
   const foreldelseStatus = getForeldelseStatus();
+
+  // Check 10-year statute of limitations
+  const check10YearForeldelse = () => {
+    console.log('🔍 10-YEAR FORELDELSE: Starting check', {
+      søknadRegistrert,
+      aapFra,
+      rawSalaryData: !!rawSalaryData
+    });
+
+    const regDate = parseDate(søknadRegistrert);
+    if (!regDate) {
+      console.log('🔍 10-YEAR FORELDELSE: No registration date, skipping');
+      return { hasViolation: false };
+    }
+
+    // Parse uføretrygd grant date from raw data
+    const uforetrygdGrantDate = parseUforetrygdDate(rawSalaryData);
+    
+    // Determine which date to use - the oldest between max date and disability grant date
+    let comparisonDate = null;
+    let comparisonDateStr = '';
+    let dateSource = '';
+
+    // Start with max date (AAP Fra - 1 day)
+    const fraDate = parseDate(aapFra);
+    if (fraDate) {
+      const maxDate = new Date(fraDate);
+      maxDate.setDate(maxDate.getDate() - 1);
+      comparisonDate = maxDate;
+      comparisonDateStr = formatDate(maxDate);
+      dateSource = 'Maks dato';
+    }
+
+    // Check if disability grant date is older
+    if (uforetrygdGrantDate) {
+      const uforeDate = parseDate(uforetrygdGrantDate);
+      if (uforeDate && (!comparisonDate || uforeDate < comparisonDate)) {
+        comparisonDate = uforeDate;
+        comparisonDateStr = uforetrygdGrantDate;
+        dateSource = 'Uføretrygd innvilget';
+      }
+    }
+
+    if (!comparisonDate) {
+      console.log('🔍 10-YEAR FORELDELSE: No comparison date available');
+      return { hasViolation: false };
+    }
+
+    // Calculate years between comparison date and registration date
+    const diffMs = regDate.getTime() - comparisonDate.getTime();
+    const diffYears = diffMs / (365.25 * 24 * 60 * 60 * 1000);
+
+    console.log('🔍 10-YEAR FORELDELSE: Calculation', {
+      comparisonDateStr,
+      dateSource,
+      søknadRegistrert,
+      diffYears,
+      hasViolation: diffYears > 10
+    });
+
+    if (diffYears > 10) {
+      return {
+        hasViolation: true,
+        comparisonDate: comparisonDateStr,
+        dateSource,
+        yearsDiff: Math.round(diffYears * 10) / 10
+      };
+    }
+
+    return { hasViolation: false };
+  };
+
+  const tenYearForeldelseCheck = check10YearForeldelse();
 
   // Parse salary history and check for 15% increase
   // Parse salary history from Excel data (tab-separated format) or legacy DSOP format
@@ -3127,6 +3221,49 @@ export default function Home() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 10-Year Foreldelse Warning */}
+              {tenYearForeldelseCheck.hasViolation && (
+                <div className="mt-4 p-4 rounded-lg border-l-4 border-purple-500 bg-purple-50">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-purple-800">
+                        10-års foreldelse
+                      </h3>
+                      <p className="text-lg font-semibold text-purple-700">
+                        Mer enn 10 år siden {tenYearForeldelseCheck.dateSource.toLowerCase()}
+                      </p>
+                      <div className="mt-3 p-3 bg-purple-100 rounded border border-purple-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-purple-800">
+                              {tenYearForeldelseCheck.dateSource}:
+                            </p>
+                            <p className="text-lg font-semibold text-purple-700">
+                              {tenYearForeldelseCheck.comparisonDate}
+                            </p>
+                            <p className="text-xs text-purple-600 mt-1">
+                              {tenYearForeldelseCheck.yearsDiff} år siden søknad registrert
+                            </p>
+                          </div>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyToClipboard(tenYearForeldelseCheck.comparisonDate)}
+                            className="text-xs px-2 py-1 bg-purple-50 hover:bg-purple-100 border-purple-300"
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Kopier dato
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
