@@ -212,8 +212,9 @@ export default function Home() {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
-      // Look for lines with AAP-related content and valid dates
-      if ((trimmed.includes('Arbeidsavklaringspenger') || trimmed.includes('§11-5 nedsatt arbeidsevne')) && 
+      // Look for lines with AAP-related content and valid dates, but ignore lines with § symbol
+      if (trimmed.includes('Arbeidsavklaringspenger') && 
+          !trimmed.includes('§') && 
           !trimmed.includes('Vedtak ID')) {
         
         const dateMatch = trimmed.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
@@ -224,7 +225,6 @@ export default function Home() {
           
           if (fraDate && tilDate) {
             // Extract additional info for context
-            const isAap = trimmed.includes('Arbeidsavklaringspenger');
             const status = trimmed.includes('Avsluttet') ? 'Avsluttet' : 
                           trimmed.includes('Iverksatt') ? 'Iverksatt' : 'Unknown';
             const isStans = trimmed.includes('Stans');
@@ -235,14 +235,14 @@ export default function Home() {
               til: tilDate,
               fraStr,
               tilStr,
-              type: isAap ? 'AAP' : '§11-5',
+              type: 'AAP',
               status: isStans ? 'Stans' : isOpphør ? 'Opphør' : status
             });
             
             console.log('🔍 AAP GAP DETECTION: Found period:', {
               fra: fraStr,
               til: tilStr,
-              type: isAap ? 'AAP' : '§11-5',
+              type: 'AAP',
               status: isStans ? 'Stans' : isOpphør ? 'Opphør' : status
             });
           }
@@ -338,8 +338,8 @@ export default function Home() {
       if (vedtakSection !== -1) {
         const vedtakLines = rawInput.substring(vedtakSection).split('\n');
         for (const line of vedtakLines) {
-          // Look for lines containing AAP-related keywords
-          if (line.includes('Arbeidsavklaringspenger') || line.includes('§11-5 nedsatt arbeidsevne')) {
+          // Look for lines containing AAP-related keywords, but ignore lines with § symbol
+          if (line.includes('Arbeidsavklaringspenger') && !line.includes('§')) {
             const vedtakMatch = line.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
             if (vedtakMatch) {
               const [, fraStr, tilStr] = vedtakMatch;
