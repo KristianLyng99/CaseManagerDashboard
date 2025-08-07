@@ -48,7 +48,14 @@ export default function Home() {
   const [gridData, setGridData] = useState<string[][]>([]);
   const [manualCalculationOverride, setManualCalculationOverride] = useState(null); // null = auto, true = nominal, false = faktisk
   const [useNormalizedSickSalary, setUseNormalizedSickSalary] = useState(false); // For visualization toggle
-  const [salaryIncreaseCheck, setSalaryIncreaseCheck] = useState(null); // Cached salary increase check result
+  const [salaryIncreaseCheck, setSalaryIncreaseCheck] = useState<any>(null); // Cached salary increase check result
+  const [aapGaps, setAapGaps] = useState<Array<{
+    gapStart: string;
+    gapEnd: string;
+    gapDays: number;
+    previousEnd: string;
+    nextStart: string;
+  }>>([]);
 
   const { toast } = useToast();
 
@@ -164,6 +171,111 @@ export default function Home() {
     }
   };
 
+  // Function to detect gaps in AAP periods
+  const detectAapGaps = (rawInput: string) => {
+    console.log('🔍 AAP GAP DETECTION: Starting gap analysis');
+    
+    const periods: Array<{
+      fra: Date;
+      til: Date;
+      fraStr: string;
+      tilStr: string;
+      type: string;
+      status: string;
+    }> = [];
+
+    const vedtakSection = rawInput.indexOf('Vedtak ID');
+    if (vedtakSection === -1) {
+      console.log('🔍 AAP GAP DETECTION: No Vedtak ID section found');
+      return [];
+    }
+
+    const vedtakLines = rawInput.substring(vedtakSection).split('\n');
+    console.log('🔍 AAP GAP DETECTION: Processing', vedtakLines.length, 'lines');
+
+    for (const line of vedtakLines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      // Look for lines with AAP-related content and valid dates
+      if ((trimmed.includes('Arbeidsavklaringspenger') || trimmed.includes('§11-5 nedsatt arbeidsevne')) && 
+          !trimmed.includes('Vedtak ID')) {
+        
+        const dateMatch = trimmed.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
+        if (dateMatch) {
+          const [, fraStr, tilStr] = dateMatch;
+          const fraDate = parseDate(fraStr);
+          const tilDate = parseDate(tilStr);
+          
+          if (fraDate && tilDate) {
+            // Extract additional info for context
+            const isAap = trimmed.includes('Arbeidsavklaringspenger');
+            const status = trimmed.includes('Avsluttet') ? 'Avsluttet' : 
+                          trimmed.includes('Iverksatt') ? 'Iverksatt' : 'Unknown';
+            const isStans = trimmed.includes('Stans');
+            const isOpphør = trimmed.includes('Opphør');
+            
+            periods.push({
+              fra: fraDate,
+              til: tilDate,
+              fraStr,
+              tilStr,
+              type: isAap ? 'AAP' : '§11-5',
+              status: isStans ? 'Stans' : isOpphør ? 'Opphør' : status
+            });
+            
+            console.log('🔍 AAP GAP DETECTION: Found period:', {
+              fra: fraStr,
+              til: tilStr,
+              type: isAap ? 'AAP' : '§11-5',
+              status: isStans ? 'Stans' : isOpphør ? 'Opphør' : status
+            });
+          }
+        }
+      }
+    }
+
+    // Sort periods by start date
+    periods.sort((a, b) => a.fra.getTime() - b.fra.getTime());
+    console.log('🔍 AAP GAP DETECTION: Found', periods.length, 'total periods');
+
+    // Detect gaps between consecutive periods
+    const gaps = [];
+    for (let i = 0; i < periods.length - 1; i++) {
+      const current = periods[i];
+      const next = periods[i + 1];
+      
+      // Calculate gap: from day after current period ends to day before next period starts
+      const gapStart = new Date(current.til);
+      gapStart.setDate(gapStart.getDate() + 1);
+      
+      const gapEnd = new Date(next.fra);
+      gapEnd.setDate(gapEnd.getDate() - 1);
+      
+      // Only consider it a gap if there's actually time between periods
+      if (gapStart <= gapEnd) {
+        const gapDays = Math.ceil((gapEnd.getTime() - gapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        
+        // Only report gaps of 1 day or more (significant gaps)
+        if (gapDays >= 1) {
+          const gap = {
+            gapStart: formatDate(gapStart),
+            gapEnd: formatDate(gapEnd),
+            gapDays,
+            previousEnd: current.tilStr,
+            nextStart: next.fraStr
+          };
+          
+          gaps.push(gap);
+          console.log('🔍 AAP GAP DETECTION: Gap found:', gap);
+        }
+      }
+    }
+
+    console.log('🔍 AAP GAP DETECTION: Total gaps found:', gaps.length);
+    return gaps;
+  };
+
   // Parse raw clipboard data for autofill
   const parseAutofill = () => {
     console.log('🔍 AUTOFILL: Starting parseAutofill with rawInput length:', rawInput.length);
@@ -193,6 +305,10 @@ export default function Home() {
 
     // Parse new structured format for AAP and Uføretrygd
     if (hasStructuredFormat) {
+      // Detect AAP gaps first
+      const detectedGaps = detectAapGaps(rawInput);
+      setAapGaps(detectedGaps);
+      
       // First try to find actual AAP vedtak with "Innvilgelse av søknad"
       let aapFound = false;
       const aapDatesFromVedtak: string[] = [];
@@ -3016,7 +3132,52 @@ export default function Home() {
                 </div>
               )}
 
-
+              {/* AAP Gaps Warning */}
+              {aapGaps.length > 0 && (
+                <div className="mt-4 p-4 rounded-lg border-l-4 border-orange-500 bg-orange-50">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-orange-800">
+                        AAP Perioder - Avbrudd funnet
+                      </h3>
+                      <p className="text-lg font-semibold text-orange-700">
+                        {aapGaps.length} avbrudd i AAP-perioder
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {aapGaps.map((gap, index) => (
+                          <div key={index} className="p-3 bg-orange-100 rounded border border-orange-200">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-orange-800">
+                                  Avbrudd #{index + 1}:
+                                </p>
+                                <p className="text-lg font-semibold text-orange-700">
+                                  {gap.gapStart} - {gap.gapEnd}
+                                </p>
+                                <p className="text-xs text-orange-600 mt-1">
+                                  {gap.gapDays} dager mellom {gap.previousEnd} og {gap.nextStart}
+                                </p>
+                              </div>
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyToClipboard(`${gap.gapStart} - ${gap.gapEnd} (${gap.gapDays} dager)`)}
+                                className="text-xs px-2 py-1 bg-orange-50 hover:bg-orange-100 border-orange-300"
+                              >
+                                <Copy className="h-3 w-3 mr-1" />
+                                Kopier
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Salary Increase Check */}
               {salaryIncreaseCheck && (
