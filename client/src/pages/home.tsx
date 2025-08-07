@@ -489,11 +489,11 @@ export default function Home() {
         const m = t.match(/\d+\s+(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
         if (m) {
           const [, fraStr, tilStr] = m;
-          tilDates.push(tilStr);
           // Look for AAP-related keywords - exclude § lines
           if ((t.includes('Arbeidsavklaringspenger') && !t.includes('§11-5 nedsatt arbeidsevne')) || /Innvilgelse av søknad/i.test(t)) {
             aapDatesFromOldFormat.push(fraStr);
-            console.log('🔍 OLD FORMAT: Added AAP date from:', t.substring(0, 100));
+            tilDates.push(tilStr); // Only add til dates for valid AAP lines
+            console.log('🔍 OLD FORMAT: Added AAP dates from:', t.substring(0, 100), { fraStr, tilStr });
           } else if (t.includes('§11-5 nedsatt arbeidsevne')) {
             console.log('🔍 OLD FORMAT: Skipping § line:', t.substring(0, 100));
           }
