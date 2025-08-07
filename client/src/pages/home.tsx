@@ -1417,6 +1417,13 @@ export default function Home() {
         }
       }
       
+      console.error('🔍 COLUMN DETECTION SUMMARY:', {
+        actualPercentageIndex: actualPercentageColumnIndex,
+        nominalPercentageIndex: nominalPercentageColumnIndex,
+        actualSalaryIndex: actualSalaryColumnIndex,
+        nominalSalaryIndex: nominalSalaryColumnIndex
+      });
+      
       if (headerIndex >= 0 && dateColumnIndex >= 0 && (actualSalaryColumnIndex >= 0 || nominalSalaryColumnIndex >= 0)) {
         break;
       }
@@ -1584,9 +1591,21 @@ export default function Home() {
       let percentage = 100;
       let percentageColumnIndex = shouldUseNominal ? nominalPercentageColumnIndex : actualPercentageColumnIndex;
       
+      console.error('🔍 PERCENTAGE COLUMN SELECTION:', {
+        shouldUseNominal,
+        nominalIndex: nominalPercentageColumnIndex,
+        actualIndex: actualPercentageColumnIndex,
+        selectedIndex: percentageColumnIndex
+      });
+      
       // Fallback to other column if preferred column not available
       if (percentageColumnIndex === -1) {
-        percentageColumnIndex = shouldUseNominal ? actualPercentageColumnIndex : nominalPercentageColumnIndex;
+        const fallbackIndex = shouldUseNominal ? actualPercentageColumnIndex : nominalPercentageColumnIndex;
+        console.error('🔍 PERCENTAGE FALLBACK:', { 
+          originalIndex: percentageColumnIndex, 
+          fallbackIndex 
+        });
+        percentageColumnIndex = fallbackIndex;
       }
       
       if (percentageColumnIndex >= 0 && columns[percentageColumnIndex]) {
