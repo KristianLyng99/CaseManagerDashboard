@@ -535,11 +535,15 @@ export default function Home() {
     let calculatedAapFra = '';
     
     // For old format parsing, determine AAP start date but keep original registration date
-    if (aapDatesFromOldFormat.length >= 2 && tilDates.length > 0) {
-      calculatedAapFra = aapDatesFromOldFormat[1];
-      applyVedtakDates(aapDatesFromOldFormat[1], tilDates[tilDates.length - 1]);
-    } else if (aapDatesFromOldFormat.length === 1 && tilDates.length > 0) {
+    // Always use the EARLIEST (first) AAP date when multiple valid periods exist
+    if (aapDatesFromOldFormat.length > 0 && tilDates.length > 0) {
+      console.log('🔍 OLD FORMAT: AAP dates found:', aapDatesFromOldFormat);
+      console.log('🔍 OLD FORMAT: Til dates found:', tilDates);
+      
+      // Always select the EARLIEST AAP start date (index 0)
       calculatedAapFra = aapDatesFromOldFormat[0];
+      console.log('🔍 OLD FORMAT: Selected earliest AAP date:', calculatedAapFra);
+      
       applyVedtakDates(aapDatesFromOldFormat[0], tilDates[tilDates.length - 1]);
     }
     
