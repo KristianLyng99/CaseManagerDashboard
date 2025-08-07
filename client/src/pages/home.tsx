@@ -333,6 +333,7 @@ export default function Home() {
       // First try to find actual AAP vedtak with "Innvilgelse av søknad"
       let aapFound = false;
       const aapDatesFromVedtak: string[] = [];
+      const aapTilDatesFromVedtak: string[] = [];
       
       const vedtakSection = rawInput.indexOf('Vedtak ID');
       if (vedtakSection !== -1) {
@@ -344,19 +345,21 @@ export default function Home() {
             if (vedtakMatch) {
               const [, fraStr, tilStr] = vedtakMatch;
               aapDatesFromVedtak.push(fraStr);
-              tilDates.push(tilStr);
+              aapTilDatesFromVedtak.push(tilStr);
               aapFound = true;
+              console.log('🔍 VEDTAK PARSING: Found AAP line:', { fraStr, tilStr });
             }
           }
         }
         
-        // Use the second date as AAP FRA if we have multiple AAP dates
-        if (aapDatesFromVedtak.length >= 2) {
-          applyVedtakDates(aapDatesFromVedtak[1], tilDates[tilDates.length - 1]);
-          vedtakFra = aapDatesFromVedtak[1];
-        } else if (aapDatesFromVedtak.length === 1) {
-          applyVedtakDates(aapDatesFromVedtak[0], tilDates[tilDates.length - 1]);
-          vedtakFra = aapDatesFromVedtak[0];
+        // Use the first AAP date found (should be 24.03.2025 in your example)
+        if (aapDatesFromVedtak.length >= 1) {
+          const selectedFra = aapDatesFromVedtak[0];
+          const selectedTil = aapTilDatesFromVedtak[0];
+          applyVedtakDates(selectedFra, selectedTil);
+          vedtakFra = selectedFra;
+          tilDates.push(selectedTil);
+          console.log('🔍 VEDTAK PARSING: Applied AAP dates:', { fra: selectedFra, til: selectedTil });
         }
       }
       
