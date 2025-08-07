@@ -210,40 +210,52 @@ export default function Home() {
 
     for (const line of vedtakLines) {
       const trimmed = line.trim();
-      if (!trimmed) continue;
+      if (!trimmed || trimmed.includes('Vedtak ID') || trimmed.includes('Fra') || trimmed.includes('Til')) continue;
 
-      // Look for lines with AAP-related content and valid dates, but ignore lines with § symbol
-      if (trimmed.includes('Arbeidsavklaringspenger') && 
-          !trimmed.includes('§') && 
-          !trimmed.includes('Vedtak ID')) {
-        
+      // Parse the line by splitting on whitespace to get columns
+      const columns = trimmed.split(/\s+/);
+      
+      // Check if this line has enough columns and contains dates
+      if (columns.length >= 5) {
         const dateMatch = trimmed.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
         if (dateMatch) {
           const [, fraStr, tilStr] = dateMatch;
-          const fraDate = parseDate(fraStr);
-          const tilDate = parseDate(tilStr);
           
-          if (fraDate && tilDate) {
-            // Extract additional info for context
-            const status = trimmed.includes('Avsluttet') ? 'Avsluttet' : 
-                          trimmed.includes('Iverksatt') ? 'Iverksatt' : 'Unknown';
-            const isStans = trimmed.includes('Stans');
-            const isOpphør = trimmed.includes('Opphør');
-            
-            periods.push({
-              fra: fraDate,
-              til: tilDate,
-              fraStr,
-              tilStr,
-              type: 'AAP',
-              status: isStans ? 'Stans' : isOpphør ? 'Opphør' : status
-            });
-            
-            console.log('🔍 AAP GAP DETECTION: Found period:', {
-              fra: fraStr,
-              til: tilStr,
-              type: 'AAP',
-              status: isStans ? 'Stans' : isOpphør ? 'Opphør' : status
+          // Find the "Rettighets Type" column and check if it's exactly "Arbeidsavklaringspenger"
+          const rettighetstypeIndex = columns.findIndex(col => col === 'Arbeidsavklaringspenger');
+          
+          if (rettighetstypeIndex !== -1) {
+            const fraDate = parseDate(fraStr);
+            const tilDate = parseDate(tilStr);
+          
+            if (fraDate && tilDate) {
+              // Extract additional info for context
+              const status = trimmed.includes('Avsluttet') ? 'Avsluttet' : 
+                            trimmed.includes('Iverksatt') ? 'Iverksatt' : 'Unknown';
+              const isStans = trimmed.includes('Stans');
+              const isOpphør = trimmed.includes('Opphør');
+              
+              periods.push({
+                fra: fraDate,
+                til: tilDate,
+                fraStr,
+                tilStr,
+                type: 'AAP',
+                status: isStans ? 'Stans' : isOpphør ? 'Opphør' : status
+              });
+              
+              console.log('🔍 AAP GAP DETECTION: Found AAP period with correct Rettighets Type:', {
+                fra: fraStr,
+                til: tilStr,
+                type: 'AAP',
+                status: isStans ? 'Stans' : isOpphør ? 'Opphör' : status,
+                rettighetstypeIndex,
+                columns: columns.slice(0, 10)
+              });
+            }
+          } else {
+            console.log('🔍 AAP GAP DETECTION: Skipping line without Arbeidsavklaringspenger in Rettighets Type:', {
+              firstFewColumns: columns.slice(0, 10)
             });
           }
         }
@@ -339,15 +351,37 @@ export default function Home() {
       if (vedtakSection !== -1) {
         const vedtakLines = rawInput.substring(vedtakSection).split('\n');
         for (const line of vedtakLines) {
-          // Look for lines containing AAP-related keywords, but ignore lines with § symbol
-          if (line.includes('Arbeidsavklaringspenger') && !line.includes('§')) {
-            const vedtakMatch = line.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.includes('Vedtak ID') || trimmed.includes('Fra') || trimmed.includes('Til')) continue;
+          
+          // Parse the line by splitting on whitespace to get columns
+          const columns = trimmed.split(/\s+/);
+          
+          // Check if this line has enough columns and contains dates
+          if (columns.length >= 5) {
+            const vedtakMatch = trimmed.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/);
             if (vedtakMatch) {
               const [, fraStr, tilStr] = vedtakMatch;
-              aapDatesFromVedtak.push(fraStr);
-              aapTilDatesFromVedtak.push(tilStr);
-              aapFound = true;
-              console.log('🔍 VEDTAK PARSING: Found AAP line:', { fraStr, tilStr });
+              
+              // Find the "Rettighets Type" column (should be around index 4-5)
+              // Look for "Arbeidsavklaringspenger" specifically in the rettighets type position
+              const rettighetstypeIndex = columns.findIndex(col => col === 'Arbeidsavklaringspenger');
+              
+              if (rettighetstypeIndex !== -1) {
+                aapDatesFromVedtak.push(fraStr);
+                aapTilDatesFromVedtak.push(tilStr);
+                aapFound = true;
+                console.log('🔍 VEDTAK PARSING: Found AAP line with correct Rettighets Type:', { 
+                  fraStr, 
+                  tilStr, 
+                  rettighetstypeIndex,
+                  columns: columns.slice(0, 10) // Show first 10 columns for debugging
+                });
+              } else {
+                console.log('🔍 VEDTAK PARSING: Skipping line without Arbeidsavklaringspenger in Rettighets Type:', {
+                  firstFewColumns: columns.slice(0, 10)
+                });
+              }
             }
           }
         }
