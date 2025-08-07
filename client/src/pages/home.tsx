@@ -1893,6 +1893,22 @@ export default function Home() {
 
     // Find the baseline from entries before the 2-year period
     const entriesBeforePeriod = allEntries.filter(entry => entry.date < twoYearsBefore);
+    
+    // Check if we have insufficient historical data
+    const earliestDataDate = allEntries[0].date;
+    const earliestDataDateFormatted = formatDate(earliestDataDate);
+    
+    // Calculate the gap between when we need data (2 years before sick date) and when data actually starts
+    const timeDiffMs = earliestDataDate.getTime() - twoYearsBefore.getTime();
+    const monthsGap = Math.round(timeDiffMs / (1000 * 60 * 60 * 24 * 30.44)); // Average month length
+    
+    console.log('Historical data analysis:', {
+      needDataFrom: formatDate(twoYearsBefore),
+      actualDataFrom: earliestDataDateFormatted,
+      monthsGap: monthsGap,
+      hasInsufficientData: monthsGap > 0
+    });
+    
     if (entriesBeforePeriod.length > 0) {
       const baselineEntry = entriesBeforePeriod[entriesBeforePeriod.length - 1]; // Most recent before period
       console.log('Using baseline from entry before 2-year period:', formatDate(baselineEntry.date));
@@ -1900,7 +1916,28 @@ export default function Home() {
         benefitStatus[benefitType] = baselineEntry.benefits[benefitType] || 0;
       }
     } else {
-      console.log('No entries before 2-year period found, assuming benefits start at 0');
+      // No entries before 2-year period - insufficient historical data
+      console.log('No entries before 2-year period found - insufficient historical data detected');
+      
+      // If data starts close to or within the 2-year period, it's likely insufficient data
+      // rather than genuine "new benefits"
+      if (monthsGap <= 12) { // Data starts within 12 months of where we need it
+        console.log('Insufficient historical data detected - returning early');
+        return {
+          hasNewBenefits: false,
+          noData: false,
+          insufficientData: true,
+          dataStartsFrom: earliestDataDateFormatted,
+          neededFrom: formatDate(twoYearsBefore),
+          monthsGap: monthsGap,
+          message: `Mangler data fra ${formatDate(twoYearsBefore)} til ${earliestDataDateFormatted}. Dette tyder på at kunden er innmeldt i avtalen innen 2 år før sykdato.`
+        };
+      }
+      
+      // If there's a very large gap (>12 months), treat as potential new benefits but with caveat
+      for (const benefitType of benefitTypes) {
+        benefitStatus[benefitType] = 0;
+      }
     }
 
     // Process entries within the 2-year period to detect when benefits go from 0 to >0
@@ -4058,13 +4095,13 @@ export default function Home() {
                         {newBenefitsCheck && (
                           <div className="mt-4">
                             <div className={`p-4 rounded-lg border-l-4 ${
-                              newBenefitsCheck.hasNewBenefits 
+                              newBenefitsCheck.hasNewBenefits || newBenefitsCheck.insufficientData
                                 ? 'border-orange-500 bg-orange-50' 
                                 : 'border-green-500 bg-green-50'
                             }`}>
                               <div className="flex items-start space-x-3">
                                 <div className="flex-shrink-0">
-                                  {newBenefitsCheck.hasNewBenefits ? (
+                                  {newBenefitsCheck.hasNewBenefits || newBenefitsCheck.insufficientData ? (
                                     <AlertTriangle className="text-orange-600 mt-0.5 h-5 w-5" />
                                   ) : (
                                     <CheckCircle className="text-green-600 mt-0.5 h-5 w-5" />
@@ -4072,14 +4109,32 @@ export default function Home() {
                                 </div>
                                 <div className="flex-1">
                                   <h3 className={`text-sm font-medium mb-2 ${
-                                    newBenefitsCheck.hasNewBenefits 
+                                    newBenefitsCheck.hasNewBenefits || newBenefitsCheck.insufficientData
                                       ? 'text-orange-800' 
                                       : 'text-green-800'
                                   }`}>
                                     Ytelseskontroll - 2 år før sykdato
                                   </h3>
                                   
-                                  {newBenefitsCheck.hasNewBenefits ? (
+                                  {newBenefitsCheck.insufficientData ? (
+                                    <div className="space-y-2">
+                                      <p className="text-sm text-orange-700 font-medium">
+                                        ⚠️ Manglende historiske data
+                                      </p>
+                                      <div className="bg-orange-100 p-3 rounded text-sm">
+                                        <p className="text-orange-800 font-medium mb-2">Dataperiode:</p>
+                                        <p className="text-orange-700 text-xs mb-2">
+                                          • Ønsket data fra: {newBenefitsCheck.neededFrom}
+                                        </p>
+                                        <p className="text-orange-700 text-xs mb-3">
+                                          • Faktisk data fra: {newBenefitsCheck.dataStartsFrom}
+                                        </p>
+                                        <p className="text-orange-800 font-medium">
+                                          Dette tyder på at kunden er innmeldt i avtalen innen 2 år før sykdato.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ) : newBenefitsCheck.hasNewBenefits ? (
                                     <div className="space-y-2">
                                       <p className="text-sm text-orange-700 font-medium">
                                         ⚠️ Nye ytelser funnet i perioden {newBenefitsCheck.periodStart} - {newBenefitsCheck.periodEnd}
