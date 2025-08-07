@@ -2782,6 +2782,7 @@ export default function Home() {
     setKnekkG('7.1');
     setP1('');
     setP2('');
+    setAapGaps([]); // Clear AAP gaps
     
     toast({
       title: "Alle felt tømt",
