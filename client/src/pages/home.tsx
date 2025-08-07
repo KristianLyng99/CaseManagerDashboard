@@ -1856,7 +1856,6 @@ export default function Home() {
 
   // Check for new benefits in the 2-year period before sick date - UPDATED VERSION 3.0
   const checkNewBenefits = () => {
-    window.alert('BENEFITS CHECK FUNCTION IS RUNNING - VERSION 3.0');
     console.error('🚨 BENEFITS CHECK UPDATED VERSION 3.0 CALLED - NEW LOGIC ACTIVE 🚨');
     const salaryHistory = parseSalaryHistory();
     console.log('🔍 BENEFITS CHECK: Salary history length:', salaryHistory?.length || 0);
