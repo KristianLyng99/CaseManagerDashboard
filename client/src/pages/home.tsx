@@ -1406,16 +1406,14 @@ export default function Home() {
         }
       }
       
-      // Second pass: look for nominal percentage column only if actual not found
-      if (actualPercentageColumnIndex === -1) {
-        for (let j = 0; j < columns.length; j++) {
-          const col = columns[j].toLowerCase().trim();
-          const originalCol = columns[j].trim();
-          if (col === 'stillingsprosentn' || (col.includes('stillingsprosent') && col.includes('n'))) {
-            nominalPercentageColumnIndex = j;
-            console.log('🔍 Found NOMINAL percentage column (StillingsprosentN) at index:', j, 'header:', originalCol);
-            break;
-          }
+      // Second pass: look for nominal percentage column (independent of actual column)
+      for (let j = 0; j < columns.length; j++) {
+        const col = columns[j].toLowerCase().trim();
+        const originalCol = columns[j].trim();
+        if (col === 'stillingsprosentn' || (col.includes('stillingsprosent') && col.includes('n'))) {
+          nominalPercentageColumnIndex = j;
+          console.log('🔍 Found NOMINAL percentage column (StillingsprosentN) at index:', j, 'header:', originalCol);
+          break;
         }
       }
       
