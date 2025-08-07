@@ -1856,19 +1856,27 @@ export default function Home() {
 
   // Check for new benefits in the 2-year period before sick date
   const checkNewBenefits = () => {
+    console.log('🔍 BENEFITS CHECK: Function called');
     const salaryHistory = parseSalaryHistory();
+    console.log('🔍 BENEFITS CHECK: Salary history length:', salaryHistory?.length || 0);
+    console.log('🔍 BENEFITS CHECK: Sykdato:', sykdato);
+    
     if (!salaryHistory || salaryHistory.length === 0 || !sykdato) {
+      console.log('🔍 BENEFITS CHECK: Early exit - missing data');
       return null;
     }
 
     const sickDate = parseDate(sykdato);
-    if (!sickDate) return null;
+    if (!sickDate) {
+      console.log('🔍 BENEFITS CHECK: Early exit - invalid sick date');
+      return null;
+    }
 
     // Calculate 2 years before sick date
     const twoYearsBefore = new Date(sickDate);
     twoYearsBefore.setFullYear(twoYearsBefore.getFullYear() - 2);
 
-    console.log('Checking for new benefits from', formatDate(twoYearsBefore), 'to', formatDate(sickDate));
+    console.log('🔍 BENEFITS CHECK: Checking for new benefits from', formatDate(twoYearsBefore), 'to', formatDate(sickDate));
 
     // Get ALL entries with benefit data and sort by date
     const allEntries = salaryHistory
@@ -1902,7 +1910,7 @@ export default function Home() {
     const timeDiffMs = earliestDataDate.getTime() - twoYearsBefore.getTime();
     const monthsGap = Math.round(timeDiffMs / (1000 * 60 * 60 * 24 * 30.44)); // Average month length
     
-    console.log('Historical data analysis:', {
+    console.log('🔍 BENEFITS CHECK: Historical data analysis:', {
       needDataFrom: formatDate(twoYearsBefore),
       actualDataFrom: earliestDataDateFormatted,
       monthsGap: monthsGap,
@@ -1922,8 +1930,8 @@ export default function Home() {
       // If data starts close to or within the 2-year period, it's likely insufficient data
       // rather than genuine "new benefits"
       if (monthsGap <= 12) { // Data starts within 12 months of where we need it
-        console.log('Insufficient historical data detected - returning early');
-        return {
+        console.log('🔍 BENEFITS CHECK: Insufficient historical data detected - returning early');
+        const result = {
           hasNewBenefits: false,
           noData: false,
           insufficientData: true,
@@ -1932,6 +1940,8 @@ export default function Home() {
           monthsGap: monthsGap,
           message: `Mangler data fra ${formatDate(twoYearsBefore)} til ${earliestDataDateFormatted}. Dette tyder på at kunden er innmeldt i avtalen innen 2 år før sykdato.`
         };
+        console.log('🔍 BENEFITS CHECK: Returning insufficient data result:', result);
+        return result;
       }
       
       // If there's a very large gap (>12 months), treat as potential new benefits but with caveat
