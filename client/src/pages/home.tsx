@@ -162,6 +162,7 @@ export default function Home() {
 
   // Set AAP Fra/Til and update Maksdato
   const applyVedtakDates = (fraStr: string, tilStr: string) => {
+    console.log('🔍 APPLY VEDTAK DATES: Setting AAP dates:', { fraStr, tilStr });
     setAapFra(fraStr);
     setAapTil(tilStr);
     const fraDate = parseDate(fraStr);
@@ -489,9 +490,12 @@ export default function Home() {
         if (m) {
           const [, fraStr, tilStr] = m;
           tilDates.push(tilStr);
-          // Look for AAP-related keywords
-          if (t.includes('Arbeidsavklaringspenger') || t.includes('§11-5 nedsatt arbeidsevne') || /Innvilgelse av søknad/i.test(t)) {
+          // Look for AAP-related keywords - exclude § lines
+          if ((t.includes('Arbeidsavklaringspenger') && !t.includes('§11-5 nedsatt arbeidsevne')) || /Innvilgelse av søknad/i.test(t)) {
             aapDatesFromOldFormat.push(fraStr);
+            console.log('🔍 OLD FORMAT: Added AAP date from:', t.substring(0, 100));
+          } else if (t.includes('§11-5 nedsatt arbeidsevne')) {
+            console.log('🔍 OLD FORMAT: Skipping § line:', t.substring(0, 100));
           }
         }
       }
