@@ -1,0 +1,44 @@
+AAP
+
+Uttrekksperiode: 04.10.2013 til 19.05.2028
+
+
+
+Vedtak ID
+
+Fra
+
+Til
+
+Aktivitetsfase
+
+Rettighets Type
+
+Vedtak Status
+
+Vedtak Variant
+
+Vedtak
+
+Utfall
+
+
+22758295 16.12.2014 22.01.2019 Ikke spesif. aktivitetsfase §11-5 nedsatt arbeidsevne Avsluttet  Ny rettighet Ja 
+22853106 21.01.2015 30.04.2015 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Ny rettighet Ja 
+23700696 01.05.2015 30.11.2015 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Endring Ja 
+24594601 01.12.2015 30.04.2016 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Endring Ja 
+25681961 01.05.2016 30.11.2016 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Endring Ja 
+26706919 01.12.2016 30.04.2017 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet Forlengelse Endring Ja 
+27956302 01.05.2017 30.11.2017 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Endring Ja 
+28822868 01.12.2017 30.04.2018 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet Forlengelse Endring Ja 
+29887182 01.05.2018 30.11.2018 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Endring Ja 
+30719703 01.12.2018 22.01.2019 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet Forlengelse Endring Ja 
+31287957 23.01.2019 23.01.2019 Ikke spesif. aktivitetsfase §11-5 nedsatt arbeidsevne Iverksatt  Stans Ja 
+31109454 23.01.2019 23.01.2019 Under arbeidsavklaring Arbeidsavklaringspenger Iverksatt  Stans Ja 
+31285091 23.01.2019 23.01.2019 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet Opphør (Endelig avslag) Ny rettighet Nei 
+32822917 20.01.2020 31.10.2020 Ikke spesif. aktivitetsfase §11-5 nedsatt arbeidsevne Avsluttet  Ny rettighet Ja 
+32982340 22.01.2020 30.04.2020 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet Innvilgelse av søknad Ny rettighet Ja 
+35159207 01.05.2020 07.07.2020 Under arbeidsavklaring Arbeidsavklaringspenger Avsluttet  Endring Ja 
+35117192 08.07.2020 31.10.2020 Vurdering for uføre Arbeidsavklaringspenger Avsluttet  Endring Ja 
+35505897 01.11.2020 01.11.2020 Ikke spesif. aktivitetsfase §11-5 nedsatt arbeidsevne Iverksatt  Stans Ja 
+35492195 01.11.2020 01.11.2020 Vurdering for uføre Arbeidsavklaringspenger Iverksatt Opphør (Endelig avslag) Stans Ja 
