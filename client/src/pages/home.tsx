@@ -1902,6 +1902,8 @@ export default function Home() {
     // Find the baseline from entries before the 2-year period
     const entriesBeforePeriod = allEntries.filter(entry => entry.date < twoYearsBefore);
     
+    console.error('🔍 CRITICAL PATH: Entries before 2-year period:', entriesBeforePeriod.length);
+    
     // Check if we have insufficient historical data
     const earliestDataDate = allEntries[0].date;
     const earliestDataDateFormatted = formatDate(earliestDataDate);
@@ -1910,11 +1912,12 @@ export default function Home() {
     const timeDiffMs = earliestDataDate.getTime() - twoYearsBefore.getTime();
     const monthsGap = Math.round(timeDiffMs / (1000 * 60 * 60 * 24 * 30.44)); // Average month length
     
-    console.log('🔍 BENEFITS CHECK: Historical data analysis:', {
+    console.error('🔍 BENEFITS CHECK: Historical data analysis:', {
       needDataFrom: formatDate(twoYearsBefore),
       actualDataFrom: earliestDataDateFormatted,
       monthsGap: monthsGap,
-      hasInsufficientData: monthsGap > 0
+      hasInsufficientData: monthsGap > 0,
+      entriesBeforePeriodLength: entriesBeforePeriod.length
     });
     
     if (entriesBeforePeriod.length > 0) {
